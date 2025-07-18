@@ -366,7 +366,7 @@ interactiveTest('sigplot expand full on command', 'Do you see a fully expanded p
     assert.equal(plot._Gx.panxmin, 0);
     assert.equal(plot._Gx.panxmax, 65535);
     assert.equal(plot._Gx.panymin, -655.34); // based off 0.02 of the first buffer
-    assert.equal(plot._Gx.panymax, 33422.34); // based off 0.02 of the first buffer
+    assert.equal(plot._Gx.panymax, 33422.34); // based offf 0.02 of the first buffer
     assert.equal(plot._Mx.stk[0].xmin, 0);
     assert.equal(plot._Mx.stk[0].xmax, 32767);
     assert.equal(plot._Mx.stk[0].ymin, -655.34);
@@ -1811,4 +1811,52 @@ interactiveTest('1d max-hold change framesize hdrmod', 'does the plot have a max
             subsize: framesize
         });
     }, 100);
+});
+
+
+interactiveTest('1d negative xstart gt bufmax', 'does the plot display a full triangle correctly', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {
+        legend: true,
+        autol: 5
+    });
+    assert.notEqual(plot, null);
+
+    var plot_options = {
+        autohide_panbars: true,
+        hide_note: true,
+        all: true,
+        expand: true,
+    };
+    
+    var plot = new sigplot.Plot(document.getElementById('plot'), plot_options);
+
+    var num_elements = (plot._Gx.bufmax * 4);
+    if ((num_elements % 2) === 0) {
+        num_elements = num_elements + 1;
+    }
+
+    var val = 1;
+    var data = []; // the series of y-values
+    for (var ii=0; ii<num_elements; ii++) {
+        data.push(val);
+        if (ii < num_elements/2) {
+        val = val + 1;
+        } else {
+        val = val - 1;
+        }
+    }
+    
+    let xdelta = 50;
+    var data_header = {
+        xunits: "Time",
+        xstart: -1 * (num_elements/2) * xdelta, // the start of the x-axis
+        xdelta: xdelta, // the x-axis step between each data point
+        yunits: "Power"
+    };
+    var layer_options = {
+        name: "Sample Data"
+    };
+
+    plot.overlay_array(data, data_header, layer_options);
 });

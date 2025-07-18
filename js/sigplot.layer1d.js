@@ -278,11 +278,12 @@
                 imin = imax - npts + 1;
             }
 
-            if ((imin >= this.imin) && (imin + npts <= this.imin + this.size) && (this.ybuf !== undefined) && (this.ybufn !== undefined)) {
+            if ((this.ybufmin !== undefined) && (this.ybufmax !== undefined) && (imin >= this.ybufmin) && (imin + npts <= this.ybufmax)) {
                 // data already in buffers
+                return npts;
             } else if (this.modified) {
-                // modified data not yet saved off
-
+                // modified data not yet saved off (this code branch seems vestigal)
+                return 0;
             } else if (HCB["class"] <= 2) {
                 // load new data
                 var start = this.offset + imin;
@@ -294,12 +295,15 @@
                 }
                 var ybuf = new m.PointArray(this.ybuf);
                 var ngot = m.grab(HCB, ybuf, start, npts);
-                this.imin = imin;
-                this.xstart = HCB.xstart + (imin) * this.xdelta;
-                this.size = ngot;
+                this.ybufmin = imin;
+                this.ybufmax = imin + ngot;
+                //this.imin = imin;
+                //this.xstart = HCB.xstart + (imin) * this.xdelta;
+                return ngot;
             } else {
                 // type 3000, 4000, 5000
                 // TODO yeah right
+                return 0;
             }
 
         },
@@ -385,16 +389,21 @@
 
             // Setting ybufn to undefined causes refresh() to refetch via get_data
             this.ybufn = undefined;
+            this.ybufmin = undefined;
+            this.ybufmax = undefined;
             this.imin = -1;
-            this.size = this.hcb.size;
+
+            if (this.hcb["class"] === 2) {
+                m.force1000(this.hcb);
+                this.size = this.hcb.subsize;
+            } else {
+                this.size = this.hcb.size;
+            }
 
             var xmin = this.xmin;
             var xmax = this.xmax;
 
             if (axis_change) {
-                if (this.hcb["class"] === 2) {
-                    m.force1000(this.hcb);
-                }
                 var d = this.hcb.xstart + this.hcb.xdelta * (this.hcb.size - 1.0);
                 this.xmin = Math.min(this.hcb.xstart, d);
                 this.xmax = Math.max(this.hcb.xstart, d);
@@ -457,9 +466,7 @@
             var Gx = this.plot._Gx;
             var Mx = this.plot._Mx;
 
-            this.get_data(xmin, xmax);
-
-            var npts = Math.ceil(this.size);
+            var npts = this.get_data(xmin, xmax);;
             if (this.mode === "XY") {
                 npts = Math.floor(npts / 2);
             }
@@ -531,37 +538,40 @@
                     n1 = 0;
                     n2 = npts;
                 }
-                if ((this.cx) || (this.mode === "XY")) {
-                    this.xmin = qmin;
-                    this.xmax = qmax;
-                }
+                //if ((this.cx) || (this.mode === "XY")) {
+                //    this.xmin = qmin;
+                //    this.xmax = qmax;
+                //}
             } else if (npts > 0) {
                 var xstart = this.xstart;
                 var xdelta = this.xdelta;
                 var d = npts;
+
+                // n1 and n2 are the minimal and maximal index bounds based on the
+                // passed in xmin/xmax, but get_data may have returned less data
                 if (Gx.index) {
                     n1 = 0;
                     n2 = npts - 1;
                 } else if (xdelta >= 0.0) {
-                    n1 = Math.max(1.0, Math.min(d, Math.round((xmin - xstart) / xdelta))) - 1.0;
-                    n2 = Math.max(1.0, Math.min(d, Math.round((xmax - xstart) / xdelta) + 2.0)) - 1.0;
+                    n1 = Math.max(1.0, Math.min(this.size, Math.round((xmin - xstart) / xdelta))) - 1.0;
+                    n2 = Math.max(1.0, Math.min(this.size, Math.round((xmax - xstart) / xdelta) + 2.0)) - 1.0;
                 } else {
-                    n1 = Math.max(1.0, Math.min(d, Math.round((xmax - xstart) / xdelta) - 1.0)) - 1.0;
-                    n2 = Math.max(1.0, Math.min(d, Math.round((xmin - xstart) / xdelta) + 2.0)) - 1.0;
+                    n1 = Math.max(1.0, Math.min(this.size, Math.round((xmax - xstart) / xdelta) - 1.0)) - 1.0;
+                    n2 = Math.max(1.0, Math.min(this.size, Math.round((xmin - xstart) / xdelta) + 2.0)) - 1.0;
                 }
 
-                npts = n2 - n1 + 1;
+                n2 = Math.min(n2, n1 + d - 1);
                 if (npts < 0) {
                     m.log.debug("Nothing to plot");
                     npts = 0;
                 }
-                dbuf = new m.PointArray(this.ybuf).subarray(n1 * skip);
+                dbuf = new m.PointArray(this.ybuf);
                 xstart = xstart + xdelta * (n1);
                 for (var i = 0; i < npts; i++) {
                     if (Gx.index) {
                         this.xpoint[i] = this.imin + i + 1;
                     } else {
-                        this.xpoint[i] = xstart + i * xdelta;
+                        this.xpoint[i] = xmin + i * xdelta;
                     }
                 }
             }
@@ -858,16 +868,16 @@
                     }
                 }
 
-                if (this.size === 0) {
+                if (pts.num === 0) {
                     xmin = xmax;
                 } else {
                     if (Gx.index) {
                         xmin = xmin + pts.num;
                     } else {
                         if (xdelta >= 0) {
-                            xmin = xmin + (this.size * xdelta);
+                            xmin = xmin + (pts.num * xdelta);
                         } else {
-                            xmax = xmax + (this.size * xdelta);
+                            xmax = xmax + (pts.num * xdelta);
                         }
                     }
                 }

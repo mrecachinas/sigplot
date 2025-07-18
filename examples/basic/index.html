@@ -16,22 +16,58 @@
     <div id="plot"></div>
     <script>
     window.onload = function() {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {});
+    var pulse = [];
+    for (var i = 0; i <= 1000; i += 1) {
+        pulse.push(0.0);
+    }
+    var lyr_uuid = plot.overlay_array(pulse);
+    pulse[0] = 1.0;
+    plot.reload(lyr_uuid, pulse);
+    for (var i = 1; i <= 1000; i += 1) {
+        pulse[i - 1] = 0;
+        pulse[i] = 1;
+    }
+      /*
         var plot_options = {
             autohide_panbars: true,
-            hide_note: true
+            hide_note: true,
+            all: true,
+            expand: true,
         };
-        var data = [1, 2, 3, 4, 5, 4, 3, 2, 1]; // the series of y-values
+        
+        var plot = new sigplot.Plot(document.getElementById('plot'), plot_options);
+
+        var num_elements = (plot._Gx.bufmax * 4);
+        if ((num_elements % 2) === 0) {
+          num_elements = num_elements + 1;
+        }
+
+        var val = 1;
+        var data = []; // the series of y-values
+        for (var ii=0; ii<num_elements; ii++) {
+          data.push(val);
+          if (ii < num_elements/2) {
+            val = val + 1;
+          } else {
+            val = val - 1;
+          }
+        }
+        
+        let xdelta = 50;
         var data_header = {
             xunits: "Time",
-            xstart: 100, // the start of the x-axis
-                xdelta: 50, // the x-axis step between each data point
-                yunits: "Power"
+            xstart: -1 * (num_elements/2) * xdelta, // the start of the x-axis
+            xdelta: xdelta, // the x-axis step between each data point
+            yunits: "Power"
         };
         var layer_options = {
             name: "Sample Data"
         };
-        var plot = new sigplot.Plot(document.getElementById('plot'), plot_options);
+
         plot.overlay_array(data, data_header, layer_options);
+        */
     }
     </script>
   </body>

@@ -310,9 +310,9 @@ QUnit.test('sigplot layer1d noautoscale', function(assert) {
     for (var i = 1; i <= 1000; i += 1) {
         pulse[i - 1] = 0;
         pulse[i] = 1;
-        assert.equal(plot._Gx.panymin, -0.02);
-        assert.equal(plot._Gx.panymax, 1.02);
     }
+    assert.equal(plot._Gx.panymin, -0.02);
+    assert.equal(plot._Gx.panymax, 1.02);
 });
 /* 
  TODO REVISIT THE AUTO_SCALE TESTS

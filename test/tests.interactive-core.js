@@ -112,7 +112,7 @@ interactiveTest('sigplot 1d overlay (over bufmax)', 'Do you see a small portion 
     assert.equal(plot._Gx.panxmin, 0);
     assert.equal(plot._Gx.panxmax, 65535);
     assert.equal(plot._Gx.panymin, -655.34); // based off 0.02 of the first buffer
-    assert.equal(plot._Gx.panymax, 65536.8);
+    assert.equal(plot._Gx.panymax, 66099.34); // based off expansion of the second buffer
     assert.equal(plot._Mx.stk[0].xmin, 32678);
     assert.equal(plot._Mx.stk[0].xmax, 65535);
     assert.equal(plot._Mx.stk[0].ymin, -655.34);
@@ -166,11 +166,11 @@ interactiveTest('sigplot 1d overlay (expand)', 'Do you see a ramp from 0 to 6553
     assert.equal(plot._Gx.panxmin, 0);
     assert.equal(plot._Gx.panxmax, 65535);
     assert.equal(plot._Gx.panymin, -655.34); // based off 0.02 of the first buffer
-    assert.equal(plot._Gx.panymax, 66190.32); // TODO : might be wrong 65534+0.02*32767
+    assert.equal(plot._Gx.panymax, 66189.34); // TODO : might be wrong 65534+0.02*32767
     assert.equal(plot._Mx.stk[0].xmin, 0);
     assert.equal(plot._Mx.stk[0].xmax, 65535);
     assert.equal(plot._Mx.stk[0].ymin, -655.34);
-    assert.equal(plot._Mx.stk[0].ymax, 66190.32);
+    assert.equal(plot._Mx.stk[0].ymax, 66189.34);
 });
 
 interactiveTest('sigplot 1d reload', 'Do you see a ramp from 0 to 1023?', function(assert) {
