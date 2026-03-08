@@ -842,8 +842,8 @@
                     } else {
                         mx.trace(Mx,
                             ic,
-                            new m.PointArray(this.xptr),
-                            new m.PointArray(this.yptr),
+                            this.xpoint,
+                            this.ypoint,
                             pts.num,
                             pts.start,
                             1,
@@ -855,8 +855,8 @@
                         if (this.maxhold) {
                             mx.trace(Mx,
                                 this.maxhold.color,
-                                new m.PointArray(this.xptr),
-                                this.mhpoint.slice(pts.start, pts.end),
+                                this.xpoint,
+                                this.mhpoint.subarray(pts.start, pts.end),
                                 pts.num,
                                 pts.start,
                                 1,

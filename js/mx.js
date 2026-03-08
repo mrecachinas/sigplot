@@ -48,6 +48,8 @@
     var CanvasInput = require("./CanvasInput");
     var m = require("./m");
 
+    var DASHED_STYLE = {mode: "dashed", on: 4, off: 4};
+
     function mx() {}
 
     mx.DomMenu = require("./mx.dommenu");
@@ -1464,11 +1466,7 @@
 
         var style;
         if (options.dashed) {
-            style = {
-                mode: "dashed",
-                on: 4,
-                off: 4
-            };
+            style = DASHED_STYLE;
         }
 
         var stk4 = mx.origin(Mx.origin, 4, Mx.stk[Mx.level]);
@@ -1666,6 +1664,7 @@
 
             var ie = 0;
             var visible = false;
+            var o = {tL: 1.0, tE: 0.0};
             for (var n = skip; n <= (skip * (npts - 1)); n += skip) {
 
                 var lx = x;
@@ -1688,10 +1687,8 @@
                     dx = lx - x;
                     dy = ly - y;
                     if ((dx !== 0.0) || (dy !== 0.0)) {
-                        var o = {
-                            tL: 1.0,
-                            tE: 0.0
-                        };
+                        o.tL = 1.0;
+                        o.tE = 0.0;
                         // Between the last point and the current point,
                         // determine the ratio of the x and y porionts
                         // that intersects the border.  If clipt returns
@@ -1775,8 +1772,7 @@
                     var x_start = highlight.xstart;
                     var x_end = highlight.xend;
 
-                    console.log("x start ", x_start);
-                    console.log("x end ", x_end);
+
 
                     if (x_start >= Mx.stk[Mx.level].xmax) {
                         continue;
