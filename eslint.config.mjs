@@ -9,7 +9,7 @@ export default [
         files: ["js/**/*.js"],
         languageOptions: {
             ecmaVersion: 2022,
-            sourceType: "commonjs",
+            sourceType: "module",
             globals: {
                 // Browser globals
                 window: "readonly",
@@ -59,14 +59,7 @@ export default [
                 Uint32Array: "readonly",
                 DataView: "readonly",
                 WeakMap: "readonly",
-
-                // Node/CommonJS (for module system)
-                module: "readonly",
-                require: "readonly",
-                exports: "readonly",
-                __dirname: "readonly",
-                __filename: "readonly",
-                Buffer: "readonly",
+                ResizeObserver: "readonly",
                 process: "readonly",
                 global: "readonly",
             },

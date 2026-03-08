@@ -24,12 +24,7 @@
  *
  */
 
-/* global module */
-/* global require */
-
-(function() {
-
-module.exports = {};
+var common = {};
 
 if (window.ArrayBuffer) {
     if (!ArrayBuffer.prototype.slice) {
@@ -71,7 +66,7 @@ window.cancelAnimFrame = (function(callback) {
 })();
 
 // Handle various ways to draw dashed lines
-module.exports.dashOn = function(ctx, on, off) {
+common.dashOn = function(ctx, on, off) {
     if (ctx.setLineDash) {
         ctx.setLineDash([on, off]);
         return true;
@@ -85,7 +80,7 @@ module.exports.dashOn = function(ctx, on, off) {
     return false;
 };
 
-module.exports.dashOff = function(ctx) {
+common.dashOff = function(ctx) {
     if (ctx.setLineDash) {
         ctx.setLineDash([]);
     } else if (ctx.mozDash) { // Gecko 7.0+
@@ -96,13 +91,13 @@ module.exports.dashOff = function(ctx) {
 };
 
 // Firefox behaves differntly for keypress events
-module.exports.getKeyCode = function(e) {
+common.getKeyCode = function(e) {
     e = window.event || e;
     e = e.charCode || e.keyCode;
     return e;
 };
 
-module.exports.setKeypressHandler = function(handler) {
+common.setKeypressHandler = function(handler) {
     if (window.addEventListener) { window.addEventListener('keypress', handler, false); }
     else if (window.attachEvent) {
         window.attachEvent('onkeypress', handler);
@@ -349,7 +344,7 @@ function(a,b){return{proxy:new g(a,b),revoke:p}};return g};var u="undefined"!==t
 }
 
 //Updates destenation object with source values
-module.exports.update = function update(dst, src) {
+common.update = function update(dst, src) {
     for (var prop in src) {
         var val = src[prop];
         if (typeof val === "object") { // recursive
@@ -366,7 +361,7 @@ module.exports.update = function update(dst, src) {
 // be triggered. The function will be called after it stops being called for
 // N milliseconds. If `immediate` is passed, trigger the function on the
 // leading edge, instead of the trailing.
-module.exports.debounce = function debounce(func, wait, immediate) {
+common.debounce = function debounce(func, wait, immediate) {
 	var timeout;
 	return function() {
 		var context = this, args = arguments;
@@ -387,13 +382,11 @@ module.exports.debounce = function debounce(func, wait, immediate) {
 
 // From https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
 // consider using the uuid module instead
-module.exports.uuidv4 = function uuidv4() {
+common.uuidv4 = function uuidv4() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
 };
 
-}());
-
-
+export default common;
