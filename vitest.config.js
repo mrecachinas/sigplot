@@ -1,5 +1,8 @@
 import { defineConfig } from "vitest/config";
 
+// sec2tod uses local‑timezone Date methods, so pin to UTC for deterministic results
+process.env.TZ = "UTC";
+
 export default defineConfig({
     test: {
         include: ["test/**/*.test.js"],
