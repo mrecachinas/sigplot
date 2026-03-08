@@ -371,26 +371,19 @@
 
                     }
                     if (this.drawmode === "falling") {
-                        //shift and fill in the next row of data.
-                        var cut_off = (this.lps - 1) * this.hcb.subsize;
-                        var tmp = this.zbuf.slice(0, cut_off);
-                        this.zbuf = [];
-                        for (var i = 0; i < this.hcb.subsize; i++) {
-                            this.zbuf.push(zpoint[i]);
-                        }
-                        this.zbuf.push.apply(this.zbuf, tmp);
-                        tmp = [];
+                        //shift and fill in the next row of data using in-place operations
+                        var subsize = this.hcb.subsize;
+                        var cut_off = (this.lps - 1) * subsize;
+                        this.zbuf.copyWithin(subsize, 0, cut_off);
+                        this.zbuf.set(zpoint, 0);
                     }
                     if (this.drawmode === "rising") {
-                        //shift and fill in the next row of data.
-                        var cut_off = this.lps * this.hcb.subsize;
-                        var tmp = this.zbuf.slice(this.hcb.subsize, cut_off);
-                        this.zbuf = [];
-                        this.zbuf.push.apply(this.zbuf, tmp);
-                        for (var i = 0; i < this.hcb.subsize; i++) {
-                            this.zbuf.push(zpoint[i]);
-                        }
-                        tmp = [];
+                        //shift and fill in the next row of data using in-place operations
+                        var subsize = this.hcb.subsize;
+                        var cut_off = this.lps * subsize;
+                        this.zbuf.copyWithin(0, subsize, cut_off);
+                        var offset = (this.lps - 1) * subsize;
+                        this.zbuf.set(zpoint, offset);
                     }
                 }
 

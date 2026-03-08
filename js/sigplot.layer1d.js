@@ -672,6 +672,13 @@
          *   - a specific view to calculate the bounds against
          */
         get_pan_bounds: function(view) {
+            // If bounds were cached by a recent draw() call, use them to avoid redundant prep()
+            if (!view && this._cachedBounds) {
+                var bounds = this._cachedBounds;
+                this._cachedBounds = null;
+                return bounds;
+            }
+
             var Mx = this.plot._Mx;
             var Gx = this.plot._Gx;
 
@@ -893,17 +900,16 @@
             this.ymin = panymin;
             this.ymax = panymax;
 
-            return {
+            // Cache bounds for get_pan_bounds() to avoid redundant prep() calls
+            this._cachedBounds = {
                 num: num,
                 xmin: this.xmin,
                 xmax: this.xmax,
                 ymin: this.ymin,
                 ymax: this.ymax
             };
-        },
 
-        /**
-         * Add a highlight to a specific layer.
+            return this._cachedBounds;
          *
          * @param {Number}
          *            n the layer to add the highlight to
