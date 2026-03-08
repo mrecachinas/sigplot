@@ -1519,8 +1519,13 @@
         // if all points are on screen, then we will will need 'n' points
         // if all points are off the screen, then we will need (2*n)-2
         var bufsize = 4 * Math.ceil(2 * xpoint.length);
-        var pixx = new Int32Array(new ArrayBuffer(bufsize));
-        var pixy = new Int32Array(new ArrayBuffer(bufsize));
+        if (!Mx._traceBufferSize || Mx._traceBufferSize < bufsize) {
+            Mx._traceBufferSize = bufsize;
+            Mx._tracePixx = new Int32Array(new ArrayBuffer(bufsize));
+            Mx._tracePixy = new Int32Array(new ArrayBuffer(bufsize));
+        }
+        var pixx = Mx._tracePixx;
+        var pixy = Mx._tracePixy;
 
         var ib = 0;
         if ((line === 0) && (symb !== 0)) {
@@ -1789,24 +1794,27 @@
                         var pi_start = xstart_pixel_value.x;
                         var pi_end = xend_pixel_value.x;
                         //console.log('start: ', pi_start, 'end: ', pi_end);
-                        var pixx_new = [];
-                        var pixy_new = [];
+                        var fillCount = 0;
+                        if (!Mx._highlightPixx || Mx._highlightPixx.length < ib) {
+                            Mx._highlightPixx = new Int32Array(ib);
+                            Mx._highlightPixy = new Int32Array(ib);
+                        }
+                        var pixx_new = Mx._highlightPixx;
+                        var pixy_new = Mx._highlightPixy;
                         for (var q = 0; q < ib; q++) {
                             var this_point = pixx[q];
                             var this_point_y = pixy[q];
-                            //console.log(this_point);
                             if (in_fill_range(this_point, pi_start, pi_end) === true) {
-                                //console.log('in range: ', this_point);
-                                pixx_new.push(this_point);
-                                pixy_new.push(this_point_y);
-
+                                pixx_new[fillCount] = this_point;
+                                pixy_new[fillCount] = this_point_y;
+                                fillCount++;
                             }
                         }
 
-                        if ((pixx_new.length > 0) || (wn !== 0)) {
+                        if ((fillCount > 0) || (wn !== 0)) {
                             pi_start = Math.max(pi_start, pixx_new[0]);
-                            pi_end = Math.min(pi_end, pixx_new[pixx_new.length - 1]);
-                            mx.fill_trace(Mx, highlight.fill, pixx_new, pixy_new, pixx_new.length, pi_start, pi_end);
+                            pi_end = Math.min(pi_end, pixx_new[fillCount - 1]);
+                            mx.fill_trace(Mx, highlight.fill, pixx_new, pixy_new, fillCount, pi_start, pi_end);
                         }
                     }
 
@@ -5200,7 +5208,14 @@
         Mx._renderCanvas.height = buf.height;
 
         var imgctx = Mx._renderCanvas.getContext("2d");
-        var imgd = imgctx.createImageData(Mx._renderCanvas.width, Mx._renderCanvas.height);
+        var rw = Mx._renderCanvas.width;
+        var rh = Mx._renderCanvas.height;
+        if (!Mx._renderImgd || Mx._renderImgdW !== rw || Mx._renderImgdH !== rh) {
+            Mx._renderImgd = imgctx.createImageData(rw, rh);
+            Mx._renderImgdW = rw;
+            Mx._renderImgdH = rh;
+        }
+        var imgd = Mx._renderImgd;
         var src = new Uint32Array(buf);
         for (var ii = 0; ii < src.length; ++ii) {
             var index = ii * 4;
@@ -5279,7 +5294,14 @@
             Mx._renderCanvas.height = buf.height;
 
             var imgctx = Mx._renderCanvas.getContext("2d");
-            var imgd = imgctx.createImageData(Mx._renderCanvas.width, Mx._renderCanvas.height);
+            var rw = Mx._renderCanvas.width;
+            var rh = Mx._renderCanvas.height;
+            if (!Mx._renderImgd || Mx._renderImgdW !== rw || Mx._renderImgdH !== rh) {
+                Mx._renderImgd = imgctx.createImageData(rw, rh);
+                Mx._renderImgdW = rw;
+                Mx._renderImgdH = rh;
+            }
+            var imgd = Mx._renderImgd;
 
             // TODO - This may not be portable to all browsers, if not
             // we need to choose between this approach and the traditional
