@@ -32,6 +32,75 @@
     var mx = require("./mx");
 
     /**
+     * Min-max decimation for level-of-detail rendering.
+     * When data points greatly outnumber screen pixels, this reduces
+     * the point count to at most 2*screenWidth while preserving visual
+     * peaks and valleys.
+     *
+     * @param {TypedArray} xpoint - source x coordinates
+     * @param {TypedArray} ypoint - source y coordinates
+     * @param {number} npts - number of points to process
+     * @param {number} start - start index into xpoint/ypoint
+     * @param {number} screenWidth - available pixel width
+     * @param {TypedArray} dxpoint - destination x array (pre-allocated)
+     * @param {TypedArray} dypoint - destination y array (pre-allocated)
+     * @returns {number} number of decimated points written
+     */
+    function decimateMinMax(xpoint, ypoint, npts, start, screenWidth, dxpoint, dypoint) {
+        var bucketSize = npts / screenWidth;
+        var outIdx = 0;
+
+        for (var b = 0; b < screenWidth; b++) {
+            var bucketStart = start + Math.floor(b * bucketSize);
+            var bucketEnd = start + Math.floor((b + 1) * bucketSize);
+            if (bucketEnd > start + npts) {
+                bucketEnd = start + npts;
+            }
+            if (bucketStart >= bucketEnd) {
+                continue;
+            }
+
+            var minIdx = bucketStart;
+            var maxIdx = bucketStart;
+            var minVal = ypoint[bucketStart];
+            var maxVal = ypoint[bucketStart];
+
+            for (var i = bucketStart + 1; i < bucketEnd; i++) {
+                var val = ypoint[i];
+                if (val < minVal) {
+                    minVal = val;
+                    minIdx = i;
+                }
+                if (val > maxVal) {
+                    maxVal = val;
+                    maxIdx = i;
+                }
+            }
+
+            // Output min and max in x-order to preserve line continuity
+            if (minIdx <= maxIdx) {
+                dxpoint[outIdx] = xpoint[minIdx];
+                dypoint[outIdx] = minVal;
+                outIdx++;
+                if (minIdx !== maxIdx) {
+                    dxpoint[outIdx] = xpoint[maxIdx];
+                    dypoint[outIdx] = maxVal;
+                    outIdx++;
+                }
+            } else {
+                dxpoint[outIdx] = xpoint[maxIdx];
+                dypoint[outIdx] = maxVal;
+                outIdx++;
+                dxpoint[outIdx] = xpoint[minIdx];
+                dypoint[outIdx] = minVal;
+                outIdx++;
+            }
+        }
+
+        return outIdx;
+    }
+
+    /**
      * @constructor
      * @param plot
      */
@@ -81,6 +150,10 @@
         this.mhpoint = null; // PointArray backed by memory in mhptr
         this.firstpush = false;
         this.options = {};
+        this.decimate = true; // enable min-max decimation for large datasets
+        this._decXpoint = null;
+        this._decYpoint = null;
+        this._decBufSize = 0;
     };
 
     Layer1D.prototype = {
@@ -847,12 +920,32 @@
                     if (segment) {
                         // TODO
                     } else {
+                        // Apply min-max decimation for large datasets when drawing lines
+                        var traceX = this.xpoint;
+                        var traceY = this.ypoint;
+                        var traceNum = pts.num;
+                        var traceStart = pts.start;
+                        var screenWidth = Math.abs(Mx.r - Mx.l);
+
+                        if (this.decimate && line > 0 && symbol === 0 && pts.num > 2 * screenWidth && screenWidth > 0) {
+                            var decBufNeeded = 2 * screenWidth;
+                            if (this._decBufSize < decBufNeeded) {
+                                this._decBufSize = decBufNeeded;
+                                this._decXpoint = new m.PointArray(decBufNeeded);
+                                this._decYpoint = new m.PointArray(decBufNeeded);
+                            }
+                            traceNum = decimateMinMax(this.xpoint, this.ypoint, pts.num, pts.start, screenWidth, this._decXpoint, this._decYpoint);
+                            traceX = this._decXpoint;
+                            traceY = this._decYpoint;
+                            traceStart = 0;
+                        }
+
                         mx.trace(Mx,
                             ic,
-                            this.xpoint,
-                            this.ypoint,
-                            pts.num,
-                            pts.start,
+                            traceX,
+                            traceY,
+                            traceNum,
+                            traceStart,
                             1,
                             line,
                             symbol,
@@ -910,6 +1003,10 @@
             };
 
             return this._cachedBounds;
+        },
+
+        /**
+         * Add a highlight to a specific layer.
          *
          * @param {Number}
          *            n the layer to add the highlight to
