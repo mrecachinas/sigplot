@@ -7545,12 +7545,19 @@
         var defLabelWidth = 98; // a magic number - default width of pixels
         var maxLabelWidth = 0;
         var labelOffset = 0;
-        for (n = 0; n < Gx.lyr.length; n++) { // figure out maximum label
-            // length
-            var labelLength = ctx.measureText(Gx.lyr[n].name).width;
-            if (labelLength > maxLabelWidth) {
-                maxLabelWidth = labelLength;
+        // Cache label widths — invalidated when layer count changes or names change
+        var cacheKey = Gx.lyr.length + ":" + Gx.lyr.map(function(l) { return l.name; }).join(",");
+        if (Gx._legendCacheKey === cacheKey && Gx._legendMaxLabelWidth !== undefined) {
+            maxLabelWidth = Gx._legendMaxLabelWidth;
+        } else {
+            for (n = 0; n < Gx.lyr.length; n++) {
+                var labelLength = ctx.measureText(Gx.lyr[n].name).width;
+                if (labelLength > maxLabelWidth) {
+                    maxLabelWidth = labelLength;
+                }
             }
+            Gx._legendCacheKey = cacheKey;
+            Gx._legendMaxLabelWidth = maxLabelWidth;
         }
         if (maxLabelWidth > defLabelWidth) {
             labelOffset = (maxLabelWidth - defLabelWidth);
@@ -7818,14 +7825,22 @@
             set_panbounds(plot, lyr_bnds);
         }
 
-        // TODO consider if this is a source of performance
-        // issues on streaming plots
-        var evt = document.createEvent('Event');
-        evt.initEvent('lyrdraw', true, true);
-        evt.index = layer.index;
-        evt.name = layer.name; // the name of the layer
-        evt.layer = layer;
-        mx.dispatchEvent(Mx, evt);
+        // Use lightweight CustomEvent instead of deprecated createEvent/initEvent
+        if (!Gx.suppress_lyrdraw) {
+            var evt = new CustomEvent('lyrdraw', {
+                bubbles: true,
+                cancelable: true,
+                detail: {
+                    index: layer.index,
+                    name: layer.name,
+                    layer: layer
+                }
+            });
+            evt.index = layer.index;
+            evt.name = layer.name;
+            evt.layer = layer;
+            mx.dispatchEvent(Mx, evt);
+        }
     }
 
     /**

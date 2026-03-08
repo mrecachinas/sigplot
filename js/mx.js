@@ -50,6 +50,20 @@
 
     var DASHED_STYLE = {mode: "dashed", on: 4, off: 4};
 
+    // Cached getContext helper to avoid repeated lookups in hot paths
+    var _ctxCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+    function getCachedCtx(canvas) {
+        if (_ctxCache) {
+            var ctx = _ctxCache.get(canvas);
+            if (!ctx) {
+                ctx = canvas.getContext("2d");
+                _ctxCache.set(canvas, ctx);
+            }
+            return ctx;
+        }
+        return canvas.getContext("2d");
+    }
+
     function mx() {}
 
     mx.DomMenu = require("./mx.dommenu");
@@ -686,7 +700,7 @@
      * @private
      */
     mx.linear_gradient = function(Mx, x, y, w, h, fillStyle) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         var step_size = 1.0 / fillStyle.length;
         var lingrad = ctx.createLinearGradient(x, y, w, h);
         for (var i = 0; i < fillStyle.length - 1; i++) {
@@ -1215,7 +1229,7 @@
     // ~= MX$DRAW_SYMBOL
     //
     mx.draw_symbol = function(Mx, ic, x, y, symbol, rr, n) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         var r = 0; // int
         var d = 0; // int
@@ -1857,7 +1871,7 @@
     // ~= MX$DRAW_LINES
     //
     mx.draw_line = function(Mx, color, x1, y1, x2, y2, linewidth, style) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         if (linewidth === undefined) {
             linewidth = Mx.linewidth;
         }
@@ -1895,7 +1909,7 @@
     // ~= MX$RUBBERLINE
     //
     mx.rubberline = function(Mx, x1, y1, x2, y2) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         draw_line(ctx, x1, y1, x2, y2, {
             mode: "xor"
         }, "white", 1);
@@ -1910,7 +1924,7 @@
      * @private
      */
     mx.fill_trace = function(Mx, fillStyle, pixx, pixy, npts, l, r) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         if (Array.isArray(fillStyle)) {
             ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, Mx.b - Mx.t, fillStyle);
         } else {
@@ -1977,7 +1991,7 @@
     // ~= MX$DRAW_LINES
     //
     mx.draw_lines = function(Mx, colors, pixx, pixy, npts, linewidth, style) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (npts < 1) {
             return;
@@ -2083,7 +2097,7 @@
     // ~= MX$CLIP
     //
     mx.clip = function(Mx, left, top, width, height) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if ((left === 0) && (top === 0) && (width === 0) && (height === 0)) {
             ctx.restore();
@@ -2102,7 +2116,7 @@
     // ~= MX$CLEAR_WINDOW
     //
     mx.clear_window = function(Mx) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         ctx.fillStyle = Mx.bg;
         ctx.fillRect(0, 0, Mx.width, Mx.height);
@@ -2113,7 +2127,7 @@
      * @private
      */
     mx.erase_window = function(Mx) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         ctx.clearRect(0, 0, Mx.width, Mx.height);
     };
@@ -2290,7 +2304,7 @@
 
         // TODO Validation - make sure promptText is not too long and isn't multi-line...
         mx.onWidgetLayer(Mx, function() {
-            var ctx = Mx.active_canvas.getContext("2d");
+            var ctx = getCachedCtx(Mx.active_canvas);
             var maxNumChars = 30;
 
             // Construct the input box
@@ -2634,7 +2648,7 @@
      * @param {Number} radius The corner radius. Defaults to 5;
      */
     mx.draw_round_box = function(Mx, color, x, y, w, h, fill_opacity, fill_color, radius) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (!radius) {
             radius = 5;
@@ -2683,7 +2697,7 @@
     // ~= MX$DRAW_BOX
     //
     mx.draw_box = function(Mx, color, x, y, w, h, fill_opacity, fill_color) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (color !== "xor") {
             ctx.lineWidth = 1;
@@ -2705,7 +2719,7 @@
 
                 // For now assume xor always uses the base canvas
                 // even if it draws on another canvas
-                var dctx = Mx.canvas.getContext("2d");
+                var dctx = getCachedCtx(Mx.canvas);
 
                 var imgd = dctx.getImageData(x, y, w, 1);
                 var pix = imgd.data;
@@ -2768,8 +2782,8 @@
      */
     // ~= MX$SETFONT
     mx.set_font = function(Mx, width) {
-        var ctx = Mx.canvas.getContext("2d");
-        var ctx_wid = Mx.wid_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.canvas);
+        var ctx_wid = getCachedCtx(Mx.wid_canvas);
 
         if ((Mx.font) && (Mx.font.width === width)) {
             // use the cached font
@@ -2804,7 +2818,7 @@
      */
     // ~= MX$FTEXTLINE
     mx.textline = function(Mx, xstart, ystart, xend, yend, style) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         if (!style) {
             style = {};
         }
@@ -2964,7 +2978,7 @@
             height = iscb - isct - 4;
         }
 
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         if (flags.fillStyle) {
             if (Array.isArray(flags.fillStyle)) {
                 ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, iscb - isct, flags.fillStyle);
@@ -3385,7 +3399,7 @@
             //ctx.fillStyle = xwlo;
             //ctx.fillRect(xcc, ycc, xss, yss);
 
-            var ctx = Mx.wid_canvas.getContext("2d");
+            var ctx = getCachedCtx(Mx.wid_canvas);
             ctx.lineWidth = 1;
 
             ctx.strokeStyle = Mx.xwbs; // xwbs
@@ -3807,7 +3821,7 @@
             mx.text(Mx, xt, yt, name, Mx.xwfg);
         }
         if (inw > 0 && inh > 0) {
-            var ctx = Mx.active_canvas.getContext("2d");
+            var ctx = getCachedCtx(Mx.active_canvas);
             if (mx.LEGACY_RENDER) {
                 ctx.fillStyle = Mx.bg;
                 ctx.fillRect(inx, iny, inw, inh);
@@ -3833,7 +3847,7 @@
     // ~= MX$TEXT
     //
     mx.text = function(Mx, x, y, lbl, color) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         x = Math.max(0, x);
         y = Math.max(0, y);
@@ -4278,7 +4292,7 @@
     function display_warpbox(Mx) {
         Mx._animationFrameHandle = undefined;
         var warpbox = Mx.warpbox;
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (!warpbox) {
             return;
@@ -4556,7 +4570,7 @@
         }
         pix[7] = pix[3];
 
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (bw > 0) {
             ctx.fillStyle = (func > 0) ? Mx.xwts : Mx.xwbs; // Set foreground color
@@ -4599,7 +4613,7 @@
      */
     // ~= MX$SHADOWBOX
     mx.sigplot_shadowbox = function(Mx, x, y, w, h, shape, func, label, alpha) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         var length = label.length; // Original method declaration includes a length - but it only represents the length of the label
 
@@ -4871,7 +4885,7 @@
         var s1;
         var sw; // int_2
 
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         var scrollReal2PixOut = mx.scroll_real2pix(sv);
         s1 = scrollReal2PixOut.s1;
@@ -5207,7 +5221,7 @@
         Mx._renderCanvas.width = buf.width;
         Mx._renderCanvas.height = buf.height;
 
-        var imgctx = Mx._renderCanvas.getContext("2d");
+        var imgctx = getCachedCtx(Mx._renderCanvas);
         var rw = Mx._renderCanvas.width;
         var rh = Mx._renderCanvas.height;
         if (!Mx._renderImgd || Mx._renderImgdW !== rw || Mx._renderImgdH !== rh) {
@@ -5293,7 +5307,7 @@
             Mx._renderCanvas.width = buf.width;
             Mx._renderCanvas.height = buf.height;
 
-            var imgctx = Mx._renderCanvas.getContext("2d");
+            var imgctx = getCachedCtx(Mx._renderCanvas);
             var rw = Mx._renderCanvas.width;
             var rh = Mx._renderCanvas.height;
             if (!Mx._renderImgd || Mx._renderImgdW !== rw || Mx._renderImgdH !== rh) {
@@ -5402,7 +5416,7 @@
         var h = img.height;
 
         // Destination element
-        var imgctx = img.getContext("2d");
+        var imgctx = getCachedCtx(img);
         if (!Mx.scaledImgd || Mx.scaledImgd.width !== w || Mx.scaledImgd.height !== h) {
             Mx.scaledImgd = imgctx.createImageData(w, h);
         }
@@ -5603,7 +5617,7 @@
      * @private
      */
     mx.create_image = function(Mx, data, subsize, w, h, zmin, zmax, xcompression, drawdirection) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (!Mx.pixel) {
             console.log("COLORMAP not initialized, defaulting to foreground");
@@ -5717,7 +5731,7 @@
      * @private
      */
     mx.put_image = function(Mx, data, nx, ny, nex, ney, xd, yd, level, opacity, smoothing, downscaling) {
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
 
         if (!Mx.pixel) {
             m.log.warn("COLORMAP not initialized, defaulting to foreground");
@@ -5911,7 +5925,7 @@
         }
 
         //render the buffered canvas onto the original canvas element
-        var ctx = Mx.active_canvas.getContext("2d");
+        var ctx = getCachedCtx(Mx.active_canvas);
         ctx.save();
         ctx.beginPath();
         ctx.rect(Mx.l, Mx.t, Mx.r - Mx.l, Mx.b - Mx.t);
