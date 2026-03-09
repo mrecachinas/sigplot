@@ -35,8 +35,6 @@
  * @namespace
  */
 
-/* global requestAnimFrame */
-/* global cancelAnimFrame */
 
 import tinycolor from "tinycolor2";
 import ColorMap from "./ColorMap.js";
@@ -581,7 +579,7 @@ mx.render = function(Mx, func) {
 
     if (Mx._syncRender === false) {
         if (!active_canvas._animationFrameHandle) {
-            active_canvas._animationFrameHandle = requestAnimFrame(function() {
+            active_canvas._animationFrameHandle = requestAnimationFrame(function() {
                 active_canvas._animationFrameHandle = undefined;
                 func();
             });
@@ -3358,7 +3356,7 @@ function _menu_redraw(Mx, menu) {
     }
 
 
-    menu.animationFrameHandle = requestAnimFrame(mx.withWidgetLayer(Mx, function() {
+    menu.animationFrameHandle = requestAnimationFrame(mx.withWidgetLayer(Mx, function() {
         mx.erase_window(Mx);
 
         menu.animationFrameHandle = undefined;
@@ -4256,9 +4254,9 @@ function trimlabel(lbl, inside) {
 mx.redraw_warpbox = function(Mx) {
     if (Mx.warpbox) {
         if (Mx._animationFrameHandle) {
-            cancelAnimFrame(Mx._animationFrameHandle);
+            cancelAnimationFrame(Mx._animationFrameHandle);
         }
-        Mx._animationFrameHandle = requestAnimFrame(function() {
+        Mx._animationFrameHandle = requestAnimationFrame(function() {
             display_warpbox(Mx);
         });
     }

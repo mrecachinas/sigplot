@@ -1270,7 +1270,7 @@ var Plot = function(element, options) {
         };
     }(this));
 
-    window.addWheelListener(window, this.wheelHandler, false);
+    window.addEventListener("wheel", this.wheelHandler, {capture: false, passive: false});
 
     // window.ResizeObserver was introduced well after SigPlot was available
     // although ResizeObserver is widely supported, there might be environments
