@@ -35,6 +35,15 @@ describe("sigplot", () => {
         container.style.width = "600px";
         container.style.height = "400px";
         container.style.position = "absolute";
+        // jsdom doesn't compute layout — mock clientWidth/clientHeight
+        Object.defineProperty(container, "clientWidth", {
+            get: () => container.style.display === "none" ? 0 : (parseInt(container.style.width) || 0),
+            configurable: true
+        });
+        Object.defineProperty(container, "clientHeight", {
+            get: () => container.style.display === "none" ? 0 : (parseInt(container.style.height) || 0),
+            configurable: true
+        });
         document.body.appendChild(container);
     });
 
@@ -45,7 +54,7 @@ describe("sigplot", () => {
     });
 
     // Requires browser mode (jsdom clientWidth/clientHeight always return 0)
-    it.skip("sigplot construction", () => {
+    it("sigplot construction", () => {
         expect(container.childNodes.length).toBe(0);
         var plot = new sigplot.Plot(container, {});
         expect(plot).not.toBe(null);
@@ -365,7 +374,7 @@ describe("sigplot", () => {
     });
 
     // Requires browser mode (jsdom clientWidth/clientHeight always return 0)
-    it.skip("sigplot resize raster 0px height", () => {
+    it("sigplot resize raster 0px height", () => {
         var plot = new sigplot.Plot(container);
         expect(plot).not.toBe(null);
         expect(plot._Mx.canvas.height).toBe(400);
@@ -396,7 +405,7 @@ describe("sigplot", () => {
     });
 
     // Requires browser mode (jsdom clientWidth/clientHeight always return 0)
-    it.skip("sigplot resize raster larger height", () => {
+    it("sigplot resize raster larger height", () => {
         var plot = new sigplot.Plot(container);
         expect(plot).not.toBe(null);
         expect(plot._Mx.canvas.height).toBe(400);
@@ -585,7 +594,7 @@ describe("sigplot", () => {
     });
 
     // Requires browser mode (jsdom clientWidth/clientHeight always return 0)
-    it.skip("sigplot line push smaller than framesize", () => {
+    it("sigplot line push smaller than framesize", () => {
         var plot = new sigplot.Plot(container);
         expect(plot).not.toBe(null);
         expect(plot._Mx.canvas.height).toBe(400);
@@ -621,7 +630,7 @@ describe("sigplot", () => {
     });
 
     // Requires browser mode (jsdom clientWidth/clientHeight always return 0)
-    it.skip("sigplot raster push smaller than framesize", () => {
+    it("sigplot raster push smaller than framesize", () => {
         var plot = new sigplot.Plot(container);
         expect(plot).not.toBe(null);
         expect(plot._Mx.canvas.height).toBe(400);
