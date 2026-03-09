@@ -25,7 +25,6 @@
 
 /*jslint nomen: true, browser: true, devel: true */
 
-import Spinner from "spin";
 import common from "./common.js";
 import sigfile from "sigfile";
 import m from "./m.js";
@@ -100,29 +99,20 @@ var MAIN_HELP = "To zoom, press and drag the left mouse (LM) over the region of 
     "To unzoom, press right mouse (RM).  Press the middle mouse (MM) button or press the 'M' key to open the main menu." +
     "View the function of all keypresses by selecting 'Keypress Info' from the main menu.";
 
-/**
- * Options used when displaying the spinner.
- *
- * @memberOf sigplot
- * @private
- */
-var SPINNER_OPTS = {
-    lines: 13, // The number of lines to draw
-    length: 7, // The length of each line
-    width: 4, // The line thickness
-    radius: 10, // The radius of the inner circle
-    corners: 1, // Corner roundness (0..1)
-    rotate: 0, // The rotation offset
-    color: '#FFF', // #rgb or #rrggbb
-    speed: 1, // Rounds per second
-    trail: 60, // Afterglow percentage
-    shadow: false, // Whether to render a shadow
-    hwaccel: false, // Whether to use hardware acceleration
-    className: 'spinner', // The CSS class to assign to the spinner
-    zIndex: 2e9, // The z-index (defaults to 2000000000)
-    top: 'auto', // Top position relative to parent in px
-    left: 'auto' // Left position relative to parent in px
-};
+// CSS spinner injected once into the document
+var _spinnerStyleInjected = false;
+function ensureSpinnerStyle() {
+    if (_spinnerStyleInjected) { return; }
+    _spinnerStyleInjected = true;
+    var style = document.createElement("style");
+    style.textContent =
+        "@keyframes sigplot-spin{to{transform:rotate(360deg)}}" +
+        ".sigplot-spinner{position:absolute;top:50%;left:50%;width:28px;height:28px;" +
+        "margin:-14px 0 0 -14px;border:4px solid rgba(255,255,255,0.2);" +
+        "border-top-color:currentColor;border-radius:50%;" +
+        "animation:sigplot-spin .8s linear infinite;z-index:2000000000;pointer-events:none}";
+    document.head.appendChild(style);
+}
 
 /**
  * Attempts basic checks to determine if the browser is compatible with
@@ -2846,22 +2836,22 @@ Plot.prototype = {
 
     show_spinner: function() {
         if (!this._Gx.spinner) {
-            SPINNER_OPTS.color = this._Mx.xwfg;
-            this._Gx.spinner = new Spinner(SPINNER_OPTS).spin(this._Gx.parent);
+            ensureSpinnerStyle();
+            var el = document.createElement("div");
+            el.className = "sigplot-spinner";
+            el.style.color = this._Mx.xwfg;
+            this._Gx.parent.style.position = this._Gx.parent.style.position || "relative";
+            this._Gx.parent.appendChild(el);
+            this._Gx.spinner = el;
         }
     },
 
     hide_spinner: function(force) {
-        var cnt_pending = 0;
-        _.mapObject(this._Gx.HCB_UCB, (k, v) => {
-            if (v === null) {
-                cnt_pending += 1;
-            }
-        });
+        var cnt_pending = Object.values(this._Gx.HCB_UCB).filter(function(v) { return v === null; }).length;
 
         if ((cnt_pending === 0) || force) {
-            if (this._Gx.spinner) {
-                this._Gx.spinner.stop();
+            if (this._Gx.spinner && this._Gx.spinner.parentNode) {
+                this._Gx.spinner.parentNode.removeChild(this._Gx.spinner);
             }
             this._Gx.spinner = undefined;
         }

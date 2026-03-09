@@ -26,7 +26,7 @@
 import m from "./m.js";
 import mx from "./mx.js";
 import common from "./common.js";
-import LRU from "lru";
+import LRU from "./lru.js";
 
 
 const decimationModeLookup = {
