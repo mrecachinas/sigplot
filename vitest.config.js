@@ -8,7 +8,8 @@ export default defineConfig({
         include: ["test/**/*.test.js"],
         globals: true,
 
-        // jsdom for basic unit tests (math, data structures)
+        // jsdom for unit tests (sigfile dep doesn't support Vitest browser mode's
+        // server-side preprocessing — its UMD wrapper references window at top level)
         environment: "jsdom",
 
         // Setup file that imports sigplot and creates globals
@@ -21,18 +22,6 @@ export default defineConfig({
             exclude: ["js/license.js"],
             reporter: ["text", "lcov", "html"],
             reportsDirectory: "coverage",
-        },
-
-        // Browser mode for canvas/rendering tests (enable with --browser.enabled)
-        browser: {
-            enabled: false,
-            instances: [
-                {
-                    browser: "chromium",
-                    provider: () => import("@vitest/browser-playwright"),
-                    headless: true,
-                },
-            ],
         },
     },
 });

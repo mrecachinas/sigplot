@@ -4,47 +4,23 @@
  */
 
 // Provide a minimal canvas 2D context stub for jsdom (which lacks canvas support).
-// This allows sigplot.Plot construction and data-structure tests to run without
-// a real rendering backend.
 const noop = () => {};
 const canvasCtxStub = {
-    save: noop,
-    restore: noop,
-    beginPath: noop,
-    closePath: noop,
-    moveTo: noop,
-    lineTo: noop,
-    arc: noop,
-    rect: noop,
-    fill: noop,
-    stroke: noop,
-    clip: noop,
-    clearRect: noop,
-    fillRect: noop,
-    strokeRect: noop,
-    fillText: noop,
-    strokeText: noop,
-    setLineDash: noop,
-    drawImage: noop,
-    putImageData: noop,
-    scale: noop,
-    rotate: noop,
-    translate: noop,
-    transform: noop,
-    setTransform: noop,
-    resetTransform: noop,
-    quadraticCurveTo: noop,
-    bezierCurveTo: noop,
-    arcTo: noop,
-    ellipse: noop,
+    save: noop, restore: noop, beginPath: noop, closePath: noop,
+    moveTo: noop, lineTo: noop, arc: noop, rect: noop,
+    fill: noop, stroke: noop, clip: noop,
+    clearRect: noop, fillRect: noop, strokeRect: noop,
+    fillText: noop, strokeText: noop,
+    setLineDash: noop, drawImage: noop, putImageData: noop,
+    scale: noop, rotate: noop, translate: noop,
+    transform: noop, setTransform: noop, resetTransform: noop,
+    quadraticCurveTo: noop, bezierCurveTo: noop, arcTo: noop, ellipse: noop,
     createLinearGradient: () => ({ addColorStop: noop }),
     createRadialGradient: () => ({ addColorStop: noop }),
     createPattern: () => null,
     getLineDash: () => [],
     _fontSize: 10,
     measureText(text) {
-        // Approximate width proportional to the current font size so that
-        // mx.set_font's do-while loop converges instead of looping forever.
         const len = (text || "").length;
         return {
             width: len * this._fontSize * 0.6,
@@ -52,64 +28,40 @@ const canvasCtxStub = {
             actualBoundingBoxDescent: this._fontSize * 0.2,
         };
     },
-    createImageData: (w, h) => ({
-        data: new Uint8ClampedArray(w * h * 4),
-        width: w,
-        height: h,
-    }),
-    getImageData: (x, y, w, h) => ({
-        data: new Uint8ClampedArray(w * h * 4),
-        width: w,
-        height: h,
-    }),
-    isPointInPath: () => false,
-    isPointInStroke: () => false,
-    font: "",
-    textAlign: "start",
-    textBaseline: "alphabetic",
-    fillStyle: "#000000",
-    strokeStyle: "#000000",
-    lineWidth: 1,
-    lineCap: "butt",
-    lineJoin: "miter",
-    miterLimit: 10,
-    shadowBlur: 0,
-    shadowColor: "rgba(0, 0, 0, 0)",
-    shadowOffsetX: 0,
-    shadowOffsetY: 0,
-    globalAlpha: 1,
-    globalCompositeOperation: "source-over",
-    lineDashOffset: 0,
-    imageSmoothingEnabled: true,
-    canvas: null,
+    createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4), width: w, height: h }),
+    getImageData: (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4), width: w, height: h }),
+    isPointInPath: () => false, isPointInStroke: () => false,
+    font: "", textAlign: "start", textBaseline: "alphabetic",
+    fillStyle: "#000000", strokeStyle: "#000000",
+    lineWidth: 1, lineCap: "butt", lineJoin: "miter", miterLimit: 10,
+    shadowBlur: 0, shadowColor: "rgba(0, 0, 0, 0)", shadowOffsetX: 0, shadowOffsetY: 0,
+    globalAlpha: 1, globalCompositeOperation: "source-over",
+    lineDashOffset: 0, imageSmoothingEnabled: true, canvas: null,
 };
 
 const _origGetContext = HTMLCanvasElement.prototype.getContext;
-HTMLCanvasElement.prototype.getContext = function (type, attrs) {
+HTMLCanvasElement.prototype.getContext = function(type) {
     if (type === "2d") {
-        // Return a fresh stub bound to this canvas
         const ctx = Object.create(canvasCtxStub);
         ctx.canvas = this;
         ctx._fontSize = 10;
-        // Track font size so measureText returns proportional values
         let _font = "";
         Object.defineProperty(ctx, "font", {
             get() { return _font; },
             set(val) {
                 _font = val;
                 const m = /^(\d+(?:\.\d+)?)px/.exec(val);
-                if (m) ctx._fontSize = parseFloat(m[1]);
+                if (m) { ctx._fontSize = parseFloat(m[1]); }
             },
-            enumerable: true,
-            configurable: true,
+            enumerable: true, configurable: true,
         });
         return ctx;
     }
-    return _origGetContext.call(this, type, attrs);
+    return _origGetContext.call(this, type);
 };
 
-// Import the built bundle
+// Import sigplot from source (Vite resolves deps)
 import sigplot from "../js/sigplot.js";
 
-// Make it globally available (mimics the HTML <script> include)
+// Make it globally available
 globalThis.sigplot = sigplot;
