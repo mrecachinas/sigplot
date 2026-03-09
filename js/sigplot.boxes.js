@@ -23,7 +23,6 @@
  * under the License.
  */
 
-import _ from "underscore";
 import common from "./common.js";
 import m from "./m.js";
 import mx from "./mx.js";
@@ -121,7 +120,7 @@ class BoxesPlugin {
         } else {
             this.options.enableSelect = val;
             if (this.options.enableSelect === false) {
-                _.each(this.boxes, (box) => {
+                this.boxes.forEach((box) => {
                     box.selected = undefined;
                 });
             }

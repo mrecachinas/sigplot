@@ -25,7 +25,6 @@
 
 /*jslint nomen: true, browser: true, devel: true */
 
-import _ from "underscore";
 import Spinner from "spin";
 import common from "./common.js";
 import sigfile from "sigfile";
@@ -2156,7 +2155,7 @@ Plot.prototype = {
         }
 
         var origHCB = Gx.HCB.slice();
-        var origHCB_UUID = _.clone(Gx.HCB_UUID);
+        var origHCB_UUID = Object.assign({}, Gx.HCB_UUID);
 
         this.deoverlay();
         for (var i = 0; i < origHCB.length; i++) {
@@ -2201,7 +2200,7 @@ Plot.prototype = {
         var Gx = this._Gx;
 
         var n = -1;
-        if (_.has(Gx.HCB_UUID, lyr)) {
+        if (Object.prototype.hasOwnProperty.call(Gx.HCB_UUID, lyr)) {
             n = this.get_lyrn(lyr);
         }
 
@@ -2280,7 +2279,7 @@ Plot.prototype = {
         var Gx = this._Gx;
 
         var n = -1;
-        if (_.has(Gx.HCB_UUID, lyr)) {
+        if (Object.prototype.hasOwnProperty.call(Gx.HCB_UUID, lyr)) {
             n = this.get_lyrn(lyr);
         }
 
@@ -2876,7 +2875,7 @@ Plot.prototype = {
     },
 
     get_lyrn: function(uuid) {
-        return _.indexOf(this._Gx.HCB, uuid);
+        return this._Gx.HCB.indexOf(uuid);
     },
 
     get_lyr_uuid: function(lyrN) {
@@ -2925,7 +2924,7 @@ Plot.prototype = {
     get_layer: function(lyr) {
         var Gx = this._Gx;
 
-        if (_.has(Gx.HCB_UUID, lyr)) {
+        if (Object.prototype.hasOwnProperty.call(Gx.HCB_UUID, lyr)) {
             lyr = this.get_lyrn(lyr);
         }
         if ((lyr >= 0) && (lyr < Gx.lyr.length)) {
@@ -2961,7 +2960,7 @@ Plot.prototype = {
         if (lyr_uuid) {
             // the layer was pre-registered but has already been
             // deoverlayed, do nothing
-            if (!_.has(Gx.HCB_UUID, lyr_uuid)) {
+            if (!Object.prototype.hasOwnProperty.call(Gx.HCB_UUID, lyr_uuid)) {
                 return;
             }
             // Update the HCB
@@ -3030,7 +3029,7 @@ Plot.prototype = {
                 draw_layer(plot, layer);
             });
         } else {
-            if (_.size(Gx.HCB_UUID) === 0) { // TODO dead code that cannot be reached
+            if (Object.keys(Gx.HCB_UUID).length === 0) { // TODO dead code that cannot be reached
                 basefile(this, false);
             } else {
                 Gx.basemode = Gx.cmode;
@@ -3109,7 +3108,7 @@ Plot.prototype = {
         var Gx = this._Gx;
         var Mx = this._Mx;
 
-        if (_.has(Gx.HCB_UUID, index)) {
+        if (Object.prototype.hasOwnProperty.call(Gx.HCB_UUID, index)) {
             this.remove_layer(index);
         } else {
             if (Gx.HCB.length > 0) {
@@ -3128,7 +3127,7 @@ Plot.prototype = {
                 }
             }
         }
-        if (_.size(Gx.HCB_UUID) === 0) {
+        if (Object.keys(Gx.HCB_UUID).length === 0) {
             basefile(this, false);
             scale_base(this, {});
         }
@@ -3148,7 +3147,7 @@ Plot.prototype = {
 
         // This will also return false if
         // `cleanup` is not defined.
-        if (HCB && _.isFunction(HCB.cleanup)) {
+        if (HCB && typeof HCB.cleanup === "function") {
             HCB.cleanup();
         }
 
@@ -7629,7 +7628,7 @@ function form_plotnote(plot) {
     }
 
     var hcb0 = plot.get_hcb_by_lyrn(0);
-    if (_.size(Gx.HCB_UUID) === 0) {
+    if (Object.keys(Gx.HCB_UUID).length === 0) {
         Gx.note = "";
     } else if (hcb0 && hcb0.plotnote === undefined) {
         // if layer 0 doesn't have a plot note, build one
@@ -7855,7 +7854,7 @@ function delete_layer(plot, n) {
     }
     Gx.lyr.length -= 1;
 
-    if (_.size(Gx.HCB_UUID) > 0) {
+    if (Object.keys(Gx.HCB_UUID).length > 0) {
         Gx.panxmin = 1.0;
         Gx.panxmax = -1.0;
         Gx.panymin = 1.0;
@@ -8089,7 +8088,7 @@ function changemode(plot, newmode) {
                 }, Gx.xmin, Gx.xmax);
             }
         } else {
-            if ((_.size(Gx.HCB_UUID) === 0) && (newmode === Gx.basemode)) {
+            if ((Object.keys(Gx.HCB_UUID).length === 0) && (newmode === Gx.basemode)) {
                 Gx.panymin = 1.0;
                 Gx.panymax = -1.0;
                 Mx.stk[0].ymin = Gx.ymin;
