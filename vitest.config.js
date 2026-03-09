@@ -14,6 +14,15 @@ export default defineConfig({
         // Setup file that imports sigplot and creates globals
         setupFiles: ["test/vitest.setup.js"],
 
+        // Coverage configuration
+        coverage: {
+            provider: "v8",
+            include: ["js/**/*.js"],
+            exclude: ["js/license.js"],
+            reporter: ["text", "lcov", "html"],
+            reportsDirectory: "coverage",
+        },
+
         // Browser mode for canvas/rendering tests (enable with --browser.enabled)
         browser: {
             enabled: false,

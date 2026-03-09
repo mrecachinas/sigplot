@@ -56,6 +56,7 @@
     "clean": "rm -rf dist/",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:browser": "vitest run --browser.enabled --browser.name=chromium",
     "prepublishOnly": "npm run clean && npm run build"
   },
@@ -68,6 +69,7 @@
     "@eslint/js": "^10.0.1",
     "@vitest/browser": "^4.0.18",
     "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
     "bootstrap": "^5.0.0-beta3",
     "esbuild": "^0.27.3",
     "eslint": "^10.0.3",
