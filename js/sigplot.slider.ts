@@ -111,10 +111,15 @@ class SliderPlugin {
         this.plot = plot;
         const Mx = plot._Mx;
 
+        // Bind once so the same reference is used for add and remove
+        this.onmousemove = this.onmousemove.bind(this);
+        this.onmousedown = this.onmousedown.bind(this);
+        this.onmouseup = this.onmouseup.bind(this);
+
         // Register for mouse events
-        plot.addListener("mmove", this.onmousemove.bind(this));
-        plot.addListener("mdown", this.onmousedown.bind(this));
-        plot.addListener("mup", this.onmouseup.bind(this));
+        plot.addListener("mmove", this.onmousemove);
+        plot.addListener("mdown", this.onmousedown);
+        plot.addListener("mup", this.onmouseup);
     }
 
     onmousemove(evt: PlotMouseEvent): void {
@@ -162,7 +167,7 @@ class SliderPlugin {
                 }
             } else if (this.options.direction === "both") {
                 const location = this.location as SliderPosition;
-                if ((Math.abs(location.x! - evt.xpos) < (lineWidth + 5)) ||
+                if ((Math.abs(location.x! - evt.xpos) < (lineWidth + 5)) &&
                     (Math.abs(location.y! - evt.ypos) < (lineWidth + 5))) {
                     this.set_highlight(true);
                 } else {
@@ -210,29 +215,37 @@ class SliderPlugin {
             return;
         }
 
+        if (evt.slider_drag) {
+            return;
+        }
+
         const lineWidth = this.options.style.lineWidth;
         if (this.options.direction === "vertical") {
             if (Math.abs((this.location as number) - evt.xpos) < (lineWidth + 5)) {
                 this.dragging = true;
                 evt.slider_drag = true;
+                evt.preventDefault();
             }
         } else if (this.options.direction === "horizontal") {
             if (Math.abs((this.location as number) - evt.ypos) < (lineWidth + 5)) {
                 this.dragging = true;
                 evt.slider_drag = true;
+                evt.preventDefault();
             }
         } else if (this.options.direction === "both") {
             const location = this.location as SliderPosition;
-            if ((Math.abs(location.x! - evt.xpos) < (lineWidth + 5)) ||
+            if ((Math.abs(location.x! - evt.xpos) < (lineWidth + 5)) &&
                 (Math.abs(location.y! - evt.ypos) < (lineWidth + 5))) {
                 this.dragging = true;
                 evt.slider_drag = true;
+                evt.preventDefault();
             }
         }
     }
 
     onmouseup(evt: PlotMouseEvent): void {
         if (this.dragging) {
+            evt.preventDefault();
             this.dragging = false;
 
             // Dispatch slidertag event
@@ -514,10 +527,10 @@ class SliderPlugin {
     }
 
     dispose(): void {
-        this.plot.removeListener("mmove", this.onmousemove.bind(this));
-        this.plot.removeListener("mdown", this.onmousedown.bind(this));
-        this.plot.removeListener("mup", this.onmouseup.bind(this));
-        document.removeEventListener("mouseup", this.onmouseup.bind(this) as any, false);
+        this.plot.removeListener("mmove", this.onmousemove);
+        this.plot.removeListener("mdown", this.onmousedown);
+        this.plot.removeListener("mup", this.onmouseup);
+        document.removeEventListener("mouseup", this.onmouseup as any, false);
 
         this.plot = undefined;
         this.position = undefined;

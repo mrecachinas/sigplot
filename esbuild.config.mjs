@@ -14,6 +14,7 @@ await esbuild.build({
     format: "iife",
     globalName: "sigplot",
     outfile: "dist/sigplot.js",
+    footer: { js: "sigplot = sigplot.default || sigplot;" },
 });
 
 // Minified UMD
@@ -24,6 +25,7 @@ await esbuild.build({
     globalName: "sigplot",
     outfile: "dist/sigplot.min.js",
     minify: true,
+    footer: { js: "sigplot = sigplot.default || sigplot;" },
 });
 
 // ESM bundle for modern consumers

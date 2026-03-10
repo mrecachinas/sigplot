@@ -110,8 +110,8 @@ class Layer2D {
     imin: number;
     xmin: number;
     xmax: number;
-    ymin: number;
-    ymax: number;
+    ymin!: number;
+    ymax!: number;
     name: string;
     cx: boolean;
 
@@ -141,7 +141,7 @@ class Layer2D {
     options: LayerOptions;
 
     // Streaming state
-    position: number;
+    position!: number;
     frame: number;
     lps: number;
 
@@ -181,8 +181,6 @@ class Layer2D {
         this.imin = 0;
         this.xmin = 0.0;
         this.xmax = 0.0;
-        this.ymin = 0.0;
-        this.ymax = 0.0;
         this.name = "";
         this.cx = false;
         this.drawmode = "scrolling";
@@ -217,7 +215,6 @@ class Layer2D {
         this.options = {};
 
         // Streaming state defaults
-        this.position = 0;
         this.frame = 0;
         this.lps = 0;
         this.xframe = 0;
@@ -241,7 +238,7 @@ class Layer2D {
         var Mx: MxContext = this.plot._Mx;
 
         this.hcb = hcb;
-        if (this.hcb.buf) this.hcb.buf._type = "D";
+        this.hcb.buf_type = "D";
 
         if (this.hcb.pipe) {
             var self = this;
@@ -597,7 +594,7 @@ class Layer2D {
         if (settings.subsize) {
             this.hcb!.subsize = settings.subsize;
             (this.hcb as any).ape = settings.subsize;
-            this.hcb!.size = (this.hcb!.dview as DataView).byteLength / ((this.hcb!.spa as number) * (this.hcb as any).ape);
+            this.hcb!.size = (this.hcb!.dview as any).length / ((this.hcb!.spa as number) * (this.hcb as any).ape);
             this.lps = Math.ceil(this.hcb!.size as number);
             var d: number = (this.hcb!.ystart as number) + ((this.hcb!.ydelta as number) * this.lps);
             this.ymin = (this.hcb as any).ymin || Math.min(this.hcb!.ystart as number, d);
@@ -697,7 +694,7 @@ class Layer2D {
         if (this.hcb!.pipe) {
             throw "reload cannot be used with pipe, use push instead";
         }
-        var axis_change: boolean = ((this.hcb!.dview as DataView).byteLength !== data.length) || !!hdrmod;
+        var axis_change: boolean = ((this.hcb!.dview as any).length !== data.length) || !!hdrmod;
         if (hdrmod) {
             for (var k in hdrmod) {
                 (this.hcb as any)[k] = hdrmod[k];
@@ -1612,7 +1609,7 @@ class Layer2D {
         var Gx: GxContext = plot._Gx;
         var Mx: MxContext = plot._Mx;
 
-        if (hcb.buf) hcb.buf._type = "D";
+        hcb.buf_type = "D";
         if (!hcb.ystart) {
             hcb.ystart = 0.0;
         }

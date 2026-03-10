@@ -231,7 +231,7 @@ class Layer1D implements Layer {
         const Gx: GxContext = this.plot._Gx;
 
         this.hcb = hcb;
-        if (this.hcb.buf) this.hcb.buf._type = "D";
+        this.hcb.buf_type = "D";
 
         this.offset = 0;
         this.size = 0;
@@ -570,7 +570,7 @@ class Layer1D implements Layer {
                     m.force1000(this.hcb!);
                     this.size = this.hcb!.subsize!;
                     // Reset the buffer
-                    this.position = undefined;
+                    this.position = 0;
                     this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
                     this.ybuf = new ArrayBuffer(this.ybufn);
                     this.ymin = undefined;
@@ -1041,25 +1041,22 @@ class Layer1D implements Layer {
             this.options.highlight = [];
         }
 
-        if (!Array.isArray(highlight)) {
-            // Check for nans on single highlight
+        if (Array.isArray(highlight)) {
+            // Array input replaces all highlights (original behavior)
+            this.options.highlight = [];
+            this.options.highlight.push.apply(this.options.highlight, highlight);
+        } else {
+            // Single highlight — check for NaN/null/undefined
             const xmin: number = highlight.xstart;
             const xmax: number = highlight.xend;
-            const min_nan: boolean = isNaN(xmin);
-            const max_nan: boolean = isNaN(xmax);
 
-            if ((min_nan === true) || (xmin === null) || (xmin === undefined)) {
+            if (isNaN(xmin) || xmin === null || xmin === undefined) {
                 this.options.highlight = [];
             }
-            if ((max_nan === true) || (xmax === null) || (xmax === undefined)) {
+            if (isNaN(xmax) || xmax === null || xmax === undefined) {
                 this.options.highlight = [];
             }
-        }
 
-        if (highlight instanceof Array) {
-            this.options.highlight.push.apply(
-                this.options.highlight, highlight);
-        } else {
             this.options.highlight.push(highlight);
         }
         this.plot.refresh();
@@ -1106,7 +1103,7 @@ class Layer1D implements Layer {
         if (hcb["class"] === 2) {
             m.force1000(hcb);
         }
-        if (hcb.buf) hcb.buf._type = "D";
+        hcb.buf_type = "D";
 
         // If the input is type 2000, each row becomes its own layer
         const n1: number = 0;

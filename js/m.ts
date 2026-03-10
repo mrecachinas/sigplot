@@ -34,8 +34,8 @@ var bluefile = sigfile.bluefile;
  * set by bluefile.BlueHeader.setData(), not a DataView despite the interface declaration.
  * This helper retrieves it with the correct runtime type.
  */
-function getDview(hcb: BlueHeader): TypedArray {
-    return hcb.dview! as TypedArray;
+function getDview(hcb: BlueHeader): TypedArray | undefined {
+    return hcb.dview as TypedArray | undefined;
 }
 
 interface TouchLike {
@@ -531,7 +531,7 @@ m.initialize = function(data: ArrayBuffer | NumericArray, overrides?: Record<str
 
         hcb.buf! = new ArrayBuffer(pipesize);
         (hcb as any).setData(hcb.buf!);
-        hcb.data_free! = getDview(hcb).length;
+        hcb.data_free! = getDview(hcb)!.length;
     }
 
     return hcb;
@@ -585,7 +585,7 @@ m.grab = function(hcb: BlueHeader, bufview: TypedArray, start: number, nget: num
  * Append data buffer to file specified in the bluefile header control block.
  */
 m.filad = function(hcb: BlueHeader, data: TypedArray | number[], sync?: boolean): void {
-    var dv = getDview(hcb);
+    var dv = getDview(hcb)!;
     if (hcb.data_free! < data.length) {
         throw "Pipe full";
     }
@@ -622,7 +622,7 @@ m.filad = function(hcb: BlueHeader, data: TypedArray | number[], sync?: boolean)
  * @private
  */
 m.pavail = function(hcb: BlueHeader): number {
-    return getDview(hcb).length - hcb.data_free!;
+    return getDview(hcb)!.length - hcb.data_free!;
 };
 
 /**
@@ -630,7 +630,7 @@ m.pavail = function(hcb: BlueHeader): number {
  */
 // WARNING - nget is number of scalars...which differs from the normal API
 m.grabx = function(hcb: BlueHeader, dview: TypedArray, nget?: number, offset?: number): number {
-    var dv = getDview(hcb);
+    var dv = getDview(hcb)!;
     var navail = dv.length - hcb.data_free!;
     if (offset === undefined) {
         offset = 0;

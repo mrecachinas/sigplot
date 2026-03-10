@@ -647,10 +647,10 @@ class CanvasInput {
             // parse box shadow
             var boxShadow = data.split('px ');
             self._boxShadow = {
-                x: self._boxShadow.color === '' && self._boxShadow.x === 0 ? 0 : parseInt(boxShadow[0], 10),
-                y: self._boxShadow.color === '' && self._boxShadow.x === 0 ? 0 : parseInt(boxShadow[1], 10),
-                blur: self._boxShadow.color === '' && self._boxShadow.x === 0 ? 0 : parseInt(boxShadow[2], 10),
-                color: self._boxShadow.color === '' && self._boxShadow.x === 0 ? '' : boxShadow[3]
+                x: data === 'none' ? 0 : parseInt(boxShadow[0], 10),
+                y: data === 'none' ? 0 : parseInt(boxShadow[1], 10),
+                blur: data === 'none' ? 0 : parseInt(boxShadow[2], 10),
+                color: data === 'none' ? '' : boxShadow[3]
             };
 
             // take into account the shadow and its direction

@@ -174,7 +174,7 @@ LayerSDS.prototype = {
 
         // Get Header Params from URL
         this.hcb = hcb;
-        if (this.hcb.buf) this.hcb.buf._type = "D";
+        this.hcb.buf_type = "D";
 
         if (hcb.file_type === 1000) {
             this.lps = this.hcb.lps || Math.ceil(hcb.size! / hcb.subsize!);
@@ -1115,7 +1115,7 @@ LayerSDS.prototype = {
  */
 LayerSDS.overlay = function (plot: any, hcb: BlueHeader, layerOptions: LayerOptions): LayerSDS[] { // TODO: type plot properly
     const Gx: GxContext = plot._Gx;
-    if (hcb.buf) hcb.buf._type = "D";
+    hcb.buf_type = "D";
 
     const layer = new LayerSDS(plot);
     layer.init(hcb);

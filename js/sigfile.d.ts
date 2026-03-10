@@ -28,7 +28,7 @@ declare module "sigfile" {
         class: number;
         file_name: string;
         spa: number;
-        dview: DataView;
+        dview: Float32Array | Float64Array | Int16Array | Int32Array | Uint8Array;
         buf_type: string;
         pipe: boolean;
         in_byte: number;

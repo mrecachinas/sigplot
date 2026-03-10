@@ -124,7 +124,7 @@ export interface BlueHeader {
     // Data access fields set by bluefile.BlueHeader
     file_name?: string;
     spa?: number;
-    dview?: DataView;
+    dview?: Float32Array | Float64Array | Int16Array | Int32Array | Uint8Array;
     buf_type?: string;
 
     // Methods from bluefile.BlueHeader
@@ -234,7 +234,7 @@ export interface MxContext {
     // Color scheme
     bg: string;
     fg: string;
-    xi: boolean;
+    xi: boolean | string;
     xwfg: string;
     xwbg: string;
     xwts: string;

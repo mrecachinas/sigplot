@@ -131,7 +131,7 @@ Layer1DSDS.prototype = {
         var Mx: MxContext = this.plot._Mx;
 
         this.hcb = hcb;
-        if (this.hcb.buf) this.hcb.buf._type = "I";
+        this.hcb.buf_type = "I";
 
         if (hcb["file_type"] === 2000) {
             m.force1000(hcb);
@@ -496,7 +496,7 @@ Layer1DSDS.overlay = function(plot: any, hcb: BlueHeader, layerOptions: LayerOpt
     if (hcb["class"] === 2) {
         m.force1000(hcb);
     }
-    if (hcb.buf) hcb.buf._type = "I";
+    hcb.buf_type = "I";
 
     // Extract the layer_name before enter the loop
     var layer_name_override = layerOptions["name"] as string | undefined;
