@@ -25,7 +25,7 @@
 
 import * as sigfile from "sigfile";
 import loglevel from "loglevel";
-import type { BlueHeader, Mc as McType, MinMaxResult, NumericArray, UnitEntry } from "./types";
+import type { BlueHeader, Mc as McType, MinMaxResult, NumericArray, TypedArray, UnitEntry } from "./types";
 
 var bluefile = sigfile.bluefile;
 
@@ -34,8 +34,8 @@ var bluefile = sigfile.bluefile;
  * set by bluefile.BlueHeader.setData(), not a DataView despite the interface declaration.
  * This helper retrieves it with the correct runtime type.
  */
-function getDview(hcb: BlueHeader): any {
-    return hcb.dview;
+function getDview(hcb: BlueHeader): TypedArray {
+    return hcb.dview! as TypedArray;
 }
 
 interface TouchLike {
@@ -478,18 +478,18 @@ m.unit_lookup = function(unitInput: string | number): number | string {
  * Creates new file with header initialized to type-1000 defaults
  * and data appended.
  */
-m.initialize = function(data: any, overrides?: Record<string, any>, cleanup?: () => void): BlueHeader {
+m.initialize = function(data: ArrayBuffer | NumericArray, overrides?: Record<string, any>, cleanup?: () => void): BlueHeader {
     var hcb: BlueHeader = new bluefile.BlueHeader(null);
 
     hcb.version = 'BLUE';
     hcb.size = 0;
     hcb.type = 1000;
-    hcb.format = 'SF';
+    hcb.format! = 'SF';
     hcb.timecode = 0.0;
     hcb.xstart = 0.0;
     hcb.xdelta = 1.0;
     hcb.xunits = 0;
-    hcb.subsize = 1;
+    hcb.subsize! = 1;
     hcb.ystart = 0.0;
     hcb.ydelta = 1.0;
     hcb.yunits = 0;
@@ -512,7 +512,7 @@ m.initialize = function(data: any, overrides?: Record<string, any>, cleanup?: ()
         hcb.type = 2000;
     } else if (Array.isArray(data) && (Array.isArray(data[0]) || ArrayBuffer.isView(data[0]))) {
         hcb.type = 2000;
-        hcb.subsize = (data[0] as any).length;
+        hcb.subsize! = (data[0] as any).length;
         hcb.size = data.length;
     }
     hcb["class"] = hcb.type / 1000;
@@ -522,16 +522,16 @@ m.initialize = function(data: any, overrides?: Record<string, any>, cleanup?: ()
 
 
     if (!overrides.pipe) {
-        hcb.setData(data);
+        (hcb as any).setData(data);
     } else {
         hcb.pipe = true;
-        hcb.in_byte = 0;
+        hcb.in_byte! = 0;
         hcb.out_byte = 0;
         var pipesize = overrides.pipesize || m.PIPESIZE;
 
-        hcb.buf = new ArrayBuffer(pipesize);
-        hcb.setData(hcb.buf);
-        hcb.data_free = getDview(hcb).length;
+        hcb.buf! = new ArrayBuffer(pipesize);
+        (hcb as any).setData(hcb.buf!);
+        hcb.data_free! = getDview(hcb).length;
     }
 
     return hcb;
@@ -543,11 +543,11 @@ m.initialize = function(data: any, overrides?: Record<string, any>, cleanup?: ()
 m.force1000 = function(hcb: BlueHeader): void {
     if (hcb["class"] === 2) {
         if ((hcb.size) && (!hcb.pipe)) {
-            hcb.size = hcb.subsize * hcb.size;
+            hcb.size = hcb.subsize! * hcb.size;
         } else {
             hcb.size = 0;
         }
-        hcb.bpe = hcb.bpe / hcb.subsize;
+        hcb.bpe = hcb.bpe / hcb.subsize!;
         hcb.ape = 1;
     }
 };
@@ -555,13 +555,13 @@ m.force1000 = function(hcb: BlueHeader): void {
 /**
  * Get data from file at specified start location.
  */
-m.grab = function(hcb: BlueHeader, bufview: any, start: number, nget: number): number {
+m.grab = function(hcb: BlueHeader, bufview: TypedArray, start: number, nget: number): number {
     var dv = getDview(hcb);
     if (!dv) {
         return 0;
     }
 
-    if (hcb.format[0] === 'C') {
+    if (hcb.format![0] === 'C') {
         start = start * 2;
     }
 
@@ -575,7 +575,7 @@ m.grab = function(hcb: BlueHeader, bufview: any, start: number, nget: number): n
     } else {
         bufview.set(dv.subarray(start, start + ngot));
     }
-    if (hcb.format[0] === 'C') {
+    if (hcb.format![0] === 'C') {
         ngot = ngot / 2;
     }
     return ngot;
@@ -584,29 +584,29 @@ m.grab = function(hcb: BlueHeader, bufview: any, start: number, nget: number): n
 /**
  * Append data buffer to file specified in the bluefile header control block.
  */
-m.filad = function(hcb: BlueHeader, data: any, sync?: boolean): void {
+m.filad = function(hcb: BlueHeader, data: TypedArray | number[], sync?: boolean): void {
     var dv = getDview(hcb);
-    if (hcb.data_free < data.length) {
+    if (hcb.data_free! < data.length) {
         throw "Pipe full";
     }
-    var sidx = hcb.in_byte / dv.BYTES_PER_ELEMENT;
+    var sidx = hcb.in_byte! / dv.BYTES_PER_ELEMENT;
     var eidx = (sidx + data.length);
     if (eidx > dv.length) {
         var head = dv.length - sidx;
         var tail = data.length - head;
-        if (data.subarray) {
-            dv.set(data.subarray(0, head), sidx);
-            dv.set(data.subarray(head, data.length), 0);
-        } else {
+        if (Array.isArray(data)) {
             dv.set(data.slice(0, head), sidx);
             dv.set(data.slice(head, data.length), 0);
+        } else {
+            dv.set(data.subarray(0, head), sidx);
+            dv.set(data.subarray(head, data.length), 0);
         }
-        hcb.in_byte = (tail * dv.BYTES_PER_ELEMENT);
+        hcb.in_byte! = (tail * dv.BYTES_PER_ELEMENT);
     } else {
         dv.set(data, sidx);
-        hcb.in_byte = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf.byteLength;
+        hcb.in_byte! = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf!.byteLength;
     }
-    hcb.data_free -= data.length;
+    hcb.data_free! -= data.length;
     if (hcb.onwritelisteners) {
         for (var i = 0; i < hcb.onwritelisteners.length; i++) {
             if (!sync) {
@@ -622,16 +622,16 @@ m.filad = function(hcb: BlueHeader, data: any, sync?: boolean): void {
  * @private
  */
 m.pavail = function(hcb: BlueHeader): number {
-    return getDview(hcb).length - hcb.data_free;
+    return getDview(hcb).length - hcb.data_free!;
 };
 
 /**
  * Get data from file in dataflow fashion.
  */
 // WARNING - nget is number of scalars...which differs from the normal API
-m.grabx = function(hcb: BlueHeader, dview: any, nget?: number, offset?: number): number {
+m.grabx = function(hcb: BlueHeader, dview: TypedArray, nget?: number, offset?: number): number {
     var dv = getDview(hcb);
-    var navail = dv.length - hcb.data_free;
+    var navail = dv.length - hcb.data_free!;
     if (offset === undefined) {
         offset = 0;
     }
@@ -647,7 +647,7 @@ m.grabx = function(hcb: BlueHeader, dview: any, nget?: number, offset?: number):
         return 0;
     }
 
-    var sidx = hcb.out_byte / dv.BYTES_PER_ELEMENT;
+    var sidx = hcb.out_byte! / dv.BYTES_PER_ELEMENT;
     var eidx = (sidx + nget);
     if (eidx >= dv.length) {
         var head = dv.length - sidx;
@@ -657,8 +657,8 @@ m.grabx = function(hcb: BlueHeader, dview: any, nget?: number, offset?: number):
     } else {
         dview.set(dv.subarray(sidx, eidx), offset);
     }
-    hcb.out_byte = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf.byteLength;
-    hcb.data_free += nget;
+    hcb.out_byte = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf!.byteLength;
+    hcb.data_free! += nget;
     var ngot = nget;
     return ngot;
 };

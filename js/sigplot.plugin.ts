@@ -24,7 +24,7 @@
  */
 
 import mx from "./mx.js";
-import type { MxContext, GxContext, MenuItem } from "./types.js";
+import type { MxContext, GxContext, MenuItem, Plot } from "./types.js";
 
 /** Schema for a plugin property defined via defineProperty. */
 interface PropertyDefinition {
@@ -45,7 +45,7 @@ class Plugin {
     initial_properties: Record<string, any> | undefined;
     properties: Record<string, any>;
     definedproperties: Record<string, PropertyDefinition>;
-    _plot: any;
+    _plot: Plot | undefined;
     _canvas: HTMLCanvasElement | undefined;
     _events: Record<string, EventListenerEntry[]> | undefined;
 
@@ -121,7 +121,7 @@ class Plugin {
      * @param plot - The plot the plugin is attached to
      * @param canvas - The canvas the plugin should render to
      */
-    init(plot: any, canvas: HTMLCanvasElement): void {
+    init(plot: Plot, canvas: HTMLCanvasElement): void {
         if (this._plot) {
             throw "Plugins can only be added to one plot at a time";
         }
@@ -136,7 +136,7 @@ class Plugin {
         this.pluginInit();
     }
 
-    get plot(): any {
+    get plot(): Plot | undefined {
         return this._plot;
     }
 

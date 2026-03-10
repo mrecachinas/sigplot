@@ -1,3 +1,7 @@
+
+
+
+
 /**
  * @license
  * File: sigplot.layer2dSDS.js
@@ -102,7 +106,7 @@ interface LayerSDS extends Layer {
     [key: string]: any;
 }
 
-const LayerSDS = function (plot: any): any {
+const LayerSDS = function (this: any, plot: any): any {
     this.plot = plot;
 
     this.offset = 0.0;
@@ -170,19 +174,19 @@ LayerSDS.prototype = {
 
         // Get Header Params from URL
         this.hcb = hcb;
-        this.hcb.buf_type = "D";
+        if (this.hcb.buf) this.hcb.buf._type = "D";
 
         if (hcb.file_type === 1000) {
-            this.lps = this.hcb.lps || Math.ceil(hcb.size / hcb.subsize);
+            this.lps = this.hcb.lps || Math.ceil(hcb.size! / hcb.subsize!);
         } else {
-            this.lps = this.hcb.lps || Math.ceil(hcb.size);
+            this.lps = this.hcb.lps || Math.ceil(hcb.size!);
         }
 
         this.hcb.class = 2;
 
         this.cache = new LRU(500);
 
-        this.init_axes();
+        this.init_axes!();
     },
 
     init_axes: function (this: LayerSDS): void {
@@ -196,47 +200,47 @@ LayerSDS.prototype = {
             this.ystart = 1.0;
             this.ydelta = 1.0;
             this.ymin = 1.0;
-            if (this.hcb.file_type === 1000) {
-                this.ymax = this.hcb.size / this.hcb.subsize;
+            if (this.hcb!.file_type === 1000) {
+                this.ymax = this.hcb!.size! / this.hcb!.subsize!;
             } else {
                 if (this.drawdirection !== "horizontal") {
-                    this.xmax = this.hcb.subsize;
+                    this.xmax = this.hcb!.subsize!;
                     this.ymax = this.size;
                 } else {
-                    this.xmax = this.size;
-                    this.ymax = this.hcb.subsize;
+                    this.xmax = this.size!;
+                    this.ymax = this.hcb!.subsize!;
                 }
             }
         } else {
             let d;
             if (this.drawdirection !== "horizontal") {
-                this.xstart = this.hcb.xstart;
-                this.xdelta = this.hcb.xdelta;
-                d = this.hcb.xstart + this.hcb.xdelta * this.hcb.subsize;
-                this.xmin = this.hcb.xmin || Math.min(this.hcb.xstart, d);
-                this.xmax = this.hcb.xmax || Math.max(this.hcb.xstart, d);
-                this.ystart = this.hcb.ystart;
-                this.ydelta = this.hcb.ydelta;
-                d = this.hcb.ystart + this.hcb.ydelta * this.lps;
-                this.ymin = this.hcb.ymin || Math.min(this.hcb.ystart, d);
-                this.ymax = this.hcb.ymax || Math.max(this.hcb.ystart, d);
+                this.xstart = this.hcb!.xstart!;
+                this.xdelta = this.hcb!.xdelta!;
+                d = this.hcb!.xstart! + this.hcb!.xdelta! * this.hcb!.subsize!;
+                this.xmin = this.hcb!.xmin || Math.min(this.hcb!.xstart!, d);
+                this.xmax = this.hcb!.xmax || Math.max(this.hcb!.xstart!, d);
+                this.ystart = this.hcb!.ystart!;
+                this.ydelta = this.hcb!.ydelta!;
+                d = this.hcb!.ystart! + this.hcb!.ydelta! * this.lps!;
+                this.ymin = this.hcb!.ymin || Math.min(this.hcb!.ystart!, d);
+                this.ymax = this.hcb!.ymax || Math.max(this.hcb!.ystart!, d);
             } else {
-                this.ystart = this.hcb.xstart;
-                this.ydelta = this.hcb.xdelta;
-                d = this.hcb.xstart + this.hcb.xdelta * this.hcb.subsize;
-                this.ymin = this.hcb.xmin || Math.min(this.hcb.xstart, d);
-                this.ymax = this.hcb.xmax || Math.max(this.hcb.xstart, d);
-                this.xstart = this.hcb.ystart;
-                this.xdelta = this.hcb.ydelta;
-                d = this.hcb.ystart + this.hcb.ydelta * this.lps;
-                this.xmin = this.hcb.ymin || Math.min(this.hcb.ystart, d);
-                this.xmax = this.hcb.ymax || Math.max(this.hcb.ystart, d);
+                this.ystart = this.hcb!.xstart!;
+                this.ydelta = this.hcb!.xdelta!;
+                d = this.hcb!.xstart! + this.hcb!.xdelta! * this.hcb!.subsize!;
+                this.ymin = this.hcb!.xmin || Math.min(this.hcb!.xstart!, d);
+                this.ymax = this.hcb!.xmax || Math.max(this.hcb!.xstart!, d);
+                this.xstart = this.hcb!.ystart!;
+                this.xdelta = this.hcb!.ydelta!;
+                d = this.hcb!.ystart! + this.hcb!.ydelta! * this.lps!;
+                this.xmin = this.hcb!.ymin || Math.min(this.hcb!.ystart!, d);
+                this.xmax = this.hcb!.ymax || Math.max(this.hcb!.ystart!, d);
             }
         }
 
         // TODO make this work with force 1000 applied
-        this.xframe = this.hcb.subsize;
-        this.yframe = (this.lps * this.hcb.subsize) / this.xframe;
+        this.xframe = this.hcb!.subsize!;
+        this.yframe = (this.lps! * this.hcb!.subsize!) / this.xframe;
 
         if (this.lpb === 0) {
             this.lpb = this.yframe;
@@ -247,11 +251,11 @@ LayerSDS.prototype = {
         this.lpb = Math.max(1, this.lpb / this.yc) * this.yc;
 
         if (this.drawdirection !== "horizontal") {
-            this.xlab = this.hcb.xunits;
-            this.ylab = this.hcb.yunits; // might be undefined
+            this.xlab = this.hcb!.xunits;
+            this.ylab = this.hcb!.yunits; // might be undefined
         } else {
-            this.xlab = this.hcb.yunits;
-            this.ylab = this.hcb.xunits; // might be undefined
+            this.xlab = this.hcb!.yunits;
+            this.ylab = this.hcb!.xunits; // might be undefined
         }
 
         if (this.drawdirection === "horizontal") {
@@ -277,20 +281,20 @@ LayerSDS.prototype = {
     change_settings: function (this: LayerSDS, settings: any): void { // TODO: type settings properly
         const Gx: GxContext = this.plot._Gx;
         if (settings.subsize) {
-            this.hcb.subsize = settings.subsize;
-            this.hcb.ape = settings.subsize;
-            if (this.hcb.file_type === 1000) {
-                this.lps = Math.ceil(this.hcb.size / this.hcb.subsize);
+            this.hcb!.subsize = settings.subsize;
+            this.hcb!.ape = settings.subsize;
+            if (this.hcb!.file_type === 1000) {
+                this.lps = Math.ceil(this.hcb!.size! / this.hcb!.subsize!);
             } else {
-                this.lps = Math.ceil(this.hcb.size);
+                this.lps = Math.ceil(this.hcb!.size!);
             }
-            let d = this.hcb.xstart + this.hcb.xdelta * this.hcb.subsize;
-            this.xmin = this.hcb.xmin || Math.min(this.hcb.xstart, d);
-            this.xmax = this.hcb.xmax || Math.max(this.hcb.xstart, d);
+            let d = this.hcb!.xstart! + this.hcb!.xdelta! * this.hcb!.subsize!;
+            this.xmin = this.hcb!.xmin || Math.min(this.hcb!.xstart!, d);
+            this.xmax = this.hcb!.xmax || Math.max(this.hcb!.xstart!, d);
 
-            d = this.hcb.ystart + this.hcb.ydelta * this.lps;
-            this.ymin = this.hcb.ymin || Math.min(this.hcb.ystart, d);
-            this.ymax = this.hcb.ymax || Math.max(this.hcb.ystart, d);
+            d = this.hcb!.ystart! + this.hcb!.ydelta! * this.lps;
+            this.ymin = this.hcb!.ymin || Math.min(this.hcb!.ystart!, d);
+            this.ymax = this.hcb!.ymax || Math.max(this.hcb!.ystart!, d);
         }
         if (settings.debug) {
             this.debug = settings.debug;
@@ -318,7 +322,7 @@ LayerSDS.prototype = {
         if (this.drawdirection === "horizontal") {
             this.plot._Mx.origin = 1;
             this.preferred_origin = 1;
-            this.init_axes();
+            this.init_axes!();
         }
 
         if (settings.xcmp !== undefined) {
@@ -383,10 +387,10 @@ LayerSDS.prototype = {
                     arrayBuffer = oReq.response;
                 }
 
-                const xmin = parseFloat(oReq.getResponseHeader("Xmin"));
-                const xmax = parseFloat(oReq.getResponseHeader("Xmax"));
-                const ymin = parseFloat(oReq.getResponseHeader("Ymin"));
-                const ymax = parseFloat(oReq.getResponseHeader("Ymax"));
+                const xmin = parseFloat(oReq.getResponseHeader("Xmin")!);
+                const xmax = parseFloat(oReq.getResponseHeader("Xmax")!);
+                const ymin = parseFloat(oReq.getResponseHeader("Ymin")!);
+                const ymax = parseFloat(oReq.getResponseHeader("Ymax")!);
                 arrayBuffer.width = oReq.getResponseHeader("Outxsize");
                 arrayBuffer.height = oReq.getResponseHeader("Outysize");
                 arrayBuffer.contents = "rgba";
@@ -394,7 +398,7 @@ LayerSDS.prototype = {
                 arrayBuffer.ymin = ymin;
                 arrayBuffer.xmax = xmax;
                 arrayBuffer.ymax = ymax;
-                this.cache.set(url, arrayBuffer); // store the data in the cache
+                this.cache!.set(url, arrayBuffer); // store the data in the cache
 
                 this.plot.refresh(); // refresh the plot will cause this tile to be drawn
             }
@@ -424,7 +428,7 @@ LayerSDS.prototype = {
         const cxm = ["Ma", "Ph", "Re", "Im", "IR", "Lo", "L2"];
         const xcmp = ["first", "mean", "min", "max", "first", "absmax"];
 
-        const urlsplit = this.hcb.url.split("/sds/hdr/");
+        const urlsplit = this.hcb!.url.split("/sds/hdr/");
         let url =
             urlsplit[0] +
             "/sds/rdstile/" +
@@ -443,9 +447,9 @@ LayerSDS.prototype = {
             urlsplit[1] +
             "?outfmt=RGBA" +
             "&colormap=" +
-            m.Mc.colormap[Gx.cmap].name +
+            m.Mc.colormap[Gx.cmap!].name +
             "&subsize=" +
-            this.hcb.subsize;
+            this.hcb!.subsize!;
 
         if (Gx.zmin !== undefined) {
             url = url + "&zmin=" + Gx.zmin;
@@ -494,7 +498,7 @@ LayerSDS.prototype = {
         oReq.overrideMimeType("text/plain; charset=x-user-defined");
 
         const that = this;
-        oReq.onload = function (oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
+        oReq.onload = function (oEvent: ProgressEvent<EventTarget>) {
             // `this` will be oReq within this context
             delete that.pendingURLs[url]; // Remove this url as pending
             that.load_tile(url, this as XMLHttpRequest, oEvent);
@@ -505,7 +509,7 @@ LayerSDS.prototype = {
                 that.plot.hide_spinner();
             }
         };
-        oReq.onerror = function (oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
+        oReq.onerror = function (oEvent: ProgressEvent<EventTarget>) {
             delete that.pendingURLs[url];
             if (Object.keys(that.pendingURLs).length === 0) {
                 var evt: any = new Event("sds_tiles_loaded"); // TODO: create proper event type
@@ -521,7 +525,7 @@ LayerSDS.prototype = {
     draw: function (this: LayerSDS): any {
         const Mx: MxContext = this.plot._Mx;
         const Gx: GxContext = this.plot._Gx;
-        const HCB = this.hcb;
+        const HCB = this.hcb!;
 
         let horizontal_min, horizontal_max, vertical_min, vertical_max;
         if (this.drawdirection !== "horizontal") {
@@ -531,11 +535,11 @@ LayerSDS.prototype = {
                 // no data
                 return;
             }
-            vertical_min = Math.max(this.ymin, Mx.stk[Mx.level].ymin);
-            vertical_max = Math.min(this.ymax, Mx.stk[Mx.level].ymax);
+            vertical_min = Math.max(this.ymin!, Mx.stk[Mx.level].ymin);
+            vertical_max = Math.min(this.ymax!, Mx.stk[Mx.level].ymax);
         } else {
-            horizontal_min = Math.max(this.ymin, Mx.stk[Mx.level].ymin);
-            horizontal_max = Math.min(this.ymax, Mx.stk[Mx.level].ymax);
+            horizontal_min = Math.max(this.ymin!, Mx.stk[Mx.level].ymin);
+            horizontal_max = Math.min(this.ymax!, Mx.stk[Mx.level].ymax);
             if (horizontal_min >= horizontal_max) {
                 // no data
                 return;
@@ -554,15 +558,15 @@ LayerSDS.prototype = {
         }
 
         // Convert w/h to elements
-        w = Math.ceil(w / HCB.xdelta);
-        h = Math.ceil(h / HCB.ydelta);
+        w = Math.ceil(w / HCB.xdelta!);
+        h = Math.ceil(h / HCB.ydelta!);
 
         // Make sure w/h remain within limits
-        w = Math.min(w, HCB.subsize);
+        w = Math.min(w, HCB.subsize!);
         if (HCB.file_type === 1000) {
-            h = Math.min(h, HCB.size / HCB.subsize);
+            h = Math.min(h, HCB.size! / HCB.subsize!);
         } else {
-            h = Math.min(h, HCB.size);
+            h = Math.min(h, HCB.size!);
         }
 
         // figure out the upper-left and lower-right pixel coordinates
@@ -584,8 +588,8 @@ LayerSDS.prototype = {
         }
 
         // Index values of horizontal_max, horizontal_min, vertical_max, vertical_min
-        const x1 = Math.floor((horizontal_min - HCB.xstart) / HCB.xdelta);
-        const y1 = Math.floor((vertical_min - HCB.ystart) / HCB.ydelta);
+        const x1 = Math.floor((horizontal_min - HCB.xstart!) / HCB.xdelta!);
+        const y1 = Math.floor((vertical_min - HCB.ystart!) / HCB.ydelta!);
 
         const x2 = x1 + w;
         const y2 = y1 + h;
@@ -620,8 +624,8 @@ LayerSDS.prototype = {
             const tilexsize = maxtileXsize * decfactorx;
             const tileysize = maxtileYsize * decfactory;
 
-            const maxcol = Math.ceil(HCB.subsize / tilexsize);
-            const maxrow = Math.ceil(HCB.size / tileysize);
+            const maxcol = Math.ceil(HCB.subsize! / tilexsize);
+            const maxrow = Math.ceil(HCB.size! / tileysize);
 
             // x1,x2,y1,y2 are index relative
             const firstcolumn = Math.max(0, Math.floor(x1 / tilexsize));
@@ -639,7 +643,7 @@ LayerSDS.prototype = {
                         tileX,
                         tileY
                     );
-                    const img = this.cache.get(url);
+                    const img = this.cache!.get(url);
                     if (img) {
                         //Get the data from this tile out of the cache and plot it.
                         let strokeStyle, text;
@@ -681,20 +685,20 @@ LayerSDS.prototype = {
                         }
                     } else {
                         // Don't already have the data for this tile to request it from the server.
-                        this.sendTileRequest(url);
+                        this.sendTileRequest!(url);
                     }
                 }
             }
         } else {
             const oReq = new XMLHttpRequest();
-            const [sds_host, filepath] = this.hcb.url.split("/sds/hdr/");
+            const [sds_host, filepath] = this.hcb!.url.split("/sds/hdr/");
 
             const base_url = `${sds_host}/sds`;
             const url_params = `rds/${x1}/${y1}/${x2}/${y2}/${out_x_pixel_size}/${out_y_pixel_size}/${filepath}`;
 
             let query_string = `?outfmt=RGBA&colormap=${
-                m.Mc.colormap[Gx.cmap].name
-            }&subsize=${HCB.subsize}`;
+                m.Mc.colormap[Gx.cmap!].name
+            }&subsize=${HCB.subsize!}`;
             if (Gx.zmin !== undefined) {
                 query_string = `${query_string}&zmin=${Gx.zmin}`;
             }
@@ -724,7 +728,7 @@ LayerSDS.prototype = {
             }
 
             const url = `${base_url}/${url_params}${query_string}`;
-            const img = this.cache.get(url);
+            const img = this.cache!.get(url);
             if (img) {
                 if (this.drawdirection !== "horizontal") {
                     mx.draw_image(
@@ -785,7 +789,7 @@ LayerSDS.prototype = {
                             arrayBuffer.width = out_x_pixel_size;
                             arrayBuffer.height = out_y_pixel_size;
                             arrayBuffer.contents = "rgba";
-                            that.cache.set(url, arrayBuffer);
+                            that.cache!.set(url, arrayBuffer);
                             if (that.drawdirection !== "horizontal") {
                                 mx.draw_image(
                                     Mx,
@@ -818,7 +822,7 @@ LayerSDS.prototype = {
                 };
                 oReq.onerror = function (oEvent) {};
 
-                this.debounceSend(oReq);
+                this.debounceSend!(oReq);
             }
         }
         return {
@@ -856,17 +860,17 @@ LayerSDS.prototype = {
             };
 
             const row = Math.round((ypos - this.ystart) / this.ydelta);
-            if (row < 0 || row > this.lps) {
+            if (row < 0 || row > this.lps!) {
                 return;
             }
 
             // Adjust the zoom stack to adjust y values to be undefined.
             for (let stk_num = 0; stk_num < Mx.stk.length; stk_num++) {
-                Mx.stk[stk_num].ymin = undefined;
-                Mx.stk[stk_num].ymax = undefined;
+                Mx.stk[stk_num].ymin = undefined as any;
+                Mx.stk[stk_num].ymax = undefined as any;
             }
-            Gx.panymax = undefined;
-            Gx.panymin = undefined;
+            Gx.panymax = undefined as any;
+            Gx.panymin = undefined as any;
 
             let name, mode;
             if (this.drawdirection !== "horizontal") {
@@ -896,8 +900,8 @@ LayerSDS.prototype = {
                 Gx.ylabel = "Intensity";
             }
 
-            if ((m.UNITS[Gx.xlab][0] !== "None") && (m.UNITS[Gx.xlab][0] !== "Unknown")) {
-                Gx.xlabel = m.UNITS[Gx.xlab][0];
+            if ((m.UNITS[Gx.xlab!][0] !== "None") && (m.UNITS[Gx.xlab!][0] !== "Unknown")) {
+                Gx.xlabel = m.UNITS[Gx.xlab!][0];
             } else {
                 Gx.xlabel = "Frequency";
             }
@@ -905,7 +909,7 @@ LayerSDS.prototype = {
             Mx.origin = 1;
 
             this.xcut_layer = this.plot.overlay_href(
-                this.hcb.url,
+                this.hcb!.url,
                 null,
                 {
                     name: name,
@@ -1000,12 +1004,12 @@ LayerSDS.prototype = {
                 Mx.stk[stk_num].xmin = Mx.stk[stk_num].ymin;
                 Mx.stk[stk_num].xmax = Mx.stk[stk_num].ymax;
                 Mx.stk[stk_num].xscl = Mx.stk[stk_num].yscl;
-                Mx.stk[stk_num].ymin = undefined;
-                Mx.stk[stk_num].ymax = undefined;
-                Mx.stk[stk_num].yscl = undefined;
+                Mx.stk[stk_num].ymin = undefined as any;
+                Mx.stk[stk_num].ymax = undefined as any;
+                Mx.stk[stk_num].yscl = undefined as any;
             }
-            Gx.panymax = undefined;
-            Gx.panymin = undefined;
+            Gx.panymax = undefined as any;
+            Gx.panymin = undefined as any;
 
             let name, mode;
             if (this.drawdirection !== "horizontal") {
@@ -1035,8 +1039,8 @@ LayerSDS.prototype = {
                 Gx.ylabel = "Intensity";
             }
 
-            if ((m.UNITS[Gx.ylab][0] !== "None") && (m.UNITS[Gx.ylab][0] !== "Unknown")) {
-                Gx.xlabel = m.UNITS[Gx.ylab][0];
+            if ((m.UNITS[Gx.ylab!][0] !== "None") && (m.UNITS[Gx.ylab!][0] !== "Unknown")) {
+                Gx.xlabel = m.UNITS[Gx.ylab!][0];
             } else {
                 Gx.xlabel = "Time";
             }
@@ -1044,7 +1048,7 @@ LayerSDS.prototype = {
             Mx.origin = 1;
 
             this.ycut_layer = this.plot.overlay_href(
-                this.hcb.url,
+                this.hcb!.url,
                 null,
                 {
                     name: name,
@@ -1111,7 +1115,7 @@ LayerSDS.prototype = {
  */
 LayerSDS.overlay = function (plot: any, hcb: BlueHeader, layerOptions: LayerOptions): LayerSDS[] { // TODO: type plot properly
     const Gx: GxContext = plot._Gx;
-    hcb.buf_type = "D";
+    if (hcb.buf) hcb.buf._type = "D";
 
     const layer = new LayerSDS(plot);
     layer.init(hcb);

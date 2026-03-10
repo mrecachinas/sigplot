@@ -1,3 +1,6 @@
+
+
+
 /**
  * @license
  * File: sigplot.js
@@ -140,7 +143,7 @@ function ensureSpinnerStyle(): void {
 (sigplot as any).browserIsCompatible = function browserIsCompatible(): boolean {
     // We need a Canvas
     var test_canvas = document.createElement('canvas');
-    var hascanvas = (test_canvas.getContext) ? true : false;
+    var hascanvas = (test_canvas.getContext !== undefined) ? true : false;
 
     // We need ArrayBuffer
     var hasarraybuf = ("ArrayBuffer" in window);
@@ -342,7 +345,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     this._Mx = mx.open(element);
     var Mx = this._Mx;
 
-    this._Gx = new GX();
+    this._Gx = new (GX as any)();
     this._Gx.parent = element;
 
     // Variable which stores state of mouse position relative to the canvas
@@ -367,7 +370,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     this._refresh(); // Draw immediately
 
     this.onmousemove = (function(plot) {
-        return function(e) {
+        return function(e: any) {
             var Mx = plot._Mx;
             var Gx = plot._Gx;
 
@@ -449,7 +452,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "mousemove", this.throttledOnMouseMove, false);
 
     this.onmouseout = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Gx = plot._Gx;
             var Mx = plot._Mx;
             if (plot.mouseOnCanvas) {
@@ -470,7 +473,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "mouseout", this.onmouseout, false);
 
     this.onmouseover = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Gx = plot._Gx;
             var Mx = plot._Mx;
             plot.mouseOnCanvas = true;
@@ -485,7 +488,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "mouseover", this.onmouseover, false);
 
     this.onmousedown = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             event.preventDefault(); // mouse down on the canvas should never do a browser default action
 
             var Mx = plot._Mx;
@@ -522,7 +525,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
                 // region
                 event.preventDefault();
                 if (inPan.command !== ' ') {
-                    var scrollbar = null;
+                    var scrollbar: any = null;
                     var position = null;
                     if (inPan.command === "XPAN") {
                         scrollbar = Mx.scrollbar_x;
@@ -737,7 +740,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     // Putting a finger on the screen and moving it, simulates
     // pan.
     this.ontouchstart = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             event.preventDefault();
 
             // See how many fingers are on the screen
@@ -780,7 +783,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "touchstart", this.ontouchstart, false);
 
     this.ontouchmove = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Mx = plot._Mx;
             var Gx = plot._Gx;
             var k = Mx.level;
@@ -885,7 +888,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "touchmove", this.throttledOnTouchMove, false);
 
     this.ontouchend = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Gx = plot._Gx;
             var Mx = plot._Mx;
 
@@ -911,7 +914,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "touchend", this.ontouchend, false);
 
     this.docMouseUp = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Gx = plot._Gx;
 
             if (event.which === 1) {
@@ -959,7 +962,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     document.addEventListener("mouseup", this.docMouseUp, false);
 
     this.mouseup = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             event.preventDefault(); // mouse up on the canvas should never do a browser default action
 
             var Gx = plot._Gx;
@@ -1076,7 +1079,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "mouseup", this.mouseup, false);
 
     this.mouseclick = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             event.preventDefault(); // alway prevent any default browser actions on the plot
 
             var Gx = plot._Gx;
@@ -1091,7 +1094,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     mx.addEventListener(Mx, "click", this.mouseclick, false);
 
     this.mousedblclick = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             event.preventDefault(); // alway prevent any default browser actions on the plot
 
             var Gx = plot._Gx;
@@ -1118,7 +1121,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
 
     // PANBAR DRAGGING mouse event handlers:
     this.dragMouseDownHandler = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Mx = plot._Mx;
             var Gx = plot._Gx;
 
@@ -1163,7 +1166,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     window.addEventListener("mousedown", this.dragMouseDownHandler, false);
 
     this.dragMouseMoveHandler = (function(plot) {
-        return function(e) {
+        return function(e: any) {
             var Gx = plot._Gx;
 
             if (Gx.panning !== undefined) { // execute a scrollbar DRAG
@@ -1185,7 +1188,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
         false);
 
     this.dragMouseUpHandler = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             var Gx = plot._Gx;
 
             if (event.which === 1) {
@@ -1198,7 +1201,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
 
     // TODO this may need to be throttled or debounced
     this.onresize = (function(plot) {
-        return function(event) {
+        return function(event: any) {
             if (mx.checkresize(plot._Mx)) {
                 plot.refresh();
             }
@@ -1212,7 +1215,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
         var Gx = plot._Gx;
         var event: any; // shared event reference for throttled closures
 
-        var throttledPan = m.throttle(100, function(inPan) {
+        var throttledPan = m.throttle(100, function(inPan: any) {
             // Mouse wheel
             // event over a
             // panning
@@ -1310,7 +1313,7 @@ var Plot = function(this: any, element: HTMLElement | string, options?: PlotSett
     // is enabled and only works if the mouse if over the plot
     if (!(options as any).nokeypress) {
         this.onkeypress = (function(plot) {
-            return function(event) {
+            return function(event: any) {
                 var Mx = plot._Mx;
                 var Gx = plot._Gx;
                 if (plot.mouseOnCanvas) {
@@ -1519,7 +1522,7 @@ Plot.prototype = {
      *            the zorder for the plugin to render, all plugins render as
      *            overlays on top of the plot
      */
-    add_plugin: function(plugin, zorder) {
+    add_plugin: function(plugin: any, zorder: any) {
         if (zorder === undefined) {
             zorder = Number.MAX_VALUE;
         }
@@ -1539,7 +1542,7 @@ Plot.prototype = {
             canvas: canvas
         });
 
-        this._Gx.plugins.sort(function(a, b) {
+        this._Gx.plugins.sort(function(a: any, b: any) {
             return (a.zorder - b.zorder);
         });
 
@@ -1553,7 +1556,7 @@ Plot.prototype = {
      * @param plugin
      *            the plugin object
      */
-    remove_plugin: function(plugin) {
+    remove_plugin: function(plugin: any) {
         var i = this._Gx.plugins.length;
         while (i--) {
             if (this._Gx.plugins[i].impl === plugin) {
@@ -1566,7 +1569,7 @@ Plot.prototype = {
                 this._Gx.plugins.splice(i, 1);
             }
         }
-        this._Gx.plugins.sort(function(a, b) {
+        this._Gx.plugins.sort(function(a: any, b: any) {
             return (a.zorder - b.zorder);
         });
 
@@ -1576,7 +1579,7 @@ Plot.prototype = {
     /**
      * Adds a listener to plot events.
      *
-     * @example plot.addListener(what, function(event) {});
+     * @example plot.addListener(what, function(event: any) {});
      *
      * @param what
      *            the name of the event to listen to.  "file_deoverlayed" is
@@ -1625,7 +1628,7 @@ Plot.prototype = {
      * @param [function]
      *            callback the function that will be called when the event is heard
      */
-    addListener: function(what, callback) {
+    addListener: function(what: any, callback: any) {
         var Mx = this._Mx;
         mx.addEventListener(Mx, what, callback, false);
     },
@@ -1637,7 +1640,7 @@ Plot.prototype = {
      *            the event that was listned to
      * @param callback
      */
-    removeListener: function(what, callback) {
+    removeListener: function(what: any, callback: any) {
         var Mx = this._Mx;
         mx.removeEventListener(Mx, what, callback, false);
     },
@@ -1725,7 +1728,7 @@ Plot.prototype = {
      * @param {Boolean}
      *            settings.p_cuts true displays p_cuts on a 2D plot
      */
-    change_settings: function(settings) {
+    change_settings: function(settings: any) {
         var Gx = this._Gx;
         var Mx = this._Mx;
 
@@ -2154,7 +2157,7 @@ Plot.prototype = {
      */
     reread: function() {
         var Gx = this._Gx;
-        var oldLayerData = [];
+        var oldLayerData: any = [];
         for (var k = 0; k < Gx.lyr.length; k++) { // make a copy of layer
             // data before
             // destroying Gx.lyr
@@ -2203,7 +2206,7 @@ Plot.prototype = {
      * @param {Object} hdrmod
      *            optional changes to the file header
      */
-    reload: function(lyr, data, hdrmod, rsync) {
+    reload: function(lyr: any, data: any, hdrmod: any, rsync: any) {
         var Mx = this._Mx;
         var Gx = this._Gx;
 
@@ -2261,7 +2264,7 @@ Plot.prototype = {
      * @param {Object} hdrmod
      *            changes to the file header
      */
-    headermod: function(n, hdrmod) {
+    headermod: function(n: any, hdrmod: any) {
         this.change_settings(hdrmod);
         this.push(n, [], hdrmod);
     },
@@ -2282,7 +2285,7 @@ Plot.prototype = {
      * @param {boolean} [rsync=false]
      *            optional dispatch refresh syncronously
      */
-    push: function(lyr, data, hdrmod, sync, rsync) {
+    push: function(lyr: any, data: any, hdrmod: any, sync: any, rsync?: any) {
         var Mx = this._Mx;
         var Gx = this._Gx;
 
@@ -2374,7 +2377,7 @@ Plot.prototype = {
      *
      */
 
-    overlay_array: function(data, overrides, layerOptions) {
+    overlay_array: function(data: any, overrides: any, layerOptions: any) {
         m.log.debug("Overlay array");
         var hcb = m.initialize(data, overrides);
         return this.overlay_bluefile(hcb, layerOptions);
@@ -2412,7 +2415,7 @@ Plot.prototype = {
      *
      */
 
-    overlay_pipe: function(overrides, layerOptions) {
+    overlay_pipe: function(overrides: any, layerOptions: any) {
         m.log.debug("Overlay pipe");
         if (!overrides) {
             overrides = {};
@@ -2456,7 +2459,7 @@ Plot.prototype = {
      *
      */
 
-    overlay_websocket: function(wsurl, overrides, layerOptions) {
+    overlay_websocket: function(wsurl: any, overrides: any, layerOptions: any) {
         let ws = null;
         if (typeof wsurl === "string") {
             m.log.debug("Overlay websocket: " + wsurl);
@@ -2477,10 +2480,10 @@ Plot.prototype = {
 
         var layer_n = this.overlay_bluefile(hcb, layerOptions);
 
-        ws.addEventListener("open", function(evt) {});
+        ws.addEventListener("open", function(evt: any) {});
 
         ws.addEventListener("message", (function(theSocket) {
-            return function(evt) {
+            return function(evt: any) {
                 if (evt.data instanceof ArrayBuffer) {
                     var data = hcb.createArray(evt.data);
                     plot.push(layer_n, data);
@@ -2537,7 +2540,7 @@ Plot.prototype = {
      *
      */
 
-    overlay_wpipe: function(wsurl, overrides, layerOptions, fps) {
+    overlay_wpipe: function(wsurl: any, overrides: any, layerOptions: any, fps: any) {
         let plot = this;
         let wpipe: any = {
             hcb: null,
@@ -2551,7 +2554,7 @@ Plot.prototype = {
 
         m.log.debug("Overlay websocket: " + wsurl);
 
-        wpipe.ws.onopen = function(evt) {
+        wpipe.ws.onopen = function(evt: any) {
             wpipe.ws.send(
                 JSON.stringify({
                     event: "open",
@@ -2565,7 +2568,7 @@ Plot.prototype = {
         };
 
         wpipe.ws.onmessage = (function(theSocket) {
-            return function(evt) {
+            return function(evt: any) {
                 if (typeof evt.data === "string") {
                     var msg = JSON.parse(evt.data);
 
@@ -2633,7 +2636,7 @@ Plot.prototype = {
                         var numFrames = evt.data.byteLength / wpipe.hcb.bpe;
                         for (var i = 0; i < numFrames; ++i) {
                             var offset = i * wpipe.hcb.bpe;
-                            var len = wpipe.hcb.subsize * wpipe.hcb.spa;
+                            var len = wpipe.hcb.subsize! * wpipe.hcb.spa;
                             var z = wpipe.hcb.createArray(evt.data, offset, len);
                             plot.push(wpipe.layer_n, z);
                         }
@@ -2672,10 +2675,10 @@ Plot.prototype = {
      * @returns data_layer
      *
      */
-    overlay_href: function(href, onload, layerOptions, overrides) {
+    overlay_href: function(href: any, onload: any, layerOptions: any, overrides: any) {
         var self = this;
-        var lyr_uuids = [];
-        href.split('|').forEach(function(hr) {
+        var lyr_uuids: any = [];
+        href.split('|').forEach(function(hr: any) {
             var lyr_uuid = self.overlay_href_single(hr.trim(), onload, layerOptions, overrides);
             lyr_uuids.push(lyr_uuid);
         });
@@ -2718,7 +2721,7 @@ Plot.prototype = {
      * @returns data_layer
      *
      */
-    overlay_href_single: function(href, evt_cb, layerOptions, overrides) {
+    overlay_href_single: function(href: any, evt_cb: any, layerOptions: any, overrides: any) {
         var lyr_uuid = this.reg_hcb(null);
 
         let onload_cb = null;
@@ -2734,7 +2737,7 @@ Plot.prototype = {
         try {
             this.show_spinner();
             var handleHeader = (function(plot, _onload, _onerror) {
-                return function(hcb) {
+                return function(hcb: any) {
                     try {
                         if (!hcb) {
                             if (onerror_cb) {
@@ -2763,7 +2766,7 @@ Plot.prototype = {
             }(this, onload_cb, onerror_cb));
 
             var handleSDS = (function(plot, _onload, _onerror) {
-                return function(hcb, layertype) {
+                return function(hcb: any, layertype: any) {
                     try {
                         var i = null;
                         if (!hcb) {
@@ -2796,8 +2799,8 @@ Plot.prototype = {
                 };
             }(this, onload_cb, onerror_cb));
 
-            var reader;
-            var oReq;
+            var reader: any;
+            var oReq: any;
             if (href.endsWith(".mat")) {
                 reader = new matfile.MatFileReader();
                 oReq = reader.read_http(href, handleHeader);
@@ -2807,7 +2810,7 @@ Plot.prototype = {
                 oReq = new XMLHttpRequest();
                 oReq.open("GET", href, true);
                 oReq.responseType = "";
-                oReq.onload = function(oEvent) {
+                oReq.onload = function(oEvent: any) {
                     try {
                         let hcb = JSON.parse(oReq.responseText);
                         if (hcb) {
@@ -2820,12 +2823,12 @@ Plot.prototype = {
                         }
                     }
                 };
-                oReq.onerror = function(oEvent) {
+                oReq.onerror = function(oEvent: any) {
                     if (onerror_cb) {
                         onerror_cb(oEvent);
                     }
                 };
-                oReq.ontimeout = function(oEvent) {
+                oReq.ontimeout = function(oEvent: any) {
                     if (onerror_cb) {
                         onerror_cb(oEvent);
                     }
@@ -2865,7 +2868,7 @@ Plot.prototype = {
         }
     },
 
-    hide_spinner: function(force) {
+    hide_spinner: function(force: any) {
         var cnt_pending = Object.values(this._Gx.HCB_UCB).filter(function(v) { return v === null; }).length;
 
         if ((cnt_pending === 0) || force) {
@@ -2876,30 +2879,30 @@ Plot.prototype = {
         }
     },
 
-    reg_hcb: function(hcb) {
+    reg_hcb: function(hcb: any) {
         var uuid = common.uuidv4();
         this._Gx.HCB_UUID[uuid] = hcb;
 
         return uuid;
     },
 
-    get_lyrn: function(uuid) {
+    get_lyrn: function(uuid: any) {
         return this._Gx.HCB.indexOf(uuid);
     },
 
-    get_lyr_uuid: function(lyrN) {
+    get_lyr_uuid: function(lyrN: any) {
         return this._Gx.HCB[lyrN];
     },
 
-    get_hcb_by_uuid: function(uuid) {
+    get_hcb_by_uuid: function(uuid: any) {
         return this._Gx.HCB_UUID[uuid];
     },
 
-    get_hcb_by_lyrn: function(lyrN) {
+    get_hcb_by_lyrn: function(lyrN: any) {
         return this.get_hcb_by_uuid(this.get_lyr_uuid(lyrN));
     },
 
-    add_layer: function(layer) {
+    add_layer: function(layer: any) {
         var Gx = this._Gx;
         var Mx = this._Mx;
 
@@ -2930,7 +2933,7 @@ Plot.prototype = {
      *
      */
 
-    get_layer: function(lyr) {
+    get_layer: function(lyr: any) {
         var Gx = this._Gx;
 
         if (Object.prototype.hasOwnProperty.call(Gx.HCB_UUID, lyr)) {
@@ -2943,7 +2946,7 @@ Plot.prototype = {
         }
     },
 
-    overlay_matfile: function(mfile, layerOptions) {
+    overlay_matfile: function(mfile: any, layerOptions?: any) {
         m.log.debug("Overlay matfile: " + mfile.file_name);
         return this.overlay_array(mfile.dview);
     },
@@ -2955,7 +2958,7 @@ Plot.prototype = {
      *            {BlueHeader} an opened BlueHeader file
      * @returns the index of the new layer
      */
-    overlay_bluefile: function(hcb, layerOptions) {
+    overlay_bluefile: function(hcb: any, layerOptions: any) {
         m.log.debug("Overlay bluefile: " + hcb.file_name);
         var Mx = this._Mx;
         var Gx = this._Gx;
@@ -3012,7 +3015,7 @@ Plot.prototype = {
 
         // Allow the user to store aribitary data with the layer
         if (layerOptions.user_data) {
-            layers.forEach(function(layer) {
+            layers.forEach(function(layer: any) {
                 layer.user_data = layerOptions.user_data;
             });
         }
@@ -3034,7 +3037,7 @@ Plot.prototype = {
         // this layers new range, then simply draw the new layer.
         if (!basefiles && !layerOptions.expand) {
             var plot = this;
-            layers.forEach(function(layer) {
+            layers.forEach(function(layer: any) {
                 draw_layer(plot, layer);
             });
         } else {
@@ -3086,9 +3089,9 @@ Plot.prototype = {
      * @param {File[]}
      *            a list of files to plot
      */
-    load_files: function(files, layerType) {
+    load_files: function(files: any, layerType: any) {
         var onload = (function(plot) {
-            return function(hdr) {
+            return function(hdr: any) {
                 plot.overlay_bluefile(hdr, layerType);
             };
         })(this);
@@ -3113,7 +3116,7 @@ Plot.prototype = {
      *
      */
 
-    deoverlay: function(index) {
+    deoverlay: function(index: any) {
         var Gx = this._Gx;
         var Mx = this._Mx;
 
@@ -3148,7 +3151,7 @@ Plot.prototype = {
      * @param lyr_uuid
      *            the layer to remove
      */
-    remove_layer: function(lyr_uuid) {
+    remove_layer: function(lyr_uuid: any) {
         var Gx = this._Gx;
 
         var HCB = Gx.HCB_UUID[lyr_uuid];
@@ -3200,14 +3203,14 @@ Plot.prototype = {
     /**
      * Zoom onto a given pixel range.
      */
-    pixel_zoom: function(x1, y1, x2, y2, continuous) {
+    pixel_zoom: function(x1: any, y1: any, x2: any, y2: any, continuous: any) {
         var r1 = pixel_to_real(this, x1, y1);
         var r2 = pixel_to_real(this, x2, y2);
 
         this.zoom(r1, r2, continuous);
     },
 
-    percent_zoom: function(xperc, yperc, continuous) {
+    percent_zoom: function(xperc: any, yperc: any, continuous: any) {
         var Mx = this._Mx;
         var Gx = this._Gx;
 
@@ -3257,7 +3260,7 @@ Plot.prototype = {
      *            enter continuous zoom mode.  This will create a
      *            new level
      */
-    zoom: function(ul, lr, continuous) {
+    zoom: function(ul: any, lr: any, continuous: any) {
         var Mx = this._Mx;
         var Gx = this._Gx;
 
@@ -3342,7 +3345,7 @@ Plot.prototype = {
      *            the number of levels to unzoom, if not provided unzoom
      *            all.
      */
-    unzoom: function(levels) {
+    unzoom: function(levels: any) {
         var Mx = this._Mx;
         var Gx = this._Gx;
 
@@ -3391,7 +3394,7 @@ Plot.prototype = {
     /**
      * Expand pan-bars to the full range
      */
-    expand_full: function(xpan, ypan) {
+    expand_full: function(xpan: any, ypan: any) {
         if (xpan) {
             updateViewbox(this, this._Gx.panxmin, this._Gx.panxmax, "X");
             // syncronous refresh is necessary, because expanding the xrange
@@ -3429,7 +3432,7 @@ Plot.prototype = {
         xmax,
         ymin,
         ymax
-    }) {
+    }: any) {
         var Mx = this._Mx;
         var Gx = this._Gx;
         var k = Mx.level;
@@ -3506,7 +3509,7 @@ Plot.prototype = {
      * @param mask.ypan
      *     if true, respond to pan events for the y-axis only
      */
-    mimic: function(other, mask) {
+    mimic: function(other: any, mask: any) {
         var self = this;
 
         if (!mask) {
@@ -3516,7 +3519,7 @@ Plot.prototype = {
         this.unmimic(other);
 
         if (mask.zoom) {
-            var f = function(event) {
+            var f = function(event: any) {
                 if (self.inZoom) {
                     return;
                 }
@@ -3532,7 +3535,7 @@ Plot.prototype = {
             other.addListener("zoom", f);
             this.mimicListeners.listeners.zoom = f;
         } else if (mask.xzoom) {
-            var f = function(event) {
+            var f = function(event: any) {
                 if (self.inZoom) {
                     return;
                 }
@@ -3548,7 +3551,7 @@ Plot.prototype = {
             other.addListener("zoom", f);
             this.mimicListeners.listeners.zoom = f;
         } else if (mask.yzoom) {
-            var f = function(event) {
+            var f = function(event: any) {
                 if (self.inZoom) {
                     return;
                 }
@@ -3566,7 +3569,7 @@ Plot.prototype = {
         }
 
         if (mask.unzoom) {
-            var f = function(event) {
+            var f = function(event: any) {
                 if (self.inZoom) {
                     return;
                 }
@@ -3579,7 +3582,7 @@ Plot.prototype = {
         }
 
         if (mask.pan || mask.xpan) {
-            var f = function(event) {
+            var f = function(event: any) {
                 if (self.inPan) {
                     return;
                 }
@@ -3590,7 +3593,7 @@ Plot.prototype = {
         }
 
         if (mask.pan || mask.ypan) {
-            var f = function(event) {
+            var f = function(event: any) {
                 if (self.inPan) {
                     return;
                 }
@@ -3607,7 +3610,7 @@ Plot.prototype = {
     /**
      * Unregister zoom/unzoom listeners added via previous call to unmimic.
      */
-    unmimic: function(other) {
+    unmimic: function(other: any) {
         var other = this.mimicListeners.other;
         if (other) {
             var that = this;
@@ -3699,7 +3702,7 @@ Plot.prototype = {
      *
      * @example plot.refresh_after((plot) => {plot.push(n, data)});
      */
-    refresh_after: function(cb) {
+    refresh_after: function(cb: any) {
         this._Gx.refresh_after_ctr += 1;
         try {
             cb(this);
@@ -3775,8 +3778,8 @@ Plot.prototype = {
             this.refresh();
         }
     },
-    addColorMaps: function(colormaps) {
-        colormaps.forEach(function(cmap) {
+    addColorMaps: function(colormaps: any) {
+        colormaps.forEach(function(cmap: any) {
             if (cmap.hasOwnProperty("name")) {
                 m.Mc.colormap.push(cmap);
             }
@@ -4738,7 +4741,7 @@ function sigplot_mainmenu(plot: any) {
                             plot,
                             "Y Axis Max:",
                             mx.floatValidator,
-                            function(finalValue) {
+                            function(finalValue: any) {
                                 if (parseFloat(finalValue) !== Mx.stk[Mx.level].ymax) {
                                     // Only update if different
                                     // value
@@ -4761,7 +4764,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Y Axis Min:",
                         mx.floatValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (parseFloat(finalValue) !== Mx.stk[Mx.level].ymin) {
                                 // Only update if different
                                 // value
@@ -4811,7 +4814,7 @@ function sigplot_mainmenu(plot: any) {
                             plot,
                             "X Axis Max:",
                             mx.floatValidator,
-                            function(finalValue) {
+                            function(finalValue: any) {
                                 if (parseFloat(finalValue) !== Mx.stk[Mx.level].xmax) {
                                     // Only update if different
                                     // value
@@ -4834,7 +4837,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "X Axis Min:",
                         mx.floatValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (parseFloat(finalValue) !== Mx.stk[Mx.level].xmin) {
                                 // Only update if different
                                 // value
@@ -4883,7 +4886,7 @@ function sigplot_mainmenu(plot: any) {
                             plot,
                             "Z Axis Max:",
                             mx.floatValidator,
-                            function(finalValue) {
+                            function(finalValue: any) {
                                 var floatFinalValue = parseFloat(finalValue);
                                 if (floatFinalValue !== Gx.zmax) {
                                     // Only update if different
@@ -4903,7 +4906,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Z Axis Min:",
                         mx.floatValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             var floatFinalValue = parseFloat(finalValue);
                             if (floatFinalValue !== Gx.zmin) {
                                 if (finalValue === "") {
@@ -5226,7 +5229,7 @@ function sigplot_mainmenu(plot: any) {
             }, {
                 text: "XDIVisions...",
                 handler: function() {
-                    var validator = function(value) {
+                    var validator = function(value: any) {
                         var isValid = mx.intValidator(value);
                         var maxXDIV = m.trunc(Mx.width / 2); // TODO
                         // Make value an option on the plot?
@@ -5247,7 +5250,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "X Divisions:",
                         validator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (parseFloat(finalValue) !== Gx.xdiv) { // Only
                                 // update if different value
                                 if (finalValue === "") {
@@ -5263,7 +5266,7 @@ function sigplot_mainmenu(plot: any) {
             }, {
                 text: "XLABel...",
                 handler: function() {
-                    var validator = function(value) {
+                    var validator = function(value: any) {
                         console.log("The value is " + value);
                         var isValid = mx.intValidator(value);
                         return isValid;
@@ -5273,7 +5276,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "X Units:",
                         validator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (parseFloat(finalValue) !== Gx.xlab) { // Only
                                 // update if different value
                                 if (finalValue < 0) {
@@ -5289,7 +5292,7 @@ function sigplot_mainmenu(plot: any) {
             }, {
                 text: "YDIVisions...",
                 handler: function() {
-                    var validator = function(value) {
+                    var validator = function(value: any) {
                         var isValid = mx.intValidator(value);
                         var maxYDIV = m.trunc(Mx.height / 2); // TODO
                         // Make value an option on the plot?
@@ -5310,7 +5313,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Y Divisions:",
                         validator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (parseFloat(finalValue) !== Gx.ydiv) {
                                 // Only update if different
                                 // value
@@ -5336,7 +5339,7 @@ function sigplot_mainmenu(plot: any) {
             }, {
                 text: "YLABel...",
                 handler: function() {
-                    var validator = function(value) {
+                    var validator = function(value: any) {
                         var isValid = mx.intValidator(value);
                         return isValid;
                     };
@@ -5345,7 +5348,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Y Units:",
                         validator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (parseFloat(finalValue) !== Gx.ylab) { // Only
                                 // update if different value
                                 if (finalValue < 0) {
@@ -5404,9 +5407,9 @@ function sigplot_mainmenu(plot: any) {
         }
     };
 
-    var colormap_handler = function(item) {
-        plot.change_settings({
-            cmap: this.cmap
+    var colormap_handler = function(this: any, item: any) {
+        (plot as any).change_settings({
+            cmap: (this as any).cmap
         });
     };
 
@@ -5417,7 +5420,7 @@ function sigplot_mainmenu(plot: any) {
             checked: (Gx.cmap === xc),
             handler: colormap_handler
         };
-        COLORMAP_MENU.menu.items.push(menuitem);
+        (COLORMAP_MENU.menu.items as any).push(menuitem);
     }
 
     var traceoptionsmenu = function(index?: number) {
@@ -5447,7 +5450,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Line thickness:",
                         mx.intValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (index !== undefined) {
                                 plot._Gx.lyr[index].line = 3;
                                 plot._Gx.lyr[index].thick = -1 * finalValue;
@@ -5582,11 +5585,11 @@ function sigplot_mainmenu(plot: any) {
                                 plot,
                                 "Color code (requires #):",
                                 mx.hexValidator,
-                                function(finalValue) {
+                                function(finalValue: any) {
                                     if (index !== undefined) {
                                         plot._Gx.lyr[index].color = finalValue;
                                     } else {
-                                        for (var ii = 0; ii < Gx.lyr.length; index++) {
+                                        for (var ii = 0; ii < Gx.lyr.length; ii++) {
                                             plot._Gx.lyr[ii].color = finalValue;
                                         }
                                     }
@@ -5617,7 +5620,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Radius/Shape:",
                         mx.intValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             var sym;
                             var rad;
                             if (finalValue < 0) {
@@ -5666,7 +5669,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Radius:",
                         mx.intValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             var sym;
                             var rad;
                             if (finalValue < 0) {
@@ -5713,7 +5716,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Line thickness:",
                         mx.intValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (index !== undefined) {
                                 plot._Gx.lyr[index].line = 3;
                                 plot._Gx.lyr[index].thick = finalValue;
@@ -5928,7 +5931,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Thickness",
                         mx.intValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (finalValue === "") {
                                 finalValue = 1;
                             }
@@ -5955,7 +5958,7 @@ function sigplot_mainmenu(plot: any) {
                         plot,
                         "Opacity:",
                         mx.floatValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (finalValue === "") {
                                 finalValue = 1.0;
                             }
@@ -5988,7 +5991,7 @@ function sigplot_mainmenu(plot: any) {
                                 });
                             } else {
                                 for (var i = 0; i < Gx.lyr.length; i++) {
-                                    plot._Gx.lyr[index].change_settings({
+                                    plot._Gx.lyr[i].change_settings({
                                         xcmp: 0
                                     });
                                 }
@@ -6004,7 +6007,7 @@ function sigplot_mainmenu(plot: any) {
                                 });
                             } else {
                                 for (var i = 0; i < Gx.lyr.length; i++) {
-                                    plot._Gx.lyr[index].change_settings({
+                                    plot._Gx.lyr[i].change_settings({
                                         xcmp: 1
                                     });
                                 }
@@ -6020,7 +6023,7 @@ function sigplot_mainmenu(plot: any) {
                                 });
                             } else {
                                 for (var i = 0; i < Gx.lyr.length; i++) {
-                                    plot._Gx.lyr[index].change_settings({
+                                    plot._Gx.lyr[i].change_settings({
                                         xcmp: 2
                                     });
                                 }
@@ -6036,7 +6039,7 @@ function sigplot_mainmenu(plot: any) {
                                 });
                             } else {
                                 for (var i = 0; i < Gx.lyr.length; i++) {
-                                    plot._Gx.lyr[index].change_settings({
+                                    plot._Gx.lyr[i].change_settings({
                                         xcmp: 3
                                     });
                                 }
@@ -6052,7 +6055,7 @@ function sigplot_mainmenu(plot: any) {
                                 });
                             } else {
                                 for (var i = 0; i < Gx.lyr.length; i++) {
-                                    plot._Gx.lyr[index].change_settings({
+                                    plot._Gx.lyr[i].change_settings({
                                         xcmp: 4
                                     });
                                 }
@@ -6068,7 +6071,7 @@ function sigplot_mainmenu(plot: any) {
                                 });
                             } else {
                                 for (var i = 0; i < Gx.lyr.length; i++) {
-                                    plot._Gx.lyr[index].change_settings({
+                                    plot._Gx.lyr[i].change_settings({
                                         xcmp: 5
                                     });
                                 }
@@ -6144,13 +6147,13 @@ function sigplot_mainmenu(plot: any) {
                 items: []
             };
             // Add the ALL option
-            tracemenu.items.push({
+            (tracemenu.items as any).push({
                 text: "All",
                 menu: traceoptionsmenu()
             });
             // Add all the active layers
             for (var i = 0; i < Gx.lyr.length; i++) {
-                tracemenu.items.push({
+                (tracemenu.items as any).push({
                     text: Gx.lyr[i].name,
                     menu: traceoptionsmenu(i)
                 });
@@ -6180,7 +6183,7 @@ function sigplot_mainmenu(plot: any) {
                             title: "DEOVERLAY",
                             items: []
                         };
-                        deoverlaymenu.items.push({
+                        (deoverlaymenu.items as any).push({
                             text: "Deoverlay All",
                             handler: function() {
                                 plot.deoverlay();
@@ -6195,7 +6198,7 @@ function sigplot_mainmenu(plot: any) {
                                 };
                             }(i));
 
-                            deoverlaymenu.items.push({
+                            (deoverlaymenu.items as any).push({
                                 text: Gx.lyr[i].name,
                                 handler: handler
                             });
@@ -6215,7 +6218,7 @@ function sigplot_mainmenu(plot: any) {
             items: (function() { // Immediately
                 // Invoked
                 // Function
-                var result = [];
+                var result: any = [];
                 for (var i = 0; i < Gx.plugins.length; i++) {
                     var plugin = Gx.plugins[i];
                     if (plugin.impl.menu) {
@@ -6353,7 +6356,7 @@ function sigplot_legend_menu(plot: any, index: number) {
                 plot,
                 "Line thickness:",
                 mx.intValidator,
-                function(finalValue) {
+                function(finalValue: any) {
                     if (index !== undefined) {
                         plot._Gx.lyr[index].line = 3;
                         plot._Gx.lyr[index].thick = -1 * finalValue;
@@ -6491,7 +6494,7 @@ function sigplot_legend_menu(plot: any, index: number) {
                         plot,
                         "Color code (requires #):",
                         mx.hexValidator,
-                        function(finalValue) {
+                        function(finalValue: any) {
                             if (index !== undefined) {
                                 plot._Gx.lyr[index].color = finalValue;
                             } else {
@@ -6530,7 +6533,7 @@ function sigplot_legend_menu(plot: any, index: number) {
                 plot,
                 "Line thickness:",
                 mx.intValidator,
-                function(finalValue) {
+                function(finalValue: any) {
                     if (index !== undefined) {
                         plot._Gx.lyr[index].line = 3;
                         plot._Gx.lyr[index].thick = finalValue;
@@ -6753,7 +6756,7 @@ function sigplot_legend_menu(plot: any, index: number) {
                 plot,
                 "Thickness",
                 mx.intValidator,
-                function(finalValue) {
+                function(finalValue: any) {
                     if (finalValue === "") {
                         finalValue = 1;
                     }
@@ -6782,7 +6785,7 @@ function sigplot_legend_menu(plot: any, index: number) {
                 plot,
                 "Opacity:",
                 mx.floatValidator,
-                function(finalValue) {
+                function(finalValue: any) {
                     if (finalValue === "") {
                         finalValue = 1.0;
                     }
@@ -6826,7 +6829,7 @@ function sigplot_legend_menu(plot: any, index: number) {
  * @private
  */
 function rubberbox_cb(plot: any, triggerEvent: any) {
-    return function(event, xo, yo, xl, yl, action, mode) {
+    return function(event: any, xo: any, yo: any, xl: any, yl: any, action: any, mode: any) {
         var Gx = plot._Gx;
         var Mx = plot._Mx;
 
@@ -7366,12 +7369,12 @@ function plot_init(plot: any, o: any) {
     Gx.ymrk = 0.0;
 
     if (!o.nodragdrop) {
-        mx.addEventListener(Mx, "dragover", function(evt) {
+        mx.addEventListener(Mx, "dragover", function(evt: any) {
             evt.preventDefault();
         }, false);
 
         mx.addEventListener(Mx, "drop", (function(plot) {
-            return function(evt) {
+            return function(evt: any) {
                 var files = evt.dataTransfer.files;
                 if (files.length > 0) {
                     evt.preventDefault();
@@ -7641,7 +7644,7 @@ function form_plotnote(plot: any) {
         Gx.note = "";
     } else if (hcb0 && hcb0.plotnote === undefined) {
         // if layer 0 doesn't have a plot note, build one
-        var files = [];
+        var files: any = [];
         for (var n = 0; n < Gx.HCB.length; n++) {
             var hcb = plot.get_hcb_by_lyrn(n);
             if (hcb.file_name) {
@@ -8515,8 +8518,8 @@ function setupPrompt(plot: any, promptText: string, isValid: any, onSuccess: any
     plot.disable_listeners();
 
     // Add on to the onSuccess method with plot specifics
-    var realOnSuccess = function(plot, onSuccess) {
-        return function(value) {
+    var realOnSuccess = function(plot: any, onSuccess: any) {
+        return function(value: any) {
             onSuccess(value);
 
             // Re-enable Mx keypress/mouse listeners
@@ -8724,7 +8727,7 @@ function display_specs(plot: any) {
     // If one of the layers is 2D we can draw a color-bar.
     // Note that if two Layer2D are drawn it is possible to
     // use a different color bar for each.
-    var needsColorBar = Gx.lyr.some(function(lyr) {
+    var needsColorBar = Gx.lyr.some(function(lyr: any) {
         return (lyr instanceof Layer2D);
     });
 
@@ -8967,7 +8970,7 @@ function set_panbounds(plot: any, {
     xmax,
     ymin,
     ymax
-}) {
+}: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 

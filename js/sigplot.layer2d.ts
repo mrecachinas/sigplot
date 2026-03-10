@@ -1,3 +1,5 @@
+
+
 /**
  * @license
  * File: sigplot.layer2d.ts
@@ -239,7 +241,7 @@ class Layer2D {
         var Mx: MxContext = this.plot._Mx;
 
         this.hcb = hcb;
-        this.hcb.buf_type = "D";
+        if (this.hcb.buf) this.hcb.buf._type = "D";
 
         if (this.hcb.pipe) {
             var self = this;
@@ -266,7 +268,7 @@ class Layer2D {
         if ((hcb as any)["class"] <= 2) {
             this.xsub = -1;
             this.ysub = 1;
-            this.cx = ((hcb.format as string)[0] === 'C');
+            this.cx = ((hcb.format! as string)[0] === 'C');
         } else {
             // TODO
         }
@@ -372,7 +374,7 @@ class Layer2D {
         var Gx: GxContext = this.plot._Gx;
         var Mx: MxContext = this.plot._Mx;
 
-        while (m.pavail(this.hcb) >= ((this.hcb!.subsize as number) * (this.hcb!.spa as number))) {
+        while (m.pavail(this.hcb!) >= ((this.hcb!.subsize as number) * (this.hcb!.spa as number))) {
 
             // if we aren't scrolling, than update the values
             // so that the axis scrolls with the data.  The below
@@ -416,7 +418,7 @@ class Layer2D {
             }
 
             // grab one row worth of data
-            var ngot: number = m.grabx(this.hcb, this.buf, (this.hcb!.subsize as number) * (this.hcb!.spa as number));
+            var ngot: number = m.grabx(this.hcb!, this.buf, (this.hcb!.subsize as number) * (this.hcb!.spa as number));
             if (ngot === 0) { // shouldn't happen because of the pavail check
                 m.log.error("Internal error");
                 return;
@@ -573,7 +575,7 @@ class Layer2D {
         }
 
         if (!this.hcb!.pipe) {
-            m.grab(HCB, this.buf, 0, HCB.subsize);
+            m.grab(this.hcb!, this.buf, 0, this.hcb!.subsize as number);
         }
     }
 
@@ -809,7 +811,7 @@ class Layer2D {
         }
 
         if (data.length > 0) {
-            m.filad(this.hcb, data, sync);
+            m.filad(this.hcb!, data, sync);
         }
 
         return rescale;
@@ -1433,7 +1435,7 @@ class Layer2D {
             Gx.y_cut_press_on = true;
 
             // The y-axis is now the z-values
-            var mxmn = m.vmxmn(y_cut_data, this.lps);
+            var mxmn = m.vmxmn(y_cut_data!, this.lps);
             var ymax: number = mxmn.smax;
             var ymin: number = mxmn.smin;
             var yran: number = ymax - ymin;
@@ -1610,7 +1612,7 @@ class Layer2D {
         var Gx: GxContext = plot._Gx;
         var Mx: MxContext = plot._Mx;
 
-        hcb.buf_type = "D";
+        if (hcb.buf) hcb.buf._type = "D";
         if (!hcb.ystart) {
             hcb.ystart = 0.0;
         }

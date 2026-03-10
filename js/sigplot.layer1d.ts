@@ -161,7 +161,7 @@ class Layer1D implements Layer {
 
     // Pipe-mode state
     drawmode?: string;
-    position?: number | null;
+    position?: number;
     tle?: number;
     maxhold?: MaxHoldOptions;
 
@@ -174,8 +174,8 @@ class Layer1D implements Layer {
     ybufmax?: number;
 
     // Pan y-range (computed by prep/draw)
-    ymin?: number | null;
-    ymax?: number | null;
+    ymin?: number;
+    ymax?: number;
 
     constructor(plot: Plot) {
         this.plot = plot;
@@ -231,7 +231,7 @@ class Layer1D implements Layer {
         const Gx: GxContext = this.plot._Gx;
 
         this.hcb = hcb;
-        this.hcb.buf_type = "D";
+        if (this.hcb.buf) this.hcb.buf._type = "D";
 
         this.offset = 0;
         this.size = 0;
@@ -241,14 +241,14 @@ class Layer1D implements Layer {
         if (!this.hcb.pipe) {
             if (hcb["class"] === 2) {
                 m.force1000(hcb);
-                this.size = hcb.subsize;
+                this.size = hcb.subsize!;
             } else {
-                this.size = hcb.size;
+                this.size = hcb.size!;
             }
         } else {
             if (hcb["class"] === 2) {
                 m.force1000(hcb);
-                this.size = hcb.subsize;
+                this.size = hcb.subsize!;
             }
         }
 
@@ -277,7 +277,7 @@ class Layer1D implements Layer {
         if (hcb["class"]! <= 2) {
             this.xsub = -1;
             this.ysub = 1;
-            this.cx = (hcb.format![0] === 'C');
+            this.cx = (hcb.format!![0] === 'C');
         } else {
             // TODO
         }
@@ -329,12 +329,12 @@ class Layer1D implements Layer {
         if (tle === undefined) {
             // if the transfer length wasn't set then we read
             // all the elements that are available
-            tle = Math.floor(m.pavail(this.hcb)) / this.hcb!.spa;
+            tle = Math.floor(m.pavail(this.hcb!)) / this.hcb!.spa!;
         }
 
         // Calculate transfer length in scalars
-        let tl: number = tle * this.hcb!.spa;
-        while (m.pavail(this.hcb) >= tl) {
+        let tl: number = tle * this.hcb!.spa!;
+        while (m.pavail(this.hcb!) >= tl) {
 
             if (this.drawmode === "lefttoright") {
                 this.position = 0;
@@ -351,9 +351,9 @@ class Layer1D implements Layer {
             // transfer length is adjusted to the remaining size
             // before wrapping
             const ngot: number = m.grabx(
-                this.hcb, ybuf,
-                Math.min(tle, this.size - this.position!) * this.hcb!.spa,
-                this.position! * this.hcb!.spa
+                this.hcb!, ybuf,
+                Math.min(tle, this.size - this.position!) * this.hcb!.spa!,
+                this.position! * this.hcb!.spa!
             );
             if (ngot === 0) {
                 break;
@@ -372,9 +372,9 @@ class Layer1D implements Layer {
             this.position = this.position! % this.size;
 
             if (this.tle === undefined) {
-                tle = Math.floor(m.pavail(this.hcb)) / this.hcb!.spa;
+                tle = Math.floor(m.pavail(this.hcb!)) / this.hcb!.spa!;
             }
-            tl = tle * this.hcb!.spa;
+            tl = tle * this.hcb!.spa!;
         }
     }
 
@@ -478,7 +478,7 @@ class Layer1D implements Layer {
             } else {
                 this.mhptr = new ArrayBuffer(this.pointbufsize);
                 this.mhpoint = new m.PointArray(this.mhptr);
-                this.mhpoint.fill(-Infinity);
+                this.mhpoint!.fill(-Infinity);
             }
         } else if (settings.maxhold === null) {
             this.maxhold = undefined;
@@ -497,7 +497,7 @@ class Layer1D implements Layer {
             if (this.maxhold) {
                 this.mhptr = new ArrayBuffer(this.pointbufsize);
                 this.mhpoint = new m.PointArray(this.mhptr);
-                this.mhpoint.fill(-Infinity);
+                this.mhpoint!.fill(-Infinity);
             }
         }
 
@@ -530,7 +530,7 @@ class Layer1D implements Layer {
         this.imin = -1;
 
         if (this.hcb!["class"] === 2) {
-            m.force1000(this.hcb);
+            m.force1000(this.hcb!);
             this.size = this.hcb!.subsize!;
         } else {
             this.size = this.hcb!.size!;
@@ -567,14 +567,14 @@ class Layer1D implements Layer {
 
             if (hdrmod.subsize && (hdrmod.subsize !== this.size)) {
                 if (this.hcb!["class"] === 2) {
-                    m.force1000(this.hcb);
+                    m.force1000(this.hcb!);
                     this.size = this.hcb!.subsize!;
                     // Reset the buffer
-                    this.position = null;
+                    this.position = undefined;
                     this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
                     this.ybuf = new ArrayBuffer(this.ybufn);
-                    this.ymin = null;
-                    this.ymax = null;
+                    this.ymin = undefined;
+                    this.ymax = undefined;
                 }
                 this.firstpush = false;
             }
@@ -588,7 +588,7 @@ class Layer1D implements Layer {
         }
 
         if (data.length > 0) {
-            m.filad(this.hcb, data, sync);
+            m.filad(this.hcb!, data, sync);
         }
 
         // if this is the first push of data, request a rescale
@@ -634,7 +634,7 @@ class Layer1D implements Layer {
             if (this.maxhold) {
                 this.mhptr = new ArrayBuffer(this.pointbufsize);
                 this.mhpoint = new m.PointArray(this.mhptr);
-                this.mhpoint.fill(-Infinity);
+                this.mhpoint!.fill(-Infinity);
             }
         }
 
@@ -655,7 +655,7 @@ class Layer1D implements Layer {
                 this.xpoint = new m.PointArray(this.xbuf);
             } else if ((this.cx) || (this.mode === "XY")) {
                 // This is the pre-dominate condition
-                m.vmov(dbuf, skip, this.xpoint, 1, npts);
+                m.vmov(dbuf, skip, this.xpoint!, 1, npts);
             } else if (this.line !== 0) {
                 // If we have been asked to plot Real vs. Imaginary
                 // for real data and there is a line being drawn
@@ -674,7 +674,7 @@ class Layer1D implements Layer {
                 this.xpoint = dbuf;
             }
             if (npts > 0) {
-                mxmn = m.vmxmn(this.xpoint, npts);
+                mxmn = m.vmxmn(this.xpoint!, npts);
                 qmax = mxmn.smax;
                 qmin = mxmn.smin;
                 n1 = 0;
@@ -724,28 +724,28 @@ class Layer1D implements Layer {
         }
         if (this.cx) {
             if (Gx.cmode === 1) {
-                m.cvmag(dbuf, this.ypoint, npts);
+                m.cvmag(dbuf, this.ypoint!, npts);
             } else if (Gx.cmode === 2) {
                 if (Gx.plab === 25) {
-                    m.cvpha(dbuf, this.ypoint, npts);
-                    m.vsmul(this.ypoint, 1.0 / (2 * Math.PI), this.ypoint, npts);
+                    m.cvpha(dbuf, this.ypoint!, npts);
+                    m.vsmul(this.ypoint!, 1.0 / (2 * Math.PI), this.ypoint!, npts);
                 } else if (Gx.plab !== 24) {
-                    m.cvpha(dbuf, this.ypoint, npts);
+                    m.cvpha(dbuf, this.ypoint!, npts);
                 } else {
-                    m.cvphad(dbuf, this.ypoint, npts);
+                    m.cvphad(dbuf, this.ypoint!, npts);
                 }
             } else if (Gx.cmode === 3) {
-                m.vmov(dbuf, skip, this.ypoint, 1, npts);
+                m.vmov(dbuf, skip, this.ypoint!, 1, npts);
             } else if (Gx.cmode >= 6) {
-                m.cvmag2(dbuf, this.ypoint, npts);
+                m.cvmag2(dbuf, this.ypoint!, npts);
             } else if (Gx.cmode >= 4) {
-                m.vmov(dbuf.subarray(1), skip, this.ypoint, 1, npts);
+                m.vmov(dbuf.subarray(1), skip, this.ypoint!, 1, npts);
             }
         } else if (this.mode === "XY") {
-            m.vmov(dbuf.subarray(1), skip, this.ypoint, 1, npts);
+            m.vmov(dbuf.subarray(1), skip, this.ypoint!, 1, npts);
         } else {
             if (Gx.cmode === 5) { // I vs. R
-                m.vfill(this.ypoint, 0, npts);
+                m.vfill(this.ypoint!, 0, npts);
             } else if ((Gx.cmode === 1) || (Gx.cmode >= 6)) { // Mag, log
                 for (let i = 0; i < npts; i++) {
                     this.ypoint![i] = Math.abs(dbuf[i]);
@@ -758,7 +758,7 @@ class Layer1D implements Layer {
         }
 
         if (Gx.cmode >= 6) {
-            m.vlog10(this.ypoint, Gx.dbmin, this.ypoint);
+            m.vlog10(this.ypoint!, Gx.dbmin, this.ypoint!);
             let dbscale: number = 10.0;
             if (Gx.cmode === 7) {
                 dbscale = 20.0;
@@ -766,12 +766,12 @@ class Layer1D implements Layer {
             if ((Gx.lyr.length > 0) && (Gx.lyr[0].cx)) {
                 dbscale = dbscale / 2.0;
             }
-            m.vsmul(this.ypoint, dbscale, this.ypoint);
+            m.vsmul(this.ypoint!, dbscale, this.ypoint!);
         }
-        mxmn = m.vmxmn(this.ypoint, npts);
+        mxmn = m.vmxmn(this.ypoint!, npts);
 
         if ((this.maxhold && this.mhpoint)) {
-            m.vmovmax(this.ypoint, 0, 1, this.mhpoint, n1, 1, npts, this.maxhold.decay);
+            m.vmovmax(this.ypoint!, 0, 1, this.mhpoint!, n1, 1, npts, this.maxhold.decay);
         }
 
         qmax = mxmn.smax;
@@ -1106,13 +1106,13 @@ class Layer1D implements Layer {
         if (hcb["class"] === 2) {
             m.force1000(hcb);
         }
-        hcb.buf_type = "D";
+        if (hcb.buf) hcb.buf._type = "D";
 
         // If the input is type 2000, each row becomes its own layer
         const n1: number = 0;
         let n2: number = 1;
         if ((hcb["class"] === 2) && (hcb.size! > 0)) {
-            const num_rows: number = hcb.size! / hcb.subsize!;
+            const num_rows: number = hcb.size! / hcb.subsize!!;
             n2 = Math.min(num_rows, 16 - Gx.lyr.length);
         }
 
@@ -1152,7 +1152,7 @@ class Layer1D implements Layer {
                     }
                     layer.name = layer.name + "." + mx.pad((i + 1).toString(), 3, "0");
                 }
-                layer.offset = i * hcb.subsize!;
+                layer.offset = i * hcb.subsize!!;
             } else {
                 if (layer_name_override !== undefined) {
                     layer.name = layer_name_override as string;

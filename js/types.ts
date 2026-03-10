@@ -18,6 +18,17 @@ export type NumericArray =
     | Uint8ClampedArray
     | number[];
 
+/** Union of actual TypedArray types (excludes number[]). */
+export type TypedArray =
+    | Float32Array
+    | Float64Array
+    | Int16Array
+    | Int32Array
+    | Uint8ClampedArray;
+
+/** Union type for PointArray (Float32Array on iOS/legacy, Float64Array otherwise). */
+export type PointArray = Float32Array | Float64Array;
+
 /** Return type of m.vmxmn() */
 export interface MinMaxResult {
     smax: number;
@@ -31,6 +42,20 @@ export type UnitEntry = [string, string, boolean, boolean];
 
 /** Canvas fill/stroke style value. */
 export type CanvasStyle = string | CanvasGradient | CanvasPattern;
+
+/** Highlight entry for layer highlighting. */
+export interface HighlightEntry {
+    xstart: number;
+    xend: number;
+    color: string;
+    fill?: string;
+}
+
+/** Represents the main SigPlot plotting object. */
+export interface Plot {
+    // This will be expanded as needed; for now, keep minimal
+    [key: string]: any;
+}
 
 // ---------------------------------------------------------------------------
 // Coordinate helpers
@@ -103,8 +128,8 @@ export interface BlueHeader {
     buf_type?: string;
 
     // Methods from bluefile.BlueHeader
-    setData?(data: any): void;
-    createArray?(buf: ArrayBuffer | null, offset: number, length: number): any;
+    setData?(data: ArrayBuffer | NumericArray | DataView): void;
+    createArray?(buf: ArrayBuffer | null, offset: number, length: number): NumericArray;
 
     // Allow arbitrary override fields
     [key: string]: any;
@@ -159,7 +184,7 @@ export interface Scrollbar {
 export interface WarpBoxStyle {
     opacity?: number;
     fill_color?: string;
-    return_value?: any;
+    return_value?: number | string | boolean | object;
 }
 
 export interface WarpBox {
@@ -239,9 +264,9 @@ export interface MxContext {
     scrollbar_y: Scrollbar;
 
     // UI state
-    prompt?: any;
-    pixel?: any;
-    event_cb?: ((event: any) => boolean) | undefined;
+    prompt?: { redraw: () => void; input: any } | undefined;
+    pixel?: PixelPoint | undefined;
+    event_cb?: ((event: MouseEvent | KeyboardEvent) => boolean) | undefined;
     warpbox?: WarpBox;
 
     // Rendering
@@ -260,8 +285,8 @@ export interface GxContext {
     initialized: boolean;
 
     // Pointer data
-    xptr?: any;
-    yptr?: any;
+    xptr?: NumericArray | undefined;
+    yptr?: NumericArray | undefined;
 
     // Mouse coordinates
     retx: number;
@@ -371,7 +396,7 @@ export interface GxContext {
     // Mouse/pan controls
     cntrls: number;
     panmode: number;
-    panning?: any;
+    panning?: { axis: string; xpos: number; ypos: number } | undefined;
     stillPanning?: number;
     repeatPanning?: number;
     mouseClickActive?: boolean;
@@ -446,18 +471,18 @@ export interface GxContext {
     y_box_w: number;
     p_cuts_xpos?: number;
     p_cuts_ypos?: number;
-    x_cut_data: any[];
-    y_cut_data: any[];
-    xcut?: any;
+    x_cut_data: NumericArray[];
+    y_cut_data: NumericArray[];
+    xcut?: Layer | undefined;
     xcut_layer?: number;
     x_cut_press_on: boolean;
     xcut_now: boolean;
-    ycut?: any;
+    ycut?: Layer | undefined;
     ycut_layer?: number;
     y_cut_press_on: boolean;
     ycut_now: boolean;
-    ylabel_stash?: any;
-    cut_stash?: any;
+    ylabel_stash?: string | number | undefined;
+    cut_stash?: object | undefined;
     element1?: HTMLElement;
     element2?: HTMLElement;
 
@@ -472,8 +497,8 @@ export interface GxContext {
     refresh_after_ctr: number;
 
     // Misc
-    lbtn?: any;
-    mimic?: any;
+    lbtn?: HTMLButtonElement | undefined;
+    mimic?: object | undefined;
     parent?: HTMLElement;
 }
 
@@ -589,7 +614,7 @@ export interface TraceOptions {
     vertsym?: boolean;
     horzsym?: boolean;
     highlight?: TraceHighlight[];
-    fillStyle?: string | any[];
+    fillStyle?: string | CanvasStyle[];
 }
 
 // ---------------------------------------------------------------------------
@@ -625,7 +650,7 @@ export interface PluginInterface {
     pluginConstructor?(): void;
 
     /** Called after plugin is added to plot. */
-    pluginInit?(plot: any): void;
+    pluginInit?(plot: Plot): void;
 
     /** Called after plugin is removed from plot. */
     pluginDispose?(): void;
@@ -637,7 +662,7 @@ export interface PluginInterface {
     pluginGetMenu?(): MenuItem[] | undefined;
 
     // Framework-provided methods (available after init)
-    init?(plot: any, canvas: HTMLCanvasElement): void;
+    init?(plot: Plot, canvas: HTMLCanvasElement): void;
     dispose?(): void;
     refresh?(): void;
     menu?(): MenuItem[] | undefined;
@@ -651,7 +676,7 @@ export interface PluginInterface {
     removeListener?(what: string, callback: (...args: any[]) => void): void;
 
     // Getters
-    readonly plot?: any;
+    readonly plot?: Plot;
     readonly Mx?: MxContext;
     readonly Gx?: GxContext;
     readonly canvas?: HTMLCanvasElement;
@@ -666,7 +691,7 @@ export interface PluginInterface {
 // ---------------------------------------------------------------------------
 
 export interface Layer {
-    plot: any;
+    plot: Plot;
 
     // Geometry
     offset: number;
@@ -704,9 +729,9 @@ export interface Layer {
     mode?: string;
     fillStyle?: string | null;
     pointbufsize?: number;
-    xptr?: any;
-    yptr?: any;
-    mhptr?: any;
+    xptr?: ArrayBuffer | null;
+    yptr?: ArrayBuffer | null;
+    mhptr?: ArrayBuffer | null;
     xpoint?: Float64Array | Float32Array | null;
     ypoint?: Float64Array | Float32Array | null;
     mhpoint?: Float64Array | Float32Array | null;
@@ -733,28 +758,28 @@ export interface Layer {
     img?: HTMLCanvasElement;
     frame?: number;
     lps?: number;
-    buf?: any;
-    zbuf?: any;
+    buf?: NumericArray | undefined;
+    zbuf?: PointArray | undefined;
 
     // Methods
-    init(hcb: BlueHeader, options?: any): void;
-    get_data(xmin?: number, xmax?: number): any;
+    init(hcb: BlueHeader, options?: LayerOptions): void;
+    get_data(xmin?: number, xmax?: number): number | void;
     change_settings(settings: Record<string, any>): void;
-    reload(data: any, hdrmod?: any): void;
-    push(data: any, hdrmod?: any, sync?: boolean): void;
-    prep(xmin: number, xmax: number): any;
+    reload(data: ArrayBuffer | NumericArray, hdrmod?: Partial<BlueHeader>): void;
+    push(data: ArrayBuffer | NumericArray, hdrmod?: Partial<BlueHeader>, sync?: boolean): void;
+    prep(xmin: number, xmax: number): { num: number; start: number; end: number };
     draw(): void;
-    get_pan_bounds(view?: any): any;
-    add_highlight?(highlight: any): void;
-    remove_highlight?(highlight: any): void;
-    get_highlights?(): any[];
+    get_pan_bounds(view?: { xmin: number; xmax: number }): { xmin?: number; xmax?: number };
+    add_highlight?(highlight: HighlightEntry | HighlightEntry[]): void;
+    remove_highlight?(highlight: HighlightEntry): void;
+    get_highlights?(): HighlightEntry[];
     clear_highlights?(): void;
 
     // Layer2D methods
     init_axes?(): void;
     get_z?(x: number, y: number): number | undefined;
-    xCutData?(ypos: number, zData?: any): any;
+    xCutData?(ypos: number, zData?: PointArray): NumericArray;
     xCut?(ypos: number): void;
-    yCutData?(xpos: number, zData?: any): any;
+    yCutData?(xpos: number, zData?: PointArray): NumericArray;
     yCut?(xpos: number): void;
 }

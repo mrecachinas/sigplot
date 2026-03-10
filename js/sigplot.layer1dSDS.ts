@@ -1,3 +1,7 @@
+
+
+
+
 /**
  * @license
  * File: sigplot.layer1d.js
@@ -75,7 +79,7 @@ interface Layer1DSDS {
     [key: string]: any;
 }
 
-var Layer1DSDS = function(plot: any) {
+var Layer1DSDS = function(this: any, plot: any) {
     this.plot = plot;
     this.options = {};
     this.size = 0;
@@ -127,24 +131,24 @@ Layer1DSDS.prototype = {
         var Mx: MxContext = this.plot._Mx;
 
         this.hcb = hcb;
-        this.hcb.buf_type = "I";
+        if (this.hcb.buf) this.hcb.buf._type = "I";
 
         if (hcb["file_type"] === 2000) {
             m.force1000(hcb);
-            this.size = hcb.subsize;
+            this.size = hcb.subsize!;
         } else {
-            this.size = hcb.size;
+            this.size = hcb.size!;
         }
         if (this.mode ==="lds" || this.mode==="xcut") {
-            this.xmin = this.hcb.xstart;
-            this.xmax = this.hcb.xstart+ this.hcb.xdelta*this.size; //If size is subsize for 2000 files then this logic should work. 
+            this.xmin = this.hcb.xstart!;
+            this.xmax = this.hcb.xstart!+ this.hcb.xdelta!*this.size; //If size is subsize for 2000 files then this logic should work. 
         }
         else if (this.mode === "ycut") { // In y cut mode this 1D plot will have its x axis be the y axis of the original 2D file. 
-            this.xmin = this.hcb.ystart;
+            this.xmin = this.hcb.ystart!;
             if (hcb["file_type"] === 2000) {
-                this.xmax = this.hcb.ystart + this.hcb.ydelta*this.hcb.size;
+                this.xmax = this.hcb.ystart! + this.hcb.ydelta!*this.hcb.size!;
             } else {
-                this.xmax = this.hcb.ystart + this.hcb.ydelta*(this.hcb.size/this.hcb.subsize);
+                this.xmax = this.hcb.ystart! + this.hcb.ydelta!*(this.hcb.size!/this.hcb.subsize!);
             }
         }
         this.set_pan_values();
@@ -281,11 +285,11 @@ Layer1DSDS.prototype = {
         oReq.overrideMimeType('text\/plain; charset=x-user-defined');
 
         var that = this;
-        oReq.onload = function(oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
+        oReq.onload = function(oEvent: ProgressEvent<EventTarget>) {
             // `this` will be oReq within this context
             that.load_data_from_server(url, this as XMLHttpRequest, oEvent);
         };
-        oReq.onerror = function(oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
+        oReq.onerror = function(oEvent: ProgressEvent<EventTarget>) {
         };
         this.debounceSend(oReq);
         this.pendingurl = url;
@@ -413,11 +417,11 @@ Layer1DSDS.prototype = {
     get_data_from_cache(this: Layer1DSDS): { url: string; plotData: (ArrayBuffer & { zmin?: number; zmax?: number }) | undefined } {
         var Mx: MxContext = this.plot._Mx;
 
-        var x1 =  Math.round((Mx.stk[Mx.level].xmin - this.xmin)/this.hcb.xdelta) ;
-        var x2 = Math.round((Mx.stk[Mx.level].xmax - this.xmin)/this.hcb.xdelta) ;
+        var x1 =  Math.round((Mx.stk[Mx.level].xmin - this.xmin)/this.hcb.xdelta!) ;
+        var x2 = Math.round((Mx.stk[Mx.level].xmax - this.xmin)/this.hcb.xdelta!) ;
         // y1 and y2 are only used for y cut mode, where the y of the original file has been moved to x 
-        var y1 =  Math.round((Mx.stk[Mx.level].xmin - this.xmin)/this.hcb.ydelta) ;
-        var y2 = Math.round((Mx.stk[Mx.level].xmax - this.xmin)/this.hcb.ydelta) ;
+        var y1 =  Math.round((Mx.stk[Mx.level].xmin - this.xmin)/this.hcb.ydelta!) ;
+        var y2 = Math.round((Mx.stk[Mx.level].xmax - this.xmin)/this.hcb.ydelta!) ;
         var ymin: number | undefined;
         var ymax: number | undefined;
         if (Mx.stk[Mx.level].ymin < Mx.stk[Mx.level].ymax) {
@@ -492,7 +496,7 @@ Layer1DSDS.overlay = function(plot: any, hcb: BlueHeader, layerOptions: LayerOpt
     if (hcb["class"] === 2) {
         m.force1000(hcb);
     }
-    hcb.buf_type = "I";
+    if (hcb.buf) hcb.buf._type = "I";
 
     // Extract the layer_name before enter the loop
     var layer_name_override = layerOptions["name"] as string | undefined;

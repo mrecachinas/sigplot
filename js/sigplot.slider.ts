@@ -517,7 +517,7 @@ class SliderPlugin {
         this.plot.removeListener("mmove", this.onmousemove.bind(this));
         this.plot.removeListener("mdown", this.onmousedown.bind(this));
         this.plot.removeListener("mup", this.onmouseup.bind(this));
-        document.removeEventListener("mouseup", this.onmouseup.bind(this), false);
+        document.removeEventListener("mouseup", this.onmouseup.bind(this) as any, false);
 
         this.plot = undefined;
         this.position = undefined;

@@ -306,9 +306,9 @@ function in_fill_range(ele: number, range_begin: number, range_end: number): boo
  */
 /* Step #5*/
 mx.open = function(element: HTMLElement): any {
-    var Mx = new MX(element); /* Step #6*/
+    var Mx = new (MX as any)(element); /* Step #6*/
 
-    Mx.wid_canvas.oncontextmenu = function(event) {
+    Mx.wid_canvas.oncontextmenu = function(event: any) {
         event.preventDefault();
         return false;
     };
@@ -316,7 +316,7 @@ mx.open = function(element: HTMLElement): any {
     this._ctx = Mx.active_canvas.getContext("2d");
 
     Mx.onmousemove = (function(Mx) {
-        return function(e) {
+        return function(e: any) {
             var rect = e.target.getBoundingClientRect();
             // Screen x/y of mouse
             Mx.x = e.x || e.clientX;
@@ -342,7 +342,7 @@ mx.open = function(element: HTMLElement): any {
     })(Mx);
 
     Mx.onmouseup = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             if (Mx.warpbox) {
                 mx.onWidgetLayer(Mx, function() {
                     mx.erase_window(Mx);
@@ -377,7 +377,7 @@ mx.open = function(element: HTMLElement): any {
     })(Mx);
 
     Mx.onmousedown = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             event.preventDefault();
             mx.widget_callback(Mx, event);
             return false;
@@ -385,21 +385,21 @@ mx.open = function(element: HTMLElement): any {
     })(Mx);
 
     Mx.onmouseover = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             Mx.mouseOver = true;
             return false;
         };
     })(Mx);
 
     Mx.onmouseleave = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             Mx.mouseOver = false;
             return false;
         };
     })(Mx);
 
     Mx.onkeydown = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             if (Mx.warpbox) {
                 var keyCode = common.getKeyCode(event);
                 if (((keyCode === 17) || // Ctrl
@@ -417,7 +417,7 @@ mx.open = function(element: HTMLElement): any {
     })(Mx);
 
     Mx.onkeyup = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             if (Mx.warpbox) {
                 var keyCode = common.getKeyCode(event);
                 if (((keyCode === 17) || // Ctrl
@@ -433,7 +433,7 @@ mx.open = function(element: HTMLElement): any {
     })(Mx);
 
     Mx.ontouchend = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             Mx.onmouseup({
                 which: 1
             });
@@ -441,7 +441,7 @@ mx.open = function(element: HTMLElement): any {
     })(Mx);
 
     Mx.ontouchmove = (function(Mx) {
-        return function(event) {
+        return function(event: any) {
             // Compute the total offset - consider caching offset and only calculating on resize
             var element = Mx.canvas;
             var offsetX = 0;
@@ -1217,7 +1217,7 @@ mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: num
     var d2 = 0; // int
     var rmode = false; // bool
     var fill = false; // bool
-    var tri = []; // XPoint array of size 4
+    var tri: any = []; // XPoint array of size 4
     for (var cnt = 0; cnt < 4; cnt++) { // initializing 4 points in the array
         tri[cnt] = {
             x: 0,
@@ -1279,7 +1279,7 @@ mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: num
                 tri[3].x = -d2;
                 tri[3].y = -d;
 
-                var tempTri = []; // XPoint array of size 4
+                var tempTri: any = []; // XPoint array of size 4
                 for (var cnt = 0; cnt < 4; cnt++) { // initializing 4 points in the array
                     tempTri[cnt] = {
                         x: 0,
@@ -1567,7 +1567,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
             }
         }
     } else if (line !== 0) {
-        var colors;
+        var colors: any;
         if ((options) && (options.highlight)) {
             colors = [];
             for (var sn = 0; sn < options.highlight.length; sn++) {
@@ -1585,7 +1585,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                     var rxs = Math.round((xs - xxmin) * xscl) + left;
                     var rxe = Math.round((xe - xxmin) * xscl) + left;
 
-                    for (var cn = colors.length - 1; cn >= 0; cn--) {
+                    for (var cn: any = colors.length - 1; cn >= 0; cn--) {
                         // This highlight overlaps the entire range of a previous
                         // highlight...we can thus remove the color
                         if ((rxs <= colors[cn].start) && (rxe >= colors[cn].end)) {
@@ -1631,7 +1631,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                 color: color
             });
 
-            colors.sort(function(a, b) {
+            colors.sort(function(a: any, b: any) {
                 return a.start - b.start;
             });
 
@@ -1790,8 +1790,8 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                     var pi_start = xstart_pixel_value.x;
                     var pi_end = xend_pixel_value.x;
                     //console.log('start: ', pi_start, 'end: ', pi_end);
-                    var pixx_new = [];
-                    var pixy_new = [];
+                    var pixx_new: any = [];
+                    var pixy_new: any = [];
                     for (var q = 0; q < ib; q++) {
                         var this_point = pixx[q];
                         var this_point_y = pixy[q];
@@ -2152,7 +2152,7 @@ mx.warpbox = function(Mx: any, xo: number, yo: number, xl: number, yl: number, x
         def_style = {};
     }
 
-    Mx.warpbox = new WARPBOX();
+    Mx.warpbox = new (WARPBOX as any)();
     Mx.warpbox.xo = xo;
     Mx.warpbox.yo = yo;
     Mx.warpbox.xl = xl;
@@ -2317,8 +2317,8 @@ mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, 
             tabToClear: true
         });
 
-        var subHandlerCreator = function(messageX, messageY) {
-            return function() {
+        var subHandlerCreator = function(messageX: any, messageY: any) {
+            return function(this: any) {
                 var newValue = this.value();
 
                 var inputValid = isValid(newValue);
@@ -2349,8 +2349,8 @@ mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, 
         };
 
         // Create redraw method
-        var redrawPromptCreator = function(Mx, input, promptText) {
-            return function(xpos, ypos) {
+        var redrawPromptCreator = function(Mx: any, input: any, promptText: any) {
+            return function(xpos: any, ypos: any) {
                 mx.onWidgetLayer(Mx, function() {
                     var GBorder = 3;
 
@@ -2487,7 +2487,7 @@ mx.message = function(Mx: any, msg: string, time?: number, xpos?: number, ypos?:
 
         Mx.widget = {
             type: type || "ONESHOT",
-            callback: function(event) {
+            callback: function(event: any) {
                 if ((event.type === "mousedown") || (event.type === "keydown")) {
                     Mx.widget = null;
                     mx.onWidgetLayer(Mx, function() {
@@ -2593,8 +2593,8 @@ mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: num
     if (!ypos) {
         ypos = Mx.ypos;
     }
-    var xc = Math.max(Mx.l, Math.min(xpos, Mx.r - xs));
-    var yc = Math.max(Mx.t, Math.min(ypos, Mx.b - ys));
+    var xc = Math.max(Mx.l, Math.min(xpos!, Mx.r - xs));
+    var yc = Math.max(Mx.t, Math.min(ypos!, Mx.b - ys));
     var xcc = xc + GBorder;
     var ycc = yc + GBorder;
 
@@ -3101,11 +3101,11 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
 
     var endticx;
     if (stk1.xmax >= stk1.xmin) {
-        endticx = function(val) {
+        endticx = function(val: any) {
             return (val <= stk1.xmax);
         };
     } else {
-        endticx = function(val) {
+        endticx = function(val: any) {
             return (val >= stk1.xmax);
         };
     }
@@ -3233,14 +3233,14 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
     }
     var ytic, ytic1, endticy;
     if (yTIC.dtic === 0) {
-        ytic = stk1.ymax - ytic1 + 1.0;
+        ytic = stk1.ymax - yTIC.dtic1 + 1.0;
     }
     if (stk1.ymax >= stk1.ymin) {
-        endticy = function(val) {
+        endticy = function(val: any) {
             return (val <= stk1.ymax);
         };
     } else {
-        endticy = function(val) {
+        endticy = function(val: any) {
             return (val >= stk1.ymax);
         };
     }
@@ -3763,7 +3763,7 @@ mx.menu = function(Mx: any, menu: any): void {
 
             Mx.widget = {
                 type: "MENU",
-                callback: function(event) {
+                callback: function(event: any) {
                     _menu_callback(Mx, menu, event);
                 }
             };
@@ -3988,10 +3988,10 @@ function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
             var h = 0;
             if (y1 === y2) {
                 w = Math.abs(x2 - x1);
-                h = width;
+                h = width!;
                 x1 = Math.min(x1, x2);
             } else if (x1 === x2) {
-                w = width;
+                w = width!;
                 h = Math.abs(y2 - y1);
                 y1 = Math.min(y1, y2);
             } else {
@@ -4470,7 +4470,7 @@ mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: numb
     var yt = 0; // Originally an int
     var bw = 0; // Originally an int
 
-    var pix = []; // Originally declared as a size 11 XPoint array
+    var pix: any = []; // Originally declared as a size 11 XPoint array
     for (var cnt = 0; cnt < 11; cnt++) { // initializing 11 points in the array
         pix[cnt] = {
             x: 0,
@@ -4653,7 +4653,7 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
 
 
     // Initialize the pixel array
-    var pix = [];
+    var pix: any = [];
     for (var cnt = 0; cnt < 6; cnt++) { // initializing 11 points in the array
         pix[cnt] = {
             x: 0,
@@ -5051,8 +5051,8 @@ mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: 
         y = Math.round((y - yymin) * yscl) + top;
     }
 
-    x = Math.round(x);
-    y = Math.round(y);
+    x = x !== null ? Math.round(x) : null;
+    y = y !== null ? Math.round(y) : null;
 
     return {
         x: x,
@@ -5336,9 +5336,9 @@ function renderImageTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any
         ctx.translate(x + w / 2, y + h / 2);
         ctx.rotate(rotationAngle);
         ctx.translate(-(x + h / 2), -(y + w / 2));
-        ctx.drawImage(Mx._renderCanvas, sx, sy, sw, sh, x, y, h, w);
+        ctx.drawImage(Mx._renderCanvas, sx!, sy!, sw!, sh!, x, y, h, w);
     } else {
-        ctx.drawImage(Mx._renderCanvas, sx, sy, sw, sh, x, y, w, h);
+        ctx.drawImage(Mx._renderCanvas, sx!, sy!, sw!, sh!, x, y, w, h);
     }
     ctx.restore();
 }
@@ -5381,14 +5381,17 @@ function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?:
 
     // Destination element
     var imgctx = img.getContext("2d");
+    if (!imgctx) {
+        throw new Error("Unable to get 2d context from canvas");
+    }
     if (!Mx.scaledImgd || Mx.scaledImgd.width !== w || Mx.scaledImgd.height !== h) {
         Mx.scaledImgd = imgctx.createImageData(w, h);
     }
     var dest = new Uint32Array(Mx.scaledImgd.data.buffer);
 
     // Scaling factor
-    var width_scaling = (sw / w);
-    var height_scaling = (sh / h);
+    var width_scaling = (sw! / w);
+    var height_scaling = (sh! / h);
 
     // Perform the scaling
     var xx = 0;
@@ -5445,7 +5448,7 @@ function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?:
     }
 
     // Set the data
-    imgctx.putImageData(Mx.scaledImgd, 0, 0);
+    imgctx!.putImageData(Mx.scaledImgd, 0, 0);
 }
 
 var renderImage = (typeof Uint8ClampedArray === 'undefined') ? renderImageNoTypedArrays : renderImageTypedArrays;
@@ -5875,8 +5878,8 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
     var ih = lr.y - ul.y;
 
     // Always include at least one pixel from the source
-    sw = Math.max(1, sw);
-    sh = Math.max(1, sh);
+    sw = Math.max(1, sw!);
+    sh = Math.max(1, sh!);
 
     // See if smart smoothing is requested
     if (typeof smoothing === "number") {

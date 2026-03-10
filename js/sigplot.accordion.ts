@@ -1,3 +1,5 @@
+
+
 /**
  * @license
  * File: sigplot.accordion.ts
@@ -77,8 +79,8 @@ export interface AccordionPluginOptions {
 }
 
 class AccordionPlugin extends plugin.Plugin {
-    dragging: boolean;
-    edge_dragging: boolean;
+    dragging!: boolean;
+    edge_dragging!: boolean;
 
     pluginSetup(): void {
         this.defineProperty("center_line_style", {
@@ -214,9 +216,13 @@ class AccordionPlugin extends plugin.Plugin {
         if ((this.properties.center === undefined) || (this.properties.width === undefined)) {
             return;
         }
-        let Mx = this.Mx;
-        let ctx = this.Context;
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        const Mx = this.Mx;
+        if (!Mx) return;
+        
+        const ctx = this.Context;
+        if (!ctx) return;
+        
+        ctx.clearRect(0, 0, this.canvas!.width, this.canvas!.height);
 
         let center_pxl;
         if (this.properties.mode === "absolute") {
@@ -379,15 +385,16 @@ class AccordionPlugin extends plugin.Plugin {
     mimic(acc: AccordionPlugin): void {
         if (acc instanceof AccordionPlugin) {
             acc.on("change", (evt) => {
-                this.properties.width = evt.width;
-                this.properties.center = evt.center;
-                this.plot.redraw();
+                this.properties.width = (evt as any).width;
+                this.properties.center = (evt as any).center;
+                this.plot?.redraw();
             });
         }
     }
 
     _onMouseMove(evt: PlotMouseEvent): void {
         const Mx = this.Mx;
+        if (!Mx) return;
 
         // Ignore if the slider isn't even visible
         if (this.properties.center_location === undefined) {
@@ -514,6 +521,7 @@ class AccordionPlugin extends plugin.Plugin {
 
     _onMouseDown(evt: PlotMouseEvent): void {
         const Mx = this.Mx;
+        if (!Mx) return;
 
         if (this.properties.center_location === undefined) {
             return;

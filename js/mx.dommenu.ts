@@ -24,7 +24,7 @@ class DomMenu {
         this.options = {
             itemClass: "sigplot-menu-item"
         };
-        common.update(this.options, options);
+        common.update(this.options, options as any);
         this._Mx = Mx;
         this._container = Mx.root;
         this._menu = document.createElement("div");

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * File: sigplot.annotations.ts
@@ -140,8 +141,8 @@ class AnnotationPlugin {
                 }
 
                 const rect_upperleft: { x: number; y: number } = {
-                    x: pxl.x,
-                    y: pxl.y
+                    x: pxl.x!,
+                    y: pxl.y!
                 };
                 if ((annotation.value instanceof HTMLImageElement) ||
                     (annotation.value instanceof HTMLCanvasElement) ||
@@ -323,7 +324,7 @@ class AnnotationPlugin {
                     ((typeof HTMLVideoElement !== 'undefined') && annotation.value instanceof HTMLVideoElement)) {
                     annotation.width = (annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement).width;
                     annotation.height = (annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement).height;
-                    ctx.drawImage(annotation.value as CanvasImageSource, pxl.x - (annotation.width / 2), pxl.y - (annotation.height / 2));
+                    ctx.drawImage(annotation.value as CanvasImageSource, pxl.x! - (annotation.width / 2), pxl.y! - (annotation.height / 2));
                 } else {
                     // Setup the text styles
                     ctx.font = annotation.font || "bold italic 20px new century schoolbook";
@@ -340,12 +341,12 @@ class AnnotationPlugin {
                     // Render the text
                     ctx.textBaseline = annotation.textBaseline || self.options.textBaseline;
                     ctx.textAlign = annotation.textAlign || self.options.textAlign;
-                    ctx.fillText(annotation.value as string, pxl.x, pxl.y);
+                    ctx.fillText(annotation.value as string, pxl.x!, pxl.y!);
                 }
 
 
                 if (annotation.highlight && annotation.popup) {
-                    mx.render_message_box(Mx, annotation.popup, pxl.x + 5, pxl.y + 5, annotation.popupTextColor);
+                    mx.render_message_box(Mx, annotation.popup, pxl.x! + 5, pxl.y! + 5, annotation.popupTextColor);
                 }
             }
 

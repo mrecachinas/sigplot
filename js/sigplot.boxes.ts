@@ -300,7 +300,7 @@ class BoxesPlugin {
      * 
      * @param id - the unique id of the box to remove
      */
-    bringBoxToFront(id) {
+    bringBoxToFront(id: any) {
         let box;
         let ii;
         for (ii = (this.boxes.length - 1); ii > -1; ii--) {
@@ -380,21 +380,21 @@ class BoxesPlugin {
 
     //////////////////////////////////////////////////////////////////////
     // Deprecated APIs
-    add_box(box) {
+    add_box(box: Box) {
         return this.addBox(box);
     }
 
-    remove_box(id) {
+    remove_box(id: any) {
         return this.removeBox(id);
     }
 
-    clear_boxes(box) {
+    clear_boxes(box: Box) {
         return this.clearBoxes();
     }
 
     //////////////////////////////////////////////////////////////////////
     // Internal Methods
-    _getControlPoints(box) {
+    _getControlPoints(box: Box) {
         // TODO verify this logic works correctly in all origins
         const rect = mx.real_box_to_pixel(this.plot._Mx, box.x, box.y, box.w, box.h);
 
@@ -439,7 +439,7 @@ class BoxesPlugin {
     }
 
     // Checks if the xpos/ypos is within a box
-    _isWithinBox(xpos, ypos, box) {
+    _isWithinBox(xpos: number, ypos: number, box: Box) {
         const rect = mx.real_box_to_pixel(this.plot._Mx, box.x, box.y, box.w, box.h);
 
         const in_x = (rect.ul.x <= xpos) && (xpos <= rect.lr.x);
@@ -449,7 +449,7 @@ class BoxesPlugin {
     }
 
     // Checks if the xpos/ypos is over a box control point
-    _isOverControlPoint(xpos, ypos, box) {
+    _isOverControlPoint(xpos: number, ypos: number, box: Box) {
         const controlPoints = this._getControlPoints(box);
         for (const [key, value] of Object.entries(controlPoints)) {
             const dist_x = Math.abs(value.x - xpos);
@@ -462,7 +462,7 @@ class BoxesPlugin {
     }
 
     // TODO convert this to using real-world coordinates
-    _selectBoxes(xpos, ypos, multi_select) {
+    _selectBoxes(xpos: number, ypos: number, multi_select: boolean) {
         // See if the mouse is within any boxes
         const boxes_selected = [];
         for (let ii = (this.boxes.length - 1); ii > -1; ii--) {
@@ -523,7 +523,7 @@ class BoxesPlugin {
             if (this.options.enableSelect) {
                 boxes_selected[0].selected = true;
             }
-            let controlPoint;
+            let controlPoint: string | null = null;
             if (this.options.enableResize) {
                 controlPoint = this._isOverControlPoint(evt.xpos, evt.ypos, boxes_selected[0]);
             }
@@ -679,7 +679,7 @@ class BoxesPlugin {
                     if (this.options.enableSelect) {
                         boxes_selected[0].selected = true;
                     }
-                    let controlPoint;
+                    let controlPoint: string | null = null;
                     if (this.options.enableResize) {
                         controlPoint = this._isOverControlPoint(evt.xpos, evt.ypos, boxes_selected[0]);
                     }
@@ -698,7 +698,7 @@ class BoxesPlugin {
 
             const selected = this._selected;
             if (!selected) {
-                return;
+                return true;
             }
             this._selected = undefined;
 
@@ -752,7 +752,7 @@ class BoxesPlugin {
                 mx.dispatchEvent(Mx, sevt);
                 evt.preventDefault();
                 this.plot.redraw();
-                return; // TODO should a boxmove also emit a boxselect?
+                return false; // TODO should a boxmove also emit a boxselect?
             } else {
                 // Restore the original box x,y,w,h to avoid slight movement that doesn't cause boxmove
                 // to change things
@@ -835,7 +835,7 @@ class BoxesPlugin {
      * 
      * @param {canvas} canvas 
      */
-    refresh(canvas) {
+    refresh(canvas: HTMLCanvasElement) {
         // Quick abort if we have nothing to do
         if ((!this.options.display) || (this.boxes.length === 0)) {
             return;
@@ -845,6 +845,9 @@ class BoxesPlugin {
         const Gx = this.plot._Gx;
         const Mx = this.plot._Mx;
         const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            return;
+        }
 
         if ((Gx.x_cut_press_on || Gx.y_cut_press_on)) {
             return;
