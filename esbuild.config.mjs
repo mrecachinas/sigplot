@@ -10,7 +10,7 @@ const common = {
 // UMD-style bundle (IIFE with global name) — replaces browserify --standalone
 await esbuild.build({
     ...common,
-    entryPoints: ["js/sigplot.js"],
+    entryPoints: ["js/sigplot.ts"],
     format: "iife",
     globalName: "sigplot",
     outfile: "dist/sigplot.js",
@@ -19,7 +19,7 @@ await esbuild.build({
 // Minified UMD
 await esbuild.build({
     ...common,
-    entryPoints: ["js/sigplot.js"],
+    entryPoints: ["js/sigplot.ts"],
     format: "iife",
     globalName: "sigplot",
     outfile: "dist/sigplot.min.js",
@@ -29,7 +29,7 @@ await esbuild.build({
 // ESM bundle for modern consumers
 await esbuild.build({
     ...common,
-    entryPoints: ["js/sigplot.js"],
+    entryPoints: ["js/sigplot.ts"],
     format: "esm",
     outfile: "dist/sigplot.esm.js",
     target: "es2020",
@@ -38,7 +38,7 @@ await esbuild.build({
 // Plugins bundle
 await esbuild.build({
     ...common,
-    entryPoints: ["js/plugins.js"],
+    entryPoints: ["js/plugins.ts"],
     format: "iife",
     globalName: "sigplot_plugins",
     outfile: "dist/sigplot.plugins.js",
@@ -47,7 +47,7 @@ await esbuild.build({
 // Plugins minified
 await esbuild.build({
     ...common,
-    entryPoints: ["js/plugins.js"],
+    entryPoints: ["js/plugins.ts"],
     format: "iife",
     globalName: "sigplot_plugins",
     outfile: "dist/sigplot.plugins.min.js",
