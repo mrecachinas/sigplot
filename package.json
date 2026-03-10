@@ -8,12 +8,15 @@
   "homepage": "http://github.com/spectriclabs/sigplot",
   "main": "dist/sigplot.js",
   "module": "dist/sigplot.esm.js",
+  "types": "dist/types/sigplot.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/types/sigplot.d.ts",
       "import": "./dist/sigplot.esm.js",
       "require": "./dist/sigplot.js"
     },
     "./plugins": {
+      "types": "./dist/types/plugins.d.ts",
       "import": "./dist/sigplot.plugins.js",
       "require": "./dist/sigplot.plugins.js"
     }
@@ -24,7 +27,8 @@
     "dist/sigplot.min.js",
     "dist/sigplot.esm.js",
     "dist/sigplot.plugins.js",
-    "dist/sigplot.plugins.min.js"
+    "dist/sigplot.plugins.min.js",
+    "dist/types"
   ],
   "author": {
     "name": "Spectric Labs, Inc.",
@@ -46,7 +50,7 @@
     }
   ],
   "scripts": {
-    "build": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs && npm run types",
     "dev": "vite",
     "lint": "eslint js/",
     "lint:fix": "eslint js/ --fix",

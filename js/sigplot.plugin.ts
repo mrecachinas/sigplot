@@ -27,7 +27,7 @@ import mx from "./mx.js";
 import type { MxContext, GxContext, MenuItem, Plot } from "./types.js";
 
 /** Schema for a plugin property defined via defineProperty. */
-interface PropertyDefinition {
+export interface PropertyDefinition {
     defaultValue?: any;
     refreshOnChange?: boolean;
     readonly?: boolean;
@@ -36,7 +36,7 @@ interface PropertyDefinition {
 }
 
 /** Internal event listener entry. */
-interface EventListenerEntry {
+export interface EventListenerEntry {
     cb: (...args: any[]) => void;
     ctx?: any;
 }
@@ -378,3 +378,5 @@ class Plugin {
 export default {
     Plugin: Plugin
 };
+
+export { Plugin };

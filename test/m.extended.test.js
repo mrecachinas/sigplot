@@ -395,4 +395,31 @@ describe("m extended math functions", () => {
             expect(sigplot.m.pad(50, "20%")).toBeCloseTo(10, 5);
         });
     });
+
+    describe("m.grab regression", () => {
+        it("P2-6: should return 0 from m.grab() when hcb.dview is undefined", () => {
+            const hcb = {
+                dview: undefined,
+                format: "SF",
+                ape: 1,
+            };
+            const bufview = new Float32Array(10);
+
+            const result = sigplot.m.grab(hcb, bufview, 0, 10);
+            expect(result).toBe(0);
+        });
+
+        it("P2-6: should not crash or return NaN from m.grab() with null dview", () => {
+            const hcb = {
+                dview: null,
+                format: "SF",
+                ape: 1,
+            };
+            const bufview = new Float32Array(10);
+
+            const result = sigplot.m.grab(hcb, bufview, 0, 10);
+            expect(result).toBe(0);
+            expect(Number.isNaN(result)).toBe(false);
+        });
+    });
 });

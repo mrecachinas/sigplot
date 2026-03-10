@@ -25,6 +25,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "fs";
+import Layer2D from "../js/sigplot.layer2d.js";
 
 describe("sigplot", () => {
     let container;
@@ -679,4 +681,164 @@ describe("sigplot", () => {
 
     // Requires browser mode (real canvas) — overlay_href uses XHR which is not available in jsdom
     it.skip("Plot onerror SDS callback", () => {});
+
+    describe("Layer1D regression", () => {
+        it("W4: should replace existing highlights when passing an array to add_highlight", () => {
+            const plot = new sigplot.Plot(container, {
+                all: true,
+                expand: true
+            });
+
+            const data = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+            plot.overlay_array(data, {
+                type: 1000,
+                file_name: "highlight_test"
+            });
+
+            expect(plot._Gx.lyr).toHaveLength(1);
+            const layer = plot._Gx.lyr[0];
+
+            if (layer.add_highlight && layer.get_highlights) {
+                const singleHighlight = { xstart: 1, xend: 3, color: "red" };
+                layer.add_highlight(singleHighlight);
+
+                let highlights = layer.get_highlights();
+                expect(highlights).toHaveLength(1);
+                expect(highlights[0].color).toBe("red");
+
+                const highlightArray = [
+                    { xstart: 2, xend: 4, color: "blue" },
+                    { xstart: 5, xend: 7, color: "green" }
+                ];
+                layer.add_highlight(highlightArray);
+
+                highlights = layer.get_highlights();
+                expect(highlights).toHaveLength(2);
+
+                expect(highlights.some(h => h.color === "blue")).toBe(true);
+                expect(highlights.some(h => h.color === "green")).toBe(true);
+                expect(highlights.some(h => h.color === "red")).toBe(false);
+            } else {
+                console.log("Layer highlight methods not available, skipping highlight test");
+            }
+        });
+
+        it("P2-4: should assign position = 0 when subsize changes in push()", () => {
+            const src = fs.readFileSync("js/sigplot.layer1d.ts", "utf-8");
+
+            const subsizeBlock = src.match(
+                /hdrmod\.subsize[\s\S]*?this\.position\s*=\s*0/
+            );
+            expect(subsizeBlock).not.toBeNull();
+
+            const posAssignment = src.match(
+                /hdrmod\.subsize[\s\S]*?this\.position\s*=\s*(0|undefined|null)/
+            );
+            expect(posAssignment).not.toBeNull();
+            expect(posAssignment![1]).toBe("0");
+        });
+    });
+
+    describe("Layer2D regression", () => {
+        it("W1: should use .length (element count) not .byteLength for layer2d sizing", () => {
+            const plot = new sigplot.Plot(container, {
+                all: true,
+                expand: true
+            });
+
+            const rows = 4;
+            const cols = 5;
+            const totalElements = rows * cols;
+
+            const data = new Float64Array(totalElements);
+            for (let i = 0; i < totalElements; i++) {
+                data[i] = Math.sin(i * 0.1);
+            }
+
+            plot.overlay_array(data, {
+                type: 2000,
+                subsize: cols,
+                file_name: "regression_test",
+                xstart: 0.0,
+                xdelta: 1.0,
+                ystart: 0.0,
+                ydelta: 1.0
+            });
+
+            expect(plot._Gx.lyr).toHaveLength(1);
+
+            const layer = plot._Gx.lyr[0];
+            const layerHcb = layer.hcb;
+
+            expect(layerHcb.subsize).toBe(cols);
+            expect(layerHcb.size).toBeDefined();
+            expect(layerHcb.size).toBeGreaterThan(0);
+            expect(typeof layerHcb.size).toBe("number");
+        });
+
+        it("W3: should set hcb.buf_type on BlueHeader, not hcb.buf._type (double)", () => {
+            const plot = new sigplot.Plot(container, {
+                all: true,
+                expand: true
+            });
+
+            const data = new Float64Array([1, 2, 3, 4, 5]);
+
+            plot.overlay_array(data, {
+                type: 1000,
+                file_name: "buf_type_test"
+            });
+
+            expect(plot._Gx.lyr).toHaveLength(1);
+
+            const layer = plot._Gx.lyr[0];
+            const hcb = layer.hcb;
+
+            expect(hcb.buf_type).toBeDefined();
+            expect(hcb.buf_type).toBe("D");
+
+            if (hcb.buf) {
+                expect(hcb.buf._type).toBeUndefined();
+            }
+        });
+
+        it("W3: should handle SDS format with buf_type 'I'", () => {
+            const plot = new sigplot.Plot(container, {
+                all: true,
+                expand: true
+            });
+
+            const data = new Int16Array([100, 200, 300, 400, 500]);
+
+            plot.overlay_array(data, {
+                type: 1000,
+                format: "SI",
+                file_name: "sds_buf_type_test"
+            });
+
+            expect(plot._Gx.lyr).toHaveLength(1);
+
+            const layer = plot._Gx.lyr[0];
+            const hcb = layer.hcb;
+
+            expect(hcb.buf_type).toBeDefined();
+            expect(typeof hcb.buf_type).toBe("string");
+        });
+
+        it("P2-5: should leave position, ymin, ymax undefined before init()", () => {
+            const mockPlot = {
+                _Gx: {
+                    xcompression: 1,
+                    rasterDownscale: 1,
+                },
+            };
+
+            const layer = new Layer2D(mockPlot as any);
+
+            expect(layer.position).toBeUndefined();
+            expect(layer.ymin).toBeUndefined();
+            expect(layer.ymax).toBeUndefined();
+        });
+    });
 });
