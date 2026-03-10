@@ -35,15 +35,24 @@
  * @namespace
  */
 
-
 import tinycolor from "tinycolor2";
 import ColorMap from "./ColorMap.js";
 import common from "./common.js";
 import CanvasInput from "./CanvasInput.js";
 import m from "./m.js";
 import DomMenu from "./mx.dommenu.js";
-import type { StkEntry, Scrollbar, WarpBox, WarpBoxStyle, Menu, MenuItem, PixelPoint, TraceOptions, TraceHighlight, CanvasStyle } from "./types.ts";
-
+import type {
+    StkEntry,
+    Scrollbar,
+    WarpBox,
+    WarpBoxStyle,
+    Menu,
+    MenuItem,
+    PixelPoint,
+    TraceOptions,
+    TraceHighlight,
+    CanvasStyle
+} from "./types.ts";
 
 const mx: any = function mx(): void {};
 
@@ -110,7 +119,7 @@ mx.MAX_ZOOM = 9;
  * The zoom stack structure object
  * @private
  */
-mx.STKSTRUCT = function(this: any): void {
+mx.STKSTRUCT = function (this: any): void {
     this.xmin = 0.0; // real world val at x1(origin=1,4) or x2(origin=2,4)
     this.xmax = 0.0; // real world val at x2(origin=1,4) or x1(origin=2,4)
     this.ymin = 0.0; // real world val at y2(origin=1,2) or y1(origin=3,4)
@@ -127,7 +136,7 @@ mx.STKSTRUCT = function(this: any): void {
  * The scrollbar structure object used to hold state about scrolling
  * @private
  */
-mx.SCROLLBAR = function(this: any): void {
+mx.SCROLLBAR = function (this: any): void {
     this.flag = null; // int_4 // flag field for MX$SCROLLBAR routine
     this.action = null; // int_4 // returned action performed (XW_EVENT)
     this.smin = null;
@@ -182,11 +191,12 @@ function WARPBOX(this: any): void {
  * @param element
  * @private
  */
-function MX(this: any, element: HTMLElement): void { // this is where the canvases are setup/defined
+function MX(this: any, element: HTMLElement): void {
+    // this is where the canvases are setup/defined
     this.root = element;
 
     // Create a div to hold all the various canvas layers
-    this.parent = document.createElement('div');
+    this.parent = document.createElement("div");
     this.parent.style.position = "relative";
     //this.parent.style.height = "100%"; //element.clientHeight;
     //this.parent.style.width = "100%"; //element.clientHeight;
@@ -196,7 +206,7 @@ function MX(this: any, element: HTMLElement): void { // this is where the canvas
     element.appendChild(this.parent);
 
     // Create the canvas that will hold the plot
-    this.canvas = document.createElement('canvas');
+    this.canvas = document.createElement("canvas");
     this.canvas.style.position = "absolute";
     this.canvas.style.top = "0px";
     this.canvas.style.left = "0px";
@@ -204,10 +214,11 @@ function MX(this: any, element: HTMLElement): void { // this is where the canvas
     this.canvas.height = element.clientHeight;
 
     this.parent.appendChild(this.canvas);
+    this.canvas.getContext("2d", { willReadFrequently: true });
     this.active_canvas = this.canvas;
 
     // This canvas holds all widgets and reacts to mouse events
-    this.wid_canvas = document.createElement('canvas');
+    this.wid_canvas = document.createElement("canvas");
     this.wid_canvas.style.position = "absolute";
     this.wid_canvas.style.top = "0px";
     this.wid_canvas.style.left = "0px";
@@ -288,7 +299,6 @@ function in_fill_range(ele: number, range_begin: number, range_end: number): boo
         left = true;
     }
 
-
     if (ele <= range_end) {
         right = true;
     }
@@ -305,31 +315,31 @@ function in_fill_range(ele: number, range_begin: number, range_end: number): boo
  * @param {element}	element 	Reference to a DOM window element
  */
 /* Step #5*/
-mx.open = function(element: HTMLElement): any {
+mx.open = function (element: HTMLElement): any {
     var Mx = new (MX as any)(element); /* Step #6*/
 
-    Mx.wid_canvas.oncontextmenu = function(event: any) {
+    Mx.wid_canvas.oncontextmenu = function (event: any) {
         event.preventDefault();
         return false;
     };
 
     this._ctx = Mx.active_canvas.getContext("2d");
 
-    Mx.onmousemove = (function(Mx) {
-        return function(e: any) {
+    Mx.onmousemove = (function (Mx) {
+        return function (e: any) {
             var rect = e.target.getBoundingClientRect();
             // Screen x/y of mouse
             Mx.x = e.x || e.clientX;
             Mx.y = e.y || e.clientY;
             // Plot relative x/y of mouse
-            Mx.xpos = (e.offsetX === undefined) ? (e.pageX - rect.left - window.scrollX) : e.offsetX;
-            Mx.ypos = (e.offsetY === undefined) ? (e.pageY - rect.top - window.scrollY) : e.offsetY;
+            Mx.xpos = e.offsetX === undefined ? e.pageX - rect.left - window.scrollX : e.offsetX;
+            Mx.ypos = e.offsetY === undefined ? e.pageY - rect.top - window.scrollY : e.offsetY;
 
             //				Mx.xpos = (e.offsetX === undefined) ? e.layerX : e.offsetX;
             //				Mx.ypos = (e.offsetY === undefined) ? e.layerY : e.offsetY;
 
             if (Mx.warpbox) {
-                if ((e.ctrlKey || e.metaKey) && (Mx.warpbox.alt_style !== undefined)) {
+                if ((e.ctrlKey || e.metaKey) && Mx.warpbox.alt_style !== undefined) {
                     Mx.warpbox.style = Mx.warpbox.alt_style;
                 } else {
                     Mx.warpbox.style = Mx.warpbox.def_style;
@@ -341,10 +351,10 @@ mx.open = function(element: HTMLElement): any {
         };
     })(Mx);
 
-    Mx.onmouseup = (function(Mx) {
-        return function(event: any) {
+    Mx.onmouseup = (function (Mx) {
+        return function (event: any) {
             if (Mx.warpbox) {
-                mx.onWidgetLayer(Mx, function() {
+                mx.onWidgetLayer(Mx, function () {
                     mx.erase_window(Mx);
                 });
 
@@ -365,48 +375,47 @@ mx.open = function(element: HTMLElement): any {
                             yo = Mx.t;
                             yl = Mx.b;
                         } // else "box"
-                        old_warpbox.func(event, xo, yo, xl, yl,
-                            old_warpbox.style.return_value,
-                            old_warpbox.mode);
+                        old_warpbox.func(event, xo, yo, xl, yl, old_warpbox.style.return_value, old_warpbox.mode);
                     }
                 }
-
             }
             mx.widget_callback(Mx, event);
         };
     })(Mx);
 
-    Mx.onmousedown = (function(Mx) {
-        return function(event: any) {
+    Mx.onmousedown = (function (Mx) {
+        return function (event: any) {
             event.preventDefault();
             mx.widget_callback(Mx, event);
             return false;
         };
     })(Mx);
 
-    Mx.onmouseover = (function(Mx) {
-        return function(event: any) {
+    Mx.onmouseover = (function (Mx) {
+        return function (event: any) {
             Mx.mouseOver = true;
             return false;
         };
     })(Mx);
 
-    Mx.onmouseleave = (function(Mx) {
-        return function(event: any) {
+    Mx.onmouseleave = (function (Mx) {
+        return function (event: any) {
             Mx.mouseOver = false;
             return false;
         };
     })(Mx);
 
-    Mx.onkeydown = (function(Mx) {
-        return function(event: any) {
+    Mx.onkeydown = (function (Mx) {
+        return function (event: any) {
             if (Mx.warpbox) {
                 var keyCode = common.getKeyCode(event);
-                if (((keyCode === 17) || // Ctrl
-                        (keyCode === 224) || // Mac Command Firefox
-                        (keyCode === 91) || // Safari/Chrome Left-command
-                        (keyCode === 93)) && // Safari/Chrome Right-command
-                    (Mx.warpbox.style !== Mx.warpbox.alt_style)) {
+                if (
+                    (keyCode === 17 || // Ctrl
+                        keyCode === 224 || // Mac Command Firefox
+                        keyCode === 91 || // Safari/Chrome Left-command
+                        keyCode === 93) && // Safari/Chrome Right-command
+                    Mx.warpbox.style !== Mx.warpbox.alt_style
+                ) {
                     Mx.warpbox.style = Mx.warpbox.alt_style;
                     mx.redraw_warpbox(Mx);
                 }
@@ -416,15 +425,17 @@ mx.open = function(element: HTMLElement): any {
         };
     })(Mx);
 
-    Mx.onkeyup = (function(Mx) {
-        return function(event: any) {
+    Mx.onkeyup = (function (Mx) {
+        return function (event: any) {
             if (Mx.warpbox) {
                 var keyCode = common.getKeyCode(event);
-                if (((keyCode === 17) || // Ctrl
-                        (keyCode === 224) || // Mac Command Firefox
-                        (keyCode === 91) || // Safari/Chrome Left-command
-                        (keyCode === 93)) && // Safari/Chrome Right-command
-                    (Mx.warpbox.style !== Mx.warpbox.def_style)) {
+                if (
+                    (keyCode === 17 || // Ctrl
+                        keyCode === 224 || // Mac Command Firefox
+                        keyCode === 91 || // Safari/Chrome Left-command
+                        keyCode === 93) && // Safari/Chrome Right-command
+                    Mx.warpbox.style !== Mx.warpbox.def_style
+                ) {
                     Mx.warpbox.style = Mx.warpbox.def_style;
                     mx.redraw_warpbox(Mx);
                 }
@@ -432,16 +443,16 @@ mx.open = function(element: HTMLElement): any {
         };
     })(Mx);
 
-    Mx.ontouchend = (function(Mx) {
-        return function(event: any) {
+    Mx.ontouchend = (function (Mx) {
+        return function (event: any) {
             Mx.onmouseup({
                 which: 1
             });
         };
     })(Mx);
 
-    Mx.ontouchmove = (function(Mx) {
-        return function(event: any) {
+    Mx.ontouchmove = (function (Mx) {
+        return function (event: any) {
             // Compute the total offset - consider caching offset and only calculating on resize
             var element = Mx.canvas;
             var offsetX = 0;
@@ -468,7 +479,7 @@ mx.open = function(element: HTMLElement): any {
  * @param Mx
  * @private
  */
-mx.enableListeners = function(Mx: any): void {
+mx.enableListeners = function (Mx: any): void {
     mx.addEventListener(Mx, "mousemove", Mx.onmousemove, false);
     window.addEventListener("mouseup", Mx.onmouseup, false);
     mx.addEventListener(Mx, "mousedown", Mx.onmousedown, false);
@@ -478,14 +489,13 @@ mx.enableListeners = function(Mx: any): void {
     window.addEventListener("keyup", Mx.onkeyup, false);
     //mx.addEventListener(Mx, "touchend", Mx.ontouchend);
     //mx.addEventListener(Mx, 'touchmove', Mx.ontouchmove, false);
-
 };
 
 /**
  * @param Mx
  * @private
  */
-mx.disableListeners = function(Mx: any): void {
+mx.disableListeners = function (Mx: any): void {
     mx.removeEventListener(Mx, "mousemove", Mx.onmousemove, false);
     window.removeEventListener("mouseup", Mx.onmouseup, false);
     mx.removeEventListener(Mx, "mousedown", Mx.onmousedown, false);
@@ -504,7 +514,7 @@ mx.disableListeners = function(Mx: any): void {
  * @param useCapture
  * @private
  */
-mx.addEventListener = function(Mx: any, event: string, callback: EventListener, useCapture?: boolean): void {
+mx.addEventListener = function (Mx: any, event: string, callback: EventListener, useCapture?: boolean): void {
     return Mx.wid_canvas.addEventListener(event, callback, useCapture);
 };
 
@@ -515,7 +525,7 @@ mx.addEventListener = function(Mx: any, event: string, callback: EventListener, 
  * @param useCapture
  * @private
  */
-mx.removeEventListener = function(Mx: any, event: string, callback: EventListener, useCapture?: boolean): void {
+mx.removeEventListener = function (Mx: any, event: string, callback: EventListener, useCapture?: boolean): void {
     return Mx.wid_canvas.removeEventListener(event, callback, useCapture);
 };
 
@@ -524,7 +534,7 @@ mx.removeEventListener = function(Mx: any, event: string, callback: EventListene
  * @param event
  * @private
  */
-mx.dispatchEvent = function(Mx: any, event: Event): boolean {
+mx.dispatchEvent = function (Mx: any, event: Event): boolean {
     return Mx.wid_canvas.dispatchEvent(event);
 };
 
@@ -533,7 +543,7 @@ mx.dispatchEvent = function(Mx: any, event: Event): boolean {
  * @param func
  * @private
  */
-mx.onWidgetLayer = function(Mx: any, func: () => any): any {
+mx.onWidgetLayer = function (Mx: any, func: () => any): any {
     mx.onCanvas(Mx, Mx.wid_canvas, func);
 };
 
@@ -542,7 +552,7 @@ mx.onWidgetLayer = function(Mx: any, func: () => any): any {
  * @param func
  * @private
  */
-mx.onCanvas = function(Mx: any, canvas: HTMLCanvasElement, func?: () => any): any {
+mx.onCanvas = function (Mx: any, canvas: HTMLCanvasElement, func?: () => any): any {
     var current_active = Mx.active_canvas;
     Mx.active_canvas = canvas;
     try {
@@ -559,8 +569,8 @@ mx.onCanvas = function(Mx: any, canvas: HTMLCanvasElement, func?: () => any): an
  * @param func
  * @private
  */
-mx.withWidgetLayer = function(Mx: any, func: () => any): () => void {
-    var f = function() {
+mx.withWidgetLayer = function (Mx: any, func: () => any): () => void {
+    var f = function () {
         mx.onWidgetLayer(Mx, func);
     };
     return f;
@@ -571,7 +581,7 @@ mx.withWidgetLayer = function(Mx: any, func: () => any): () => void {
  * @param func
  * @private
  */
-mx.render = function(Mx: any, func?: () => void): void {
+mx.render = function (Mx: any, func?: () => void): void {
     if (!func) {
         return;
     }
@@ -580,7 +590,7 @@ mx.render = function(Mx: any, func?: () => void): void {
 
     if (Mx._syncRender === false) {
         if (!active_canvas._animationFrameHandle) {
-            active_canvas._animationFrameHandle = requestAnimationFrame(function() {
+            active_canvas._animationFrameHandle = requestAnimationFrame(function () {
                 active_canvas._animationFrameHandle = undefined;
                 func();
             });
@@ -595,7 +605,7 @@ mx.render = function(Mx: any, func?: () => void): void {
  * @param value
  * @private
  */
-mx.fullscreen = function(Mx: any, value?: boolean): void {
+mx.fullscreen = function (Mx: any, value?: boolean): void {
     if (value === undefined) {
         value = !Mx.fullscreen;
     }
@@ -630,10 +640,9 @@ mx.fullscreen = function(Mx: any, value?: boolean): void {
  * @param Mx
  * @private
  */
-mx.checkresize = function(Mx: any): boolean {
+mx.checkresize = function (Mx: any): boolean {
     var canvas = Mx.canvas;
-    if ((canvas.height !== Mx.root.clientHeight) || (canvas.width !== Mx.root.clientWidth)) {
-
+    if (canvas.height !== Mx.root.clientHeight || canvas.width !== Mx.root.clientWidth) {
         Mx.height = Mx.root.clientHeight;
         Mx.width = Mx.root.clientWidth;
 
@@ -651,7 +660,7 @@ mx.checkresize = function(Mx: any): boolean {
  * @param Mx
  * @private
  */
-mx.invertbgfg = function(Mx: any): void {
+mx.invertbgfg = function (Mx: any): void {
     mx.setbgfg(Mx, Mx.fg, Mx.bg, !Mx.xi);
 };
 
@@ -661,7 +670,7 @@ mx.invertbgfg = function(Mx: any): void {
  * @param color3
  * @private
  */
-mx.mixcolor = function(color1: string, color2: string, perc1to2: number): string {
+mx.mixcolor = function (color1: string, color2: string, perc1to2: number): string {
     var c1 = tinycolor(color1).toRgb();
     var c2 = tinycolor(color2).toRgb();
     var mix = 1.0 - perc1to2;
@@ -680,12 +689,19 @@ mx.mixcolor = function(color1: string, color2: string, perc1to2: number): string
  * @param fillStyle
  * @private
  */
-mx.linear_gradient = function(Mx: any, x: number, y: number, w: number, h: number, fillStyle: string[]): CanvasGradient {
+mx.linear_gradient = function (
+    Mx: any,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fillStyle: string[]
+): CanvasGradient {
     var ctx = Mx.active_canvas.getContext("2d");
     var step_size = 1.0 / fillStyle.length;
     var lingrad = ctx.createLinearGradient(x, y, w, h);
     for (var i = 0; i < fillStyle.length - 1; i++) {
-        lingrad.addColorStop(step_size * (i), fillStyle[i]);
+        lingrad.addColorStop(step_size * i, fillStyle[i]);
     }
     lingrad.addColorStop(1, fillStyle[fillStyle.length - 1]);
     return lingrad;
@@ -701,12 +717,13 @@ mx.linear_gradient = function(Mx: any, x: number, y: number, w: number, h: numbe
  * @param xi
  * @private
  */
-mx.setbgfg = function(Mx: any, bg: string, fg: string, xi?: boolean | string): void {
+mx.setbgfg = function (Mx: any, bg: string, fg: string, xi?: boolean | string): void {
     Mx.bg = tinycolor(bg).toHexString();
     Mx.fg = tinycolor(fg).toHexString();
     Mx.xi = tinycolor(xi as any).toHexString();
 
-    if ((tinycolor.equals(Mx.bg, "black")) && (tinycolor.equals(Mx.fg, "white"))) { ///mmm
+    if (tinycolor.equals(Mx.bg, "black") && tinycolor.equals(Mx.fg, "white")) {
+        ///mmm
         Mx.xwfg = Mx.fg; // X-Widget Foreground color
         Mx.xwbg = "rgb(35%,35%,30%)"; // X-Widget Background color
         Mx.xwts = "rgb(60%,60%,55%)"; // X-Widget top shadow color
@@ -714,7 +731,7 @@ mx.setbgfg = function(Mx: any, bg: string, fg: string, xi?: boolean | string): v
         Mx.xwms = mx.mixcolor(Mx.xwts, Mx.xwbs, 0.5); // mid shadow
         Mx.xwlo = "rgb(15%,15%,10%)"; // X-Widget top shadow color
         Mx.hi = Mx.xwts; //  Highlight color
-    } else if ((tinycolor.equals(Mx.bg, "white")) && (tinycolor.equals(Mx.fg, "black"))) {
+    } else if (tinycolor.equals(Mx.bg, "white") && tinycolor.equals(Mx.fg, "black")) {
         Mx.xwfg = Mx.fg; // X-Widget Foreground color
         Mx.xwbg = "rgb(60%,60%,55%)"; // X-Widget Background color
         Mx.xwts = "rgb(80%,80%,75%)"; // X-Widget top shadow color
@@ -724,12 +741,12 @@ mx.setbgfg = function(Mx: any, bg: string, fg: string, xi?: boolean | string): v
         Mx.hi = Mx.xwbs; //  Highlight color
     } else {
         var clr = tinycolor(Mx.bg).toRgb();
-        var hsp = Math.sqrt( // HSP equation from http://alienryderflex.com/hsp.html
-            0.299 * (clr.r * clr.r) +
-            0.587 * (clr.g * clr.g) +
-            0.114 * (clr.b * clr.b)
+        var hsp = Math.sqrt(
+            // HSP equation from http://alienryderflex.com/hsp.html
+            0.299 * (clr.r * clr.r) + 0.587 * (clr.g * clr.g) + 0.114 * (clr.b * clr.b)
         );
-        if (hsp > 127.5) { // light
+        if (hsp > 127.5) {
+            // light
             Mx.xwfg = "black";
             Mx.xwbg = "rgb(60%,60%,55%)"; // X-Widget Background color
             Mx.xwts = "rgb(80%,80%,75%)"; // X-Widget top shadow color
@@ -737,7 +754,8 @@ mx.setbgfg = function(Mx: any, bg: string, fg: string, xi?: boolean | string): v
             Mx.xwms = mx.mixcolor(Mx.xwts, Mx.xwbs, 0.5); // mid shadow
             Mx.xwlo = "rgb(70%,70%,65%)";
             Mx.hi = Mx.xwts;
-        } else { // dark
+        } else {
+            // dark
             Mx.xwfg = "white";
             Mx.xwbg = "rgb(35%,35%,30%)"; // X-Widget Background color
             Mx.xwts = "rgb(60%,60%,55%)"; // X-Widget top shadow color
@@ -754,7 +772,7 @@ mx.setbgfg = function(Mx: any, bg: string, fg: string, xi?: boolean | string): v
  * @param theme
  * @private
  */
-mx.settheme = function(Mx: any, theme: any): void {
+mx.settheme = function (Mx: any, theme: any): void {
     Mx.bg = theme.bg;
     Mx.fg = theme.fg;
     Mx.xi = theme.xi;
@@ -770,7 +788,7 @@ mx.settheme = function(Mx: any, theme: any): void {
  * Close graphics windows.
  * @param Mx
  */
-mx.close = function(Mx: any): void {
+mx.close = function (Mx: any): void {
     var canvas = Mx.wid_canvas;
     canvas.removeEventListener("mousemove", Mx.onmousemove, false);
     //canvas.removeEventListener("touchmove", Mx.ontouchmove);
@@ -799,7 +817,19 @@ mx.close = function(Mx: any): void {
 //
 // ~= MX$SCROLLBAR
 //
-mx.scrollbar = function(Mx: any, sb: any, xs: number, xe: number, ys: number, ye: number, out: any, qs: number, qe: number, mouseEvent: any, scrollbarState: any): number {
+mx.scrollbar = function (
+    Mx: any,
+    sb: any,
+    xs: number,
+    xe: number,
+    ys: number,
+    ye: number,
+    out: any,
+    qs: number,
+    qe: number,
+    mouseEvent: any,
+    scrollbarState: any
+): number {
     // Param types:
     // mx.SCROLLBAR* sb,
     // int xs, int xe, int ys, int ye,
@@ -815,7 +845,7 @@ mx.scrollbar = function(Mx: any, sb: any, xs: number, xe: number, ys: number, ye
     var scale; // a real_8
     var sblocal = new mx.SCROLLBAR(); // a SCROLLBAR
 
-    mode = (sb.flag !== undefined ? sb.flag : sb); // REFACTOR - if user sends in a number instead of a scrollbar
+    mode = sb.flag !== undefined ? sb.flag : sb; // REFACTOR - if user sends in a number instead of a scrollbar
     action = Math.abs(mode);
 
     if (ye - ys > xe - xs) {
@@ -899,7 +929,7 @@ mx.scrollbar = function(Mx: any, sb: any, xs: number, xe: number, ys: number, ye
 //
 // ~= mx_scroll
 //
-mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarState?: any): boolean {
+mx.scroll = function (Mx: any, sv: any, op: number, mouseEvent: any, scrollbarState?: any): boolean {
     var btn; // an int
     var smin; // a real_8
     var srange; // a real_8
@@ -924,8 +954,9 @@ mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarSta
             /*  Determine which button, if any, was pressed/released
              */
             btn = 0;
-            if (sv.mxevent) { // TODO make sure mxevent is set properly when an event goes off - how is this supposed to be set?
-                btn = (Mx.button_release) ? -Mx.button_release : Mx.button_press;
+            if (sv.mxevent) {
+                // TODO make sure mxevent is set properly when an event goes off - how is this supposed to be set?
+                btn = Mx.button_release ? -Mx.button_release : Mx.button_press;
             } else if (mouseEvent.type === "mousedown" || mouseEvent.type === "mouseup") {
                 // TODO Does this case ever happen?
                 switch (mouseEvent.which) {
@@ -938,7 +969,7 @@ mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarSta
                     case 3:
                         btn = 3;
                         break;
-                        /* Add these cases for the mouse wheel */
+                    /* Add these cases for the mouse wheel */
                     case 4:
                         btn = 4;
                         break;
@@ -969,11 +1000,14 @@ mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarSta
                     Mx.xpos = sv.x;
                 }
 
-
                 /* Button !=1,2,4,5 OR NOT on scroll bar */
-                if ((btn !== 1 && btn !== 2 && btn !== 4 && btn !== 5) ||
-                    Mx.xpos < sv.x || Mx.ypos < sv.y ||
-                    Mx.xpos > sv.x + sv.w || Mx.ypos > sv.y + sv.h) {
+                if (
+                    (btn !== 1 && btn !== 2 && btn !== 4 && btn !== 5) ||
+                    Mx.xpos < sv.x ||
+                    Mx.ypos < sv.y ||
+                    Mx.xpos > sv.x + sv.w ||
+                    Mx.ypos > sv.y + sv.h
+                ) {
                     return false;
                 }
             } else if (btn < 0) {
@@ -1012,118 +1046,118 @@ mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarSta
                     // UPDATE SCROLLBAR STATE as well
                     sv.smin = scrollbarState.smin = sv.tmin;
                     sv.srange = scrollbarState.srange = 0.0;
-                } else switch (btn) {
-                    case 1:
-                        if (s > sv.a1 && s < sv.a2) {
-                            /* on scroll trough */
-                            sv.action = (sv.soff > 0) ? mx.SB_PAGEINC : mx.SB_PAGEDEC;
-                        } else {
-                            /* on arrows */
-                            sv.action = (sv.soff > 0) ? mx.SB_STEPINC : mx.SB_STEPDEC;
-                        }
-                        break;
-                    case 4:
-                        sv.action = mx.SB_WHEELUP;
-                        break;
-                    case 5:
-                        sv.action = mx.SB_WHEELDOWN;
-                        break;
-                }
+                } else
+                    switch (btn) {
+                        case 1:
+                            if (s > sv.a1 && s < sv.a2) {
+                                /* on scroll trough */
+                                sv.action = sv.soff > 0 ? mx.SB_PAGEINC : mx.SB_PAGEDEC;
+                            } else {
+                                /* on arrows */
+                                sv.action = sv.soff > 0 ? mx.SB_STEPINC : mx.SB_STEPDEC;
+                            }
+                            break;
+                        case 4:
+                            sv.action = mx.SB_WHEELUP;
+                            break;
+                        case 5:
+                            sv.action = mx.SB_WHEELDOWN;
+                            break;
+                    }
             } else {
                 /* We're repeating sv.action */
                 switch (sv.action) {
                     case mx.SB_WHEELUP:
                     case mx.SB_WHEELDOWN:
                     case mx.SB_EXPAND:
-                        /* we don't want to repeat these */
+                    /* we don't want to repeat these */
                     case mx.SB_SHRINK:
                     case mx.SB_FULL:
                         sv.action = sv.repeat_count = 0;
                 }
             }
-            /* FALL THROUGH!!! */
-            /* jshint -W086 */
-            case mx.XW_COMMAND:
-                /* jshint +W086 */
+        /* FALL THROUGH!!! */
+        /* jshint -W086 */
+        case mx.XW_COMMAND:
+            /* jshint +W086 */
 
-                smin = sv.smin;
-                srange = sv.srange;
+            smin = sv.smin;
+            srange = sv.srange;
 
-                switch (sv.action) {
-                    case mx.SB_STEPINC:
-                        smin += sv.step;
-                        break;
-                    case mx.SB_STEPDEC:
-                        smin -= sv.step;
-                        break;
-                    case mx.SB_PAGEINC:
-                        smin += sv.page;
-                        break;
-                    case mx.SB_PAGEDEC:
-                        smin -= sv.page;
-                        break;
-                    case mx.SB_FULL:
-                        smin = sv.tmin;
-                        srange = sv.trange;
-                        break;
-                    case mx.SB_EXPAND:
-                        srange = srange * sv.scale;
-                        if (smin <= 0 && smin + sv.srange >= 0) {
-                            smin *= sv.scale;
-                        } else {
-                            smin -= (srange - sv.srange) / 2.0;
-                        }
-                        break;
-                    case mx.SB_SHRINK:
-                        srange = srange / sv.scale;
-                        if (smin < 0 && smin + sv.srange >= 0) {
-                            smin += srange / sv.scale; /* Plot crosses axis */
-                        } else if (smin === 0 && smin + sv.srange >= 0) {
-                            smin = srange / sv.scale; /* Plot touches axis */
-                        } else {
-                            smin += (sv.srange - srange) / 2.0; /* Plot is completely contained on positive side of axis */
-                        }
-                        break;
-                        /* The mouse wheel needs to scroll 1 page at a time, if you want an
+            switch (sv.action) {
+                case mx.SB_STEPINC:
+                    smin += sv.step;
+                    break;
+                case mx.SB_STEPDEC:
+                    smin -= sv.step;
+                    break;
+                case mx.SB_PAGEINC:
+                    smin += sv.page;
+                    break;
+                case mx.SB_PAGEDEC:
+                    smin -= sv.page;
+                    break;
+                case mx.SB_FULL:
+                    smin = sv.tmin;
+                    srange = sv.trange;
+                    break;
+                case mx.SB_EXPAND:
+                    srange = srange * sv.scale;
+                    if (smin <= 0 && smin + sv.srange >= 0) {
+                        smin *= sv.scale;
+                    } else {
+                        smin -= (srange - sv.srange) / 2.0;
+                    }
+                    break;
+                case mx.SB_SHRINK:
+                    srange = srange / sv.scale;
+                    if (smin < 0 && smin + sv.srange >= 0) {
+                        smin += srange / sv.scale; /* Plot crosses axis */
+                    } else if (smin === 0 && smin + sv.srange >= 0) {
+                        smin = srange / sv.scale; /* Plot touches axis */
+                    } else {
+                        smin += (sv.srange - srange) / 2.0; /* Plot is completely contained on positive side of axis */
+                    }
+                    break;
+                /* The mouse wheel needs to scroll 1 page at a time, if you want an
 		           application to scroll differently, change sv.page with
 		           mx_scroll_vals in the application code */
-                    case mx.SB_WHEELUP:
-                        smin -= sv.page;
-                        break;
-                    case mx.SB_WHEELDOWN:
-                        smin += sv.page;
-                        break;
+                case mx.SB_WHEELUP:
+                    smin -= sv.page;
+                    break;
+                case mx.SB_WHEELDOWN:
+                    smin += sv.page;
+                    break;
+            }
+
+            if (sv.trange > 0) {
+                smin = Math.max(sv.tmin, Math.min(smin, sv.tmin + sv.trange - srange));
+                srange = Math.min(srange, sv.trange);
+            } else {
+                smin = Math.min(sv.tmin, Math.max(smin, sv.tmin + sv.trange - srange));
+                srange = Math.max(srange, sv.trange);
+            }
+
+            if (sv.smin === smin && sv.srange === srange) {
+                if (sv.action !== mx.SB_DRAG) {
+                    sv.action = sv.repeat_count = 0;
                 }
+            } else {
+                // UPDATE SCROLLBAR STATE as well
+                sv.smin = scrollbarState.smin = smin;
+                sv.srange = scrollbarState.srange = srange;
+                sv.repeat_count++;
+            }
 
-                if (sv.trange > 0) {
-                    smin = Math.max(sv.tmin, Math.min(smin, sv.tmin + sv.trange - srange));
-                    srange = Math.min(srange, sv.trange);
-                } else {
-                    smin = Math.min(sv.tmin, Math.max(smin, sv.tmin + sv.trange - srange));
-                    srange = Math.max(srange, sv.trange);
-                }
+            if (op === mx.XW_COMMAND) {
+                mx.scroll(Mx, sv, mx.XW_UPDATE, undefined);
+                sv.action = 0;
+            }
 
-                if (sv.smin === smin && sv.srange === srange) {
-                    if (sv.action !== mx.SB_DRAG) {
-                        sv.action = sv.repeat_count = 0;
-                    }
-                } else {
-                    // UPDATE SCROLLBAR STATE as well
-                    sv.smin = scrollbarState.smin = smin;
-                    sv.srange = scrollbarState.srange = srange;
-                    sv.repeat_count++;
-                }
-
-                if (op === mx.XW_COMMAND) {
-                    mx.scroll(Mx, sv, mx.XW_UPDATE, undefined);
-                    sv.action = 0;
-                }
-
-                break;
-            case mx.XW_DRAW:
-            case mx.XW_UPDATE:
-                mx.redrawScrollbar(sv, Mx, op);
-
+            break;
+        case mx.XW_DRAW:
+        case mx.XW_UPDATE:
+            mx.redrawScrollbar(sv, Mx, op);
     } /* switch */
     return true;
 };
@@ -1141,7 +1175,15 @@ mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarSta
 //
 // ~= mx_scroll_loc
 //
-mx.scroll_loc = function(sv: any, x: number, y: number, w: number, h: number, origin: number, scrollbarState: any): void {
+mx.scroll_loc = function (
+    sv: any,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    origin: number,
+    scrollbarState: any
+): void {
     // UPDATE local scrollbar and SCROLLBAR STATE
     if (sv === undefined) {
         return; /* mx.SCROLLBAR */
@@ -1183,7 +1225,17 @@ mx.scroll_loc = function(sv: any, x: number, y: number, w: number, h: number, or
 //
 // ~= mx_scroll_vals
 //
-mx.scroll_vals = function(sv: any, smin: number, srange: number, tmin: number, trange: number, step: number, page: number, scale: number, scrollbarState: any): void {
+mx.scroll_vals = function (
+    sv: any,
+    smin: number,
+    srange: number,
+    tmin: number,
+    trange: number,
+    step: number,
+    page: number,
+    scale: number,
+    scrollbarState: any
+): void {
     // UPDATE SCROLLBAR STATE as well
     if (sv === undefined) {
         return; /* an mx.SCROLLBAR */
@@ -1209,7 +1261,15 @@ mx.scroll_vals = function(sv: any, smin: number, srange: number, tmin: number, t
 //
 // ~= MX$DRAW_SYMBOL
 //
-mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: number | string | Function, rr: number, n?: number): void {
+mx.draw_symbol = function (
+    Mx: any,
+    ic: string,
+    x: number,
+    y: number,
+    symbol: number | string | Function,
+    rr: number,
+    n?: number
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     var r = 0; // int
@@ -1218,14 +1278,15 @@ mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: num
     var rmode = false; // bool
     var fill = false; // bool
     var tri: any = []; // XPoint array of size 4
-    for (var cnt = 0; cnt < 4; cnt++) { // initializing 4 points in the array
+    for (var cnt = 0; cnt < 4; cnt++) {
+        // initializing 4 points in the array
         tri[cnt] = {
             x: 0,
             y: 0
         };
     }
 
-    var c: any = ''; // char
+    var c: any = ""; // char
 
     fill = rr < 0;
     r = Math.abs(rr);
@@ -1265,11 +1326,11 @@ mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: num
                 break;
             case mx.L_ITriangleSymbol:
                 r = -r; // TODO Refactor without switch fall-through?
-                /* jshint -W086 */
+            /* jshint -W086 */
             case mx.L_TriangleSymbol:
                 /* jshint +W086 */
                 d = m.trunc(r * 1.5);
-                d2 = m.trunc(r * 0.80);
+                d2 = m.trunc(r * 0.8);
 
                 // Coordinates of just the triangle itself
                 tri[1].x = -d2;
@@ -1280,7 +1341,8 @@ mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: num
                 tri[3].y = -d;
 
                 var tempTri: any = []; // XPoint array of size 4
-                for (var cnt = 0; cnt < 4; cnt++) { // initializing 4 points in the array
+                for (var cnt = 0; cnt < 4; cnt++) {
+                    // initializing 4 points in the array
                     tempTri[cnt] = {
                         x: 0,
                         y: 0
@@ -1354,7 +1416,16 @@ mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: num
 //
 // ~= MX$DRAW_SYMBOLS
 //
-mx.draw_symbols = function(Mx: any, ic: string, pixx: ArrayLike<number>, pixy: ArrayLike<number>, npix: number, symbol: number | string | Function, rr: number, istart: number): void {
+mx.draw_symbols = function (
+    Mx: any,
+    ic: string,
+    pixx: ArrayLike<number>,
+    pixy: ArrayLike<number>,
+    npix: number,
+    symbol: number | string | Function,
+    rr: number,
+    istart: number
+): void {
     for (var i = 0; i < npix; i++) {
         mx.draw_symbol(Mx, ic, pixx[i], pixy[i], symbol, rr, i + istart);
     }
@@ -1377,7 +1448,7 @@ mx.draw_symbols = function(Mx: any, ic: string, pixx: ArrayLike<number>, pixy: A
  * @private
  */
 function isLeft(p_x: number, p_y: number, e_x1: number, e_y1: number, e_x2: number, e_y2: number): number {
-    return ((e_x1 - p_x) * (e_y2 - p_y) - (e_x2 - p_x) * (e_y1 - p_y));
+    return (e_x1 - p_x) * (e_y2 - p_y) - (e_x2 - p_x) * (e_y1 - p_y);
 }
 
 /**
@@ -1391,15 +1462,27 @@ function isLeft(p_x: number, p_y: number, e_x1: number, e_y1: number, e_x2: numb
  * @param e_y2
  * @private
  */
-function update_winding_number(wn: number, p_x: number, p_y: number, e_x1: number, e_y1: number, e_x2: number, e_y2: number): number {
-    if (e_y1 <= p_y) { // start y <= P.y
-        if (e_y2 > p_y) { // an upward crossing
+function update_winding_number(
+    wn: number,
+    p_x: number,
+    p_y: number,
+    e_x1: number,
+    e_y1: number,
+    e_x2: number,
+    e_y2: number
+): number {
+    if (e_y1 <= p_y) {
+        // start y <= P.y
+        if (e_y2 > p_y) {
+            // an upward crossing
             if (isLeft(p_x, p_y, e_x1, e_y1, e_x2, e_y2) > 0) {
                 wn += 1;
             }
         }
-    } else { // start y > P.y (no test needed)
-        if (e_y2 <= p_y) { // a downward crossing
+    } else {
+        // start y > P.y (no test needed)
+        if (e_y2 <= p_y) {
+            // a downward crossing
             if (isLeft(p_x, p_y, e_x1, e_y1, e_x2, e_y2) < 0) {
                 wn -= 1;
             }
@@ -1424,8 +1507,20 @@ function update_winding_number(wn: number, p_x: number, p_y: number, e_x1: numbe
 //
 // ~= MX$TRACE
 //
-mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: ArrayLike<number>, npts: number, istart: number, skip?: number, line?: number, symb?: number | string | Function, rad?: number, options?: any): void {
-    if ((xpoint === undefined) || (ypoint === undefined)) {
+mx.trace = function (
+    Mx: any,
+    color: string,
+    xpoint: ArrayLike<number>,
+    ypoint: ArrayLike<number>,
+    npts: number,
+    istart: number,
+    skip?: number,
+    line?: number,
+    symb?: number | string | Function,
+    rad?: number,
+    options?: any
+): void {
+    if (xpoint === undefined || ypoint === undefined) {
         throw "mx.trace requires xpoint and ypoint";
     }
 
@@ -1454,7 +1549,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
         return;
     }
 
-    if ((line === 0) && (symb === 0)) {
+    if (line === 0 && symb === 0) {
         m.log.warn("No line or symbol to draw");
         return;
     }
@@ -1469,7 +1564,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
     }
 
     var stk4 = mx.origin(Mx.origin, 4, Mx.stk[Mx.level]);
-    if ((stk4.xscl === 0.0) || (stk4.yscl === 0.0)) {
+    if (stk4.xscl === 0.0 || stk4.yscl === 0.0) {
         // the min and max are the same
         return;
     }
@@ -1502,7 +1597,6 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
         ymin = 0;
         xmax = Math.round(Mx.r - Mx.l);
         ymax = Math.round(Mx.b - Mx.t);
-
     }
     //dx = dx * 0.5;
     //if ((line == -1) || (line == 1)) {
@@ -1522,12 +1616,12 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
     var pixy = new Int32Array(new ArrayBuffer(bufsize));
 
     var ib = 0;
-    if ((line === 0) && (symb !== 0)) {
+    if (line === 0 && symb !== 0) {
         // We are drawing symbols only
-        for (var n = (skip - 1); n < npts; n += skip) {
+        for (var n = skip - 1; n < npts; n += skip) {
             var x = xpoint[n];
             var y = ypoint[n];
-            var lvisible = ((x >= xmin) && (x <= xmax) && (y >= ymin) && (y <= ymax));
+            var lvisible = x >= xmin && x <= xmax && y >= ymin && y <= ymax;
             if (lvisible) {
                 pixx[0] = Math.round((x - xxmin) * xscl) + left;
                 pixy[0] = Math.round((y - yymin) * yscl) + top;
@@ -1537,13 +1631,13 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
     }
     if (options.vertsym === true) {
         // we are drawing verticle lines on each symbol
-        for (var n = (skip - 1); n < npts; n += skip) {
+        for (var n = skip - 1; n < npts; n += skip) {
             var x = xpoint[n];
             var y = ypoint[n];
-            if ((x >= xmin) && (x <= xmax)) {
+            if (x >= xmin && x <= xmax) {
                 var i = Math.round((x - xxmin) * xscl) + left;
                 mx.draw_line(Mx, color, i, 0, i, Mx.height);
-                if ((y >= ymin) && (y <= ymax)) {
+                if (y >= ymin && y <= ymax) {
                     pixx[0] = i;
                     pixy[0] = Math.round((y - yymin) * yscl) + top;
                     mx.draw_symbol(Mx, color, pixx[0], pixy[0], symb, rad, istart + n);
@@ -1553,13 +1647,13 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
     }
     if (options.horzsym === true) {
         // we are drawing horizontal lines on each symbol
-        for (var n = (skip - 1); n < npts; n += skip) {
+        for (var n = skip - 1; n < npts; n += skip) {
             var x = xpoint[n];
             var y = ypoint[n];
-            if ((y >= ymin) && (y <= ymax)) {
+            if (y >= ymin && y <= ymax) {
                 var i = Math.round((y - yymin) * yscl) + top;
                 mx.draw_line(Mx, color, 0, i, Mx.width, i);
-                if ((x >= xmin) && (x <= xmax)) {
+                if (x >= xmin && x <= xmax) {
                     pixx[0] = Math.round((x - xxmin) * xscl) + left;
                     pixy[0] = i;
                     mx.draw_symbol(Mx, color, pixx[0], pixy[0], symb, rad, istart + n);
@@ -1568,7 +1662,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
         }
     } else if (line !== 0) {
         var colors: any;
-        if ((options) && (options.highlight)) {
+        if (options && options.highlight) {
             colors = [];
             for (var sn = 0; sn < options.highlight.length; sn++) {
                 if (options.highlight[sn].xstart >= xmax) {
@@ -1588,25 +1682,24 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                     for (var cn: any = colors.length - 1; cn >= 0; cn--) {
                         // This highlight overlaps the entire range of a previous
                         // highlight...we can thus remove the color
-                        if ((rxs <= colors[cn].start) && (rxe >= colors[cn].end)) {
+                        if (rxs <= colors[cn].start && rxe >= colors[cn].end) {
                             colors.splice(cn, 1);
                             continue;
                         }
                         // This highlight splits a previous highlight...we need
                         // to create a new color range
-                        else if ((rxs >= colors[cn].start) && (rxe <= colors[cn].end)) {
+                        else if (rxs >= colors[cn].start && rxe <= colors[cn].end) {
                             colors.push({
                                 start: rxe,
                                 end: colors[cn].end,
                                 color: colors[cn].color
                             });
                             colors[cn].end = rxs;
-
                         }
                         // This highlight overlaps partially
-                        else if ((rxs <= colors[cn].start) && (rxe >= colors[cn].start)) {
+                        else if (rxs <= colors[cn].start && rxe >= colors[cn].start) {
                             colors[cn].start = rxe;
-                        } else if ((rxs <= colors[cn].end) && (rxe >= colors[cn].end)) {
+                        } else if (rxs <= colors[cn].end && rxe >= colors[cn].end) {
                             colors[cn].end = rxs;
                         }
 
@@ -1631,10 +1724,9 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                 color: color
             });
 
-            colors.sort(function(a: any, b: any) {
+            colors.sort(function (a: any, b: any) {
                 return a.start - b.start;
             });
-
         } else {
             colors = color;
         }
@@ -1648,7 +1740,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
 
         wn = update_winding_number(wn, mid_x, mid_y, Mx.stk[Mx.level].xmin, Mx.stk[Mx.level].ymin, x, y);
 
-        var lvisible = ((x >= xmin) && (x <= xmax) && (y >= ymin) && (y <= ymax));
+        var lvisible = x >= xmin && x <= xmax && y >= ymin && y <= ymax;
         // The first point is visible
         if (lvisible) {
             pixx[ib] = Math.round((x - xxmin) * xscl) + left;
@@ -1663,8 +1755,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
 
         var ie = 0;
         var visible = false;
-        for (var n = skip; n <= (skip * (npts - 1)); n += skip) {
-
+        for (var n = skip; n <= skip * (npts - 1); n += skip) {
             var lx = x;
             var ly = y;
             x = xpoint[n];
@@ -1672,8 +1763,8 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
 
             wn = update_winding_number(wn, mid_x, mid_y, lx, ly, x, y);
 
-            visible = ((x >= xmin) && (x <= xmax) && (y >= ymin) && (y <= ymax));
-            if ((lvisible) && (visible)) {
+            visible = x >= xmin && x <= xmax && y >= ymin && y <= ymax;
+            if (lvisible && visible) {
                 // both the left point and right point are visible, so we can draw the trace
                 pixx[ib] = Math.round((x - xxmin) * xscl) + left;
                 pixy[ib] = Math.round((y - yymin) * yscl) + top;
@@ -1684,7 +1775,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                 // calculate the difference between the last point and this point
                 dx = lx - x;
                 dy = ly - y;
-                if ((dx !== 0.0) || (dy !== 0.0)) {
+                if (dx !== 0.0 || dy !== 0.0) {
                     var o = {
                         tL: 1.0,
                         tE: 0.0
@@ -1710,16 +1801,27 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                                         pixx[ib] = Math.round((x - xxmin + o.tE * dx) * xscl) + left;
                                         pixy[ib] = Math.round((y - yymin + o.tE * dy) * yscl) + top;
                                         ib += 1;
-                                        mx.draw_lines(Mx, colors, pixx.subarray(ie, ib), pixy.subarray(ie, ib), (ib - ie), line, style);
+                                        mx.draw_lines(
+                                            Mx,
+                                            colors,
+                                            pixx.subarray(ie, ib),
+                                            pixy.subarray(ie, ib),
+                                            ib - ie,
+                                            line,
+                                            style
+                                        );
 
-                                        if (symb !== 0 && (ib - ie) > 2) {
-                                            mx.draw_symbols(Mx,
+                                        if (symb !== 0 && ib - ie > 2) {
+                                            mx.draw_symbols(
+                                                Mx,
                                                 color,
                                                 pixx.subarray(ie + 1, ib - 1),
-                                                pixy.subarray(ie + 1, ib - 1), (ib - ie - 2),
+                                                pixy.subarray(ie + 1, ib - 1),
+                                                ib - ie - 2,
                                                 symb,
                                                 rad,
-                                                istart + n - (ib - ie - 2));
+                                                istart + n - (ib - ie - 2)
+                                            );
                                         }
                                         ie = ib;
                                     } else {
@@ -1736,26 +1838,36 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
             }
         }
         wn = update_winding_number(wn, mid_x, mid_y, x, y, Mx.stk[Mx.level].xmax, Mx.stk[Mx.level].ymin);
-        wn = update_winding_number(wn, mid_x, mid_y, Mx.stk[Mx.level].xmax, Mx.stk[Mx.level].ymin, Mx.stk[Mx.level].xmin, Mx.stk[Mx.level].ymin);
-        if ((ib - ie) > 0) {
-            mx.draw_lines(Mx, colors, pixx.subarray(ie, ib), pixy.subarray(ie, ib), (ib - ie), line, style);
+        wn = update_winding_number(
+            wn,
+            mid_x,
+            mid_y,
+            Mx.stk[Mx.level].xmax,
+            Mx.stk[Mx.level].ymin,
+            Mx.stk[Mx.level].xmin,
+            Mx.stk[Mx.level].ymin
+        );
+        if (ib - ie > 0) {
+            mx.draw_lines(Mx, colors, pixx.subarray(ie, ib), pixy.subarray(ie, ib), ib - ie, line, style);
             if (visible) {
                 ie = ie + 1;
             }
-            if (symb !== 0 && (ib - ie) > 1) {
-                mx.draw_symbols(Mx,
+            if (symb !== 0 && ib - ie > 1) {
+                mx.draw_symbols(
+                    Mx,
                     color,
                     pixx.subarray(ie, ib),
                     pixy.subarray(ie, ib),
                     ib - ie,
                     symb,
                     rad,
-                    n - ib + istart);
+                    n - ib + istart
+                );
             }
         }
 
         if (options.fillStyle && !Mx.fillMin && !Mx.fillMax) {
-            if ((ib > 1) || (wn !== 0)) {
+            if (ib > 1 || wn !== 0) {
                 // if we have at least one point
                 // or the entire plot area is in the fill zone
                 mx.fill_trace(Mx, options.fillStyle, pixx, pixy, ib);
@@ -1782,8 +1894,7 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                     continue;
                 }
 
-                if ((ib > 1) || (wn !== 0)) {
-
+                if (ib > 1 || wn !== 0) {
                     var xstart_pixel_value = mx.real_to_pixel(Mx, x_start, 0);
                     var xend_pixel_value = mx.real_to_pixel(Mx, x_end, 0);
 
@@ -1800,21 +1911,17 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
                             //console.log('in range: ', this_point);
                             pixx_new.push(this_point);
                             pixy_new.push(this_point_y);
-
                         }
                     }
 
-                    if ((pixx_new.length > 0) || (wn !== 0)) {
+                    if (pixx_new.length > 0 || wn !== 0) {
                         pi_start = Math.max(pi_start, pixx_new[0]);
                         pi_end = Math.min(pi_end, pixx_new[pixx_new.length - 1]);
                         mx.fill_trace(Mx, highlight.fill, pixx_new, pixy_new, pixx_new.length, pi_start, pi_end);
                     }
                 }
-
             }
         }
-
-
     }
 
     if (!options.noclip) {
@@ -1831,8 +1938,8 @@ mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: A
 //
 // ~= MX$DRAW_MODE
 //
-mx.draw_mode = function(Mx: any, linewidth?: number, style?: any): void {
-    Mx.linewidth = (linewidth === undefined) ? 1 : linewidth;
+mx.draw_mode = function (Mx: any, linewidth?: number, style?: any): void {
+    Mx.linewidth = linewidth === undefined ? 1 : linewidth;
     Mx.style = style;
 };
 
@@ -1849,7 +1956,16 @@ mx.draw_mode = function(Mx: any, linewidth?: number, style?: any): void {
 //
 // ~= MX$DRAW_LINES
 //
-mx.draw_line = function(Mx: any, color: string | number | CanvasGradient, x1: number, y1: number, x2: number, y2: number, linewidth?: number, style?: any): void {
+mx.draw_line = function (
+    Mx: any,
+    color: string | number | CanvasGradient,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    linewidth?: number,
+    style?: any
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
     if (linewidth === undefined) {
         linewidth = Mx.linewidth;
@@ -1868,10 +1984,7 @@ mx.draw_line = function(Mx: any, color: string | number | CanvasGradient, x1: nu
             }
             var cidx = Math.max(0, Math.min(Mx.pixel.map.length, color));
             var colorObj: any = Mx.pixel.getColor(color);
-            color = to_rgb(
-                colorObj.red,
-                colorObj.green,
-                colorObj.blue);
+            color = to_rgb(colorObj.red, colorObj.green, colorObj.blue);
         }
     }
     draw_line(ctx, x1, y1, x2, y2, style, color as string | CanvasGradient, linewidth);
@@ -1887,11 +2000,20 @@ mx.draw_line = function(Mx: any, color: string | number | CanvasGradient, x1: nu
 //
 // ~= MX$RUBBERLINE
 //
-mx.rubberline = function(Mx: any, x1: number, y1: number, x2: number, y2: number): void {
+mx.rubberline = function (Mx: any, x1: number, y1: number, x2: number, y2: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
-    draw_line(ctx, x1, y1, x2, y2, {
-        mode: "xor"
-    }, "white", 1);
+    draw_line(
+        ctx,
+        x1,
+        y1,
+        x2,
+        y2,
+        {
+            mode: "xor"
+        },
+        "white",
+        1
+    );
 };
 
 /**
@@ -1902,7 +2024,15 @@ mx.rubberline = function(Mx: any, x1: number, y1: number, x2: number, y2: number
  * @param npts
  * @private
  */
-mx.fill_trace = function(Mx: any, fillStyle: string | string[], pixx: ArrayLike<number>, pixy: ArrayLike<number>, npts: number, l?: number, r?: number): void {
+mx.fill_trace = function (
+    Mx: any,
+    fillStyle: string | string[],
+    pixx: ArrayLike<number>,
+    pixy: ArrayLike<number>,
+    npts: number,
+    l?: number,
+    r?: number
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
     if (Array.isArray(fillStyle)) {
         ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, Mx.b - Mx.t, fillStyle);
@@ -1911,7 +2041,7 @@ mx.fill_trace = function(Mx: any, fillStyle: string | string[], pixx: ArrayLike<
     }
 
     if (npts < 1) {
-        ctx.fillRect(Mx.l, Mx.t, (Mx.r - Mx.l), (Mx.b - Mx.t));
+        ctx.fillRect(Mx.l, Mx.t, Mx.r - Mx.l, Mx.b - Mx.t);
         return;
     }
 
@@ -1933,10 +2063,7 @@ mx.fill_trace = function(Mx: any, fillStyle: string | string[], pixx: ArrayLike<
             ctx.lineTo(l, Mx.b);
         }
 
-
         ctx.lineTo(x, y);
-
-
 
         for (var i = 1; i < npts; i++) {
             x = pixx[i];
@@ -1969,7 +2096,15 @@ mx.fill_trace = function(Mx: any, fillStyle: string | string[], pixx: ArrayLike<
 //
 // ~= MX$DRAW_LINES
 //
-mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: ArrayLike<number>, npts: number, linewidth?: number, style?: any): void {
+mx.draw_lines = function (
+    Mx: any,
+    colors: any,
+    pixx: ArrayLike<number>,
+    pixy: ArrayLike<number>,
+    npts: number,
+    linewidth?: number,
+    style?: any
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (npts < 1) {
@@ -1986,7 +2121,7 @@ mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: Ar
         style = Mx.style;
     }
 
-    if ((style) && (style.mode === "dashed")) {
+    if (style && style.mode === "dashed") {
         var dash_supported = common.dashOn(ctx, style.on, style.off);
         if (!dash_supported) {
             m.log.warn("WARNING: Dashed lines aren't supported on your browser");
@@ -1997,10 +2132,12 @@ mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: Ar
     var current_color = 0;
 
     if (typeof colors === "string") {
-        colors = [{
-            start: 0,
-            color: colors
-        }];
+        colors = [
+            {
+                start: 0,
+                color: colors
+            }
+        ];
     } else if (!(colors instanceof Array)) {
         if (colors.start === undefined) {
             colors.start = 0;
@@ -2009,8 +2146,8 @@ mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: Ar
     }
 
     var n;
-    for (n = (colors.length - 1); n >= 0; n--) {
-        if ((colors[n].end != null) && (colors[n].end < x)) {
+    for (n = colors.length - 1; n >= 0; n--) {
+        if (colors[n].end != null && colors[n].end < x) {
             colors.splice(n, 1);
         }
     }
@@ -2027,16 +2164,16 @@ mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: Ar
     ctx.moveTo(x, y);
 
     for (var i = 0; i < npts; i++) {
-        if ((x === pixx[i]) && (y === pixy[i])) {
+        if (x === pixx[i] && y === pixy[i]) {
             continue;
         }
         x = pixx[i];
         y = pixy[i];
 
         var newcolor = false;
-        if ((current_color > 0) && (colors[current_color].end != null) && (colors[current_color].end < x)) {
+        if (current_color > 0 && colors[current_color].end != null && colors[current_color].end < x) {
             newcolor = true;
-            while ((colors[current_color].end != null) && (colors[current_color].end < x)) {
+            while (colors[current_color].end != null && colors[current_color].end < x) {
                 colors.splice(current_color, 1);
                 current_color -= 1;
                 if (current_color === 0) {
@@ -2045,9 +2182,9 @@ mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: Ar
             }
         }
 
-        if (((current_color + 1) < colors.length) && (colors[current_color + 1].start <= x)) {
+        if (current_color + 1 < colors.length && colors[current_color + 1].start <= x) {
             newcolor = true;
-            while (((current_color + 1) < colors.length) && (colors[current_color + 1].start <= x)) {
+            while (current_color + 1 < colors.length && colors[current_color + 1].start <= x) {
                 current_color++;
             }
         }
@@ -2075,10 +2212,10 @@ mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: Ar
 //
 // ~= MX$CLIP
 //
-mx.clip = function(Mx: any, left: number, top: number, width: number, height: number): void {
+mx.clip = function (Mx: any, left: number, top: number, width: number, height: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
-    if ((left === 0) && (top === 0) && (width === 0) && (height === 0)) {
+    if (left === 0 && top === 0 && width === 0 && height === 0) {
         ctx.restore();
         return;
     }
@@ -2094,7 +2231,7 @@ mx.clip = function(Mx: any, left: number, top: number, width: number, height: nu
 //
 // ~= MX$CLEAR_WINDOW
 //
-mx.clear_window = function(Mx: any): void {
+mx.clear_window = function (Mx: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     ctx.fillStyle = Mx.bg;
@@ -2105,7 +2242,7 @@ mx.clear_window = function(Mx: any): void {
  * @param Mx
  * @private
  */
-mx.erase_window = function(Mx: any): void {
+mx.erase_window = function (Mx: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     ctx.clearRect(0, 0, Mx.width, Mx.height);
@@ -2124,7 +2261,13 @@ mx.erase_window = function(Mx: any): void {
 //
 // When CTRL is pressed, alt_style is used
 //
-mx.rubberbox = function(Mx: any, func: Function, mode?: string, def_style?: WarpBoxStyle, alt_style?: WarpBoxStyle): void {
+mx.rubberbox = function (
+    Mx: any,
+    func: Function,
+    mode?: string,
+    def_style?: WarpBoxStyle,
+    alt_style?: WarpBoxStyle
+): void {
     mx.warpbox(Mx, Mx.xpos, Mx.ypos, Mx.xpos, Mx.ypos, 0, Mx.width, 0, Mx.height, func, mode, def_style, alt_style);
 };
 
@@ -2147,7 +2290,21 @@ mx.rubberbox = function(Mx: any, func: Function, mode?: string, def_style?: Warp
 // ~= MX$WARPBOX
 // Unlike MX$WARPBOX, this is a non-blocking call.   As such the 'func' is a callback for then the rubberbox is finished.
 //
-mx.warpbox = function(Mx: any, xo: number, yo: number, xl: number, yl: number, xmin: number, xmax: number, ymin: number, ymax: number, func?: Function, mode?: string, def_style?: WarpBoxStyle, alt_style?: WarpBoxStyle): void {
+mx.warpbox = function (
+    Mx: any,
+    xo: number,
+    yo: number,
+    xl: number,
+    yl: number,
+    xmin: number,
+    xmax: number,
+    ymin: number,
+    ymax: number,
+    func?: Function,
+    mode?: string,
+    def_style?: WarpBoxStyle,
+    alt_style?: WarpBoxStyle
+): void {
     if (!def_style) {
         def_style = {};
     }
@@ -2177,7 +2334,7 @@ mx.warpbox = function(Mx: any, xo: number, yo: number, xl: number, yl: number, x
 //
 // ~= M$ORIGIN
 //
-mx.origin = function(inorigin: number, outorigin: number, instk: any): any {
+mx.origin = function (inorigin: number, outorigin: number, instk: any): any {
     inorigin = Math.max(1, inorigin);
     outorigin = Math.max(1, outorigin);
 
@@ -2197,12 +2354,14 @@ mx.origin = function(inorigin: number, outorigin: number, instk: any): any {
     if (inorigin !== outorigin) {
         var diff = Math.abs(outorigin - inorigin); // used to simplify boolean logic
         var sum = outorigin + inorigin;
-        if (diff === 2 || sum !== 5) { // (1<->3) (2<->4) (1<->2) (3<->4)
+        if (diff === 2 || sum !== 5) {
+            // (1<->3) (2<->4) (1<->2) (3<->4)
             outstk.xmin = instk.xmax;
             outstk.xmax = instk.xmin;
             outstk.xscl = -instk.xscl;
         }
-        if (diff === 2 || sum === 5) { // (1<->3) (2<->4) (1<->4) (2<->3)
+        if (diff === 2 || sum === 5) {
+            // (1<->3) (2<->4) (1<->4) (2<->3)
             outstk.ymin = instk.ymax;
             outstk.ymax = instk.ymin;
             outstk.yscl = -instk.yscl;
@@ -2218,7 +2377,7 @@ mx.origin = function(inorigin: number, outorigin: number, instk: any): any {
 //
 // ~= MX$MULT
 //
-mx.mult = function(end1: number, end2: number): number {
+mx.mult = function (end1: number, end2: number): number {
     var absmax = Math.max(Math.abs(end1), Math.abs(end2));
     if (absmax === 0) {
         return 1.0;
@@ -2229,9 +2388,9 @@ mx.mult = function(end1: number, end2: number): number {
         kengr = kengr - 1;
     }
     if (kengr < 0) {
-        return 1.0 / Math.pow(10, (-3 * kengr));
+        return 1.0 / Math.pow(10, -3 * kengr);
     } else {
-        return Math.pow(10, (3 * kengr));
+        return Math.pow(10, 3 * kengr);
     }
 };
 
@@ -2242,7 +2401,7 @@ mx.mult = function(end1: number, end2: number): number {
  */
 //
 // event may be undefined or null
-mx.widget_callback = function(Mx: any, event: any): void {
+mx.widget_callback = function (Mx: any, event: any): void {
     if (Mx.prompt) {
         if (event.which === 3) {
             Mx.prompt.input.onsubmit();
@@ -2256,7 +2415,6 @@ mx.widget_callback = function(Mx: any, event: any): void {
             Mx.widget.callback(event);
         }
     }
-
 };
 
 /**
@@ -2272,7 +2430,17 @@ mx.widget_callback = function(Mx: any, event: any): void {
  */
 //
 // ~= MX$DPROMPT - only higher-level
-mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, onSuccess: (value: any) => void, refresh?: Function, inputValue?: any, xpos?: number, ypos?: number, errorTimeout?: number): void {
+mx.prompt = function (
+    Mx: any,
+    promptText: string,
+    isValid: (value: any) => any,
+    onSuccess: (value: any) => void,
+    refresh?: Function,
+    inputValue?: any,
+    xpos?: number,
+    ypos?: number,
+    errorTimeout?: number
+): void {
     if (inputValue !== undefined) {
         var inputValid = isValid(inputValue);
 
@@ -2282,12 +2450,12 @@ mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, 
     }
 
     // TODO Validation - make sure promptText is not too long and isn't multi-line...
-    mx.onWidgetLayer(Mx, function() {
+    mx.onWidgetLayer(Mx, function () {
         var ctx = Mx.active_canvas.getContext("2d");
         var maxNumChars = 30;
 
         // Construct the input box
-        var pxIndex = ctx.font.indexOf('px');
+        var pxIndex = ctx.font.indexOf("px");
         var fontIndex = pxIndex + 3;
         var fontSize = ctx.font.substr(0, pxIndex);
         var fontFamily = ctx.font.substr(fontIndex, ctx.font.length).toString();
@@ -2311,35 +2479,44 @@ mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, 
             boxShadow: "none",
             innerShadow: "none",
             width: Mx.text_w * maxNumChars,
-            value: (inputValue !== undefined ? inputValue.toString() : ""),
+            value: inputValue !== undefined ? inputValue.toString() : "",
             disableBlur: true,
             renderOnReturn: false,
             tabToClear: true
         });
 
-        var subHandlerCreator = function(messageX: any, messageY: any) {
-            return function(this: any) {
+        var subHandlerCreator = function (messageX: any, messageY: any) {
+            return function (this: any) {
                 var newValue = this.value();
 
                 var inputValid = isValid(newValue);
 
                 if (!inputValid.valid) {
-                    mx.message(Mx, "Value: '" + newValue + "' isn't valid due to '" + inputValid.reason + "' - RETRY", undefined, messageX, messageY);
+                    mx.message(
+                        Mx,
+                        "Value: '" + newValue + "' isn't valid due to '" + inputValid.reason + "' - RETRY",
+                        undefined,
+                        messageX,
+                        messageY
+                    );
 
                     // Clear error message
-                    setTimeout(function() {
-                        mx.onWidgetLayer(Mx, function() {
-                            mx.erase_window(Mx);
-                        });
-                        Mx.widget = null;
-                        //refresh();
-                    }, errorTimeout != null ? errorTimeout : 4000);
+                    setTimeout(
+                        function () {
+                            mx.onWidgetLayer(Mx, function () {
+                                mx.erase_window(Mx);
+                            });
+                            Mx.widget = null;
+                            //refresh();
+                        },
+                        errorTimeout != null ? errorTimeout : 4000
+                    );
                 } else {
                     Mx.prompt = undefined; // clear state variable
 
                     // Kill CanvasInput
                     this.cleanup();
-                    mx.onWidgetLayer(Mx, function() {
+                    mx.onWidgetLayer(Mx, function () {
                         mx.erase_window(Mx);
                     });
 
@@ -2349,9 +2526,9 @@ mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, 
         };
 
         // Create redraw method
-        var redrawPromptCreator = function(Mx: any, input: any, promptText: any) {
-            return function(xpos: any, ypos: any) {
-                mx.onWidgetLayer(Mx, function() {
+        var redrawPromptCreator = function (Mx: any, input: any, promptText: any) {
+            return function (xpos: any, ypos: any) {
+                mx.onWidgetLayer(Mx, function () {
                     var GBorder = 3;
 
                     // Calculate the position variables
@@ -2417,9 +2594,11 @@ mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, 
  * @param strict If strict is set to true - does not consider empty strings as valid floating point numbers.
  * @private
  */
-mx.floatValidator = function(value: any, strict?: boolean): { valid: boolean; reason: string } {
-    if (!(((strict === undefined || strict === false) && value === "")) &&
-        isNaN(parseFloat(value)) || !isFinite(value)) {
+mx.floatValidator = function (value: any, strict?: boolean): { valid: boolean; reason: string } {
+    if (
+        (!((strict === undefined || strict === false) && value === "") && isNaN(parseFloat(value))) ||
+        !isFinite(value)
+    ) {
         return {
             valid: false,
             reason: "Failed float validation: not a valid floating point number"
@@ -2439,9 +2618,11 @@ mx.floatValidator = function(value: any, strict?: boolean): { valid: boolean; re
  * @param strict If strict is set to true - does not consider empty strings as valid integers.
  * @private
  */
-mx.intValidator = function(value: any, strict?: boolean): { valid: boolean; reason: string } {
-    if (((strict === undefined || strict === false) && value === "") ||
-        ((parseFloat(value) === parseInt(value, 10)) && !isNaN(value))) {
+mx.intValidator = function (value: any, strict?: boolean): { valid: boolean; reason: string } {
+    if (
+        ((strict === undefined || strict === false) && value === "") ||
+        (parseFloat(value) === parseInt(value, 10) && !isNaN(value))
+    ) {
         return {
             valid: true,
             reason: ""
@@ -2454,10 +2635,9 @@ mx.intValidator = function(value: any, strict?: boolean): { valid: boolean; reas
     }
 };
 
-mx.hexValidator = function(value: any, strict?: boolean): { valid: boolean; reason: string } {
+mx.hexValidator = function (value: any, strict?: boolean): { valid: boolean; reason: string } {
     var regColorcode = /^(#)?([0-9a-fA-F]{3})([0-9a-fA-F]{3})?$/;
-    if (((strict === undefined || strict === false) && value === "") ||
-        (regColorcode.test(value) !== false)) {
+    if (((strict === undefined || strict === false) && value === "") || regColorcode.test(value) !== false) {
         return {
             valid: true,
             reason: ""
@@ -2480,17 +2660,16 @@ mx.hexValidator = function(value: any, strict?: boolean): { valid: boolean; reas
 //
 // ~= MX$MESSAGE
 //
-mx.message = function(Mx: any, msg: string, time?: number, xpos?: number, ypos?: number, type?: string): void {
-    mx.onWidgetLayer(Mx, function() {
-
+mx.message = function (Mx: any, msg: string, time?: number, xpos?: number, ypos?: number, type?: string): void {
+    mx.onWidgetLayer(Mx, function () {
         mx.render_message_box(Mx, msg, xpos, ypos);
 
         Mx.widget = {
             type: type || "ONESHOT",
-            callback: function(event: any) {
-                if ((event.type === "mousedown") || (event.type === "keydown")) {
+            callback: function (event: any) {
+                if (event.type === "mousedown" || event.type === "keydown") {
                     Mx.widget = null;
-                    mx.onWidgetLayer(Mx, function() {
+                    mx.onWidgetLayer(Mx, function () {
                         mx.erase_window(Mx);
                     });
                 }
@@ -2499,7 +2678,7 @@ mx.message = function(Mx: any, msg: string, time?: number, xpos?: number, ypos?:
     });
 };
 
-mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: number, textColor?: string): void {
+mx.render_message_box = function (Mx: any, msg: string, xpos?: number, ypos?: number, textColor?: string): void {
     var GBorder = 3;
 
     // Unlike MX$MESSAGE, this implementaion if the message
@@ -2512,11 +2691,11 @@ mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: num
         beg = [] as any[];
         var MESSWIDTH = 40;
 
-        linel = Math.min((((Mx.width - 2 * GBorder) / Mx.text_w) - 2), msg.length);
+        linel = Math.min((Mx.width - 2 * GBorder) / Mx.text_w - 2, msg.length);
         if (linel <= 0) {
             return;
         }
-        while ((linel > MESSWIDTH) && (2.5 * Mx.text_h * msg.length < Mx.height * linel)) {
+        while (linel > MESSWIDTH && 2.5 * Mx.text_h * msg.length < Mx.height * linel) {
             linel -= 5;
         }
 
@@ -2534,21 +2713,21 @@ mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: num
             var endinreturn = false;
             for (cur = bg; cur <= end && !endinreturn; cur++) {
                 switch (msg[cur]) {
-                    case ',':
-                    case ';':
-                    case ' ':
-                    case ':':
+                    case ",":
+                    case ";":
+                    case " ":
+                    case ":":
                         brk = cur;
                         break;
-                    case '-':
-                    case '/':
+                    case "-":
+                    case "/":
                         if (brk !== cur - 1) {
                             brk = cur;
                         }
                         break;
-                    case '@':
-                    case '\n':
-                    case '\r':
+                    case "@":
+                    case "\n":
+                    case "\r":
                         center = false;
                         endinreturn = true;
                         brk = cur;
@@ -2570,7 +2749,7 @@ mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: num
         }
     } else {
         for (i = 0; i < beg.length; i++) {
-            linel = Math.min((((Mx.width - 2 * GBorder) / Mx.text_w) - 2), Math.max(linel, beg[i].length));
+            linel = Math.min((Mx.width - 2 * GBorder) / Mx.text_w - 2, Math.max(linel, beg[i].length));
         }
     }
 
@@ -2605,7 +2784,7 @@ mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: num
     while (cur < lastline) {
         j += Mx.text_h;
         if (center) {
-            i = xc + xs / 2 - ((beg[cur].length * Mx.text_w) / 2);
+            i = xc + xs / 2 - (beg[cur].length * Mx.text_w) / 2;
         }
         mx.text(Mx, i, j, beg[cur], textColor);
         cur++;
@@ -2625,7 +2804,17 @@ mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: num
  * @param fill_color
  * @param {Number} radius The corner radius. Defaults to 5;
  */
-mx.draw_round_box = function(Mx: any, color: string, x: number, y: number, w: number, h: number, fill_opacity?: number, fill_color?: string | CanvasGradient, radius?: number): void {
+mx.draw_round_box = function (
+    Mx: any,
+    color: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fill_opacity?: number,
+    fill_color?: string | CanvasGradient,
+    radius?: number
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (!radius) {
@@ -2648,7 +2837,7 @@ mx.draw_round_box = function(Mx: any, color: string, x: number, y: number, w: nu
     ctx.strokeStyle = color;
     ctx.stroke();
 
-    if ((fill_opacity !== undefined) && (fill_opacity > 0)) {
+    if (fill_opacity !== undefined && fill_opacity > 0) {
         var oldAlpha = ctx.globalAlpha;
         ctx.globalAlpha = fill_opacity;
         if (fill_color) {
@@ -2674,7 +2863,16 @@ mx.draw_round_box = function(Mx: any, color: string, x: number, y: number, w: nu
 //
 // ~= MX$DRAW_BOX
 //
-mx.draw_box = function(Mx: any, color: string, x: number, y: number, w: number, h: number, fill_opacity?: number, fill_color?: string): void {
+mx.draw_box = function (
+    Mx: any,
+    color: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fill_opacity?: number,
+    fill_color?: string
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (color !== "xor") {
@@ -2682,7 +2880,7 @@ mx.draw_box = function(Mx: any, color: string, x: number, y: number, w: number, 
         ctx.strokeStyle = color;
         ctx.strokeRect(x, y, w, h);
     } else {
-        if (typeof Uint8ClampedArray === 'undefined') {
+        if (typeof Uint8ClampedArray === "undefined") {
             // we don't have typed arrays, so canvas getImageData operations
             // will be very slow, so use Mx.fg instead
             ctx.lineWidth = 1;
@@ -2741,7 +2939,7 @@ mx.draw_box = function(Mx: any, color: string, x: number, y: number, w: number, 
         }
     }
 
-    if ((fill_opacity !== undefined) && (fill_opacity > 0)) {
+    if (fill_opacity !== undefined && fill_opacity > 0) {
         var oldAlpha = ctx.globalAlpha;
         ctx.globalAlpha = fill_opacity;
         if (fill_color) {
@@ -2759,11 +2957,11 @@ mx.draw_box = function(Mx: any, color: string, x: number, y: number, w: number, 
  * @param width
  */
 // ~= MX$SETFONT
-mx.set_font = function(Mx: any, width: number): void {
+mx.set_font = function (Mx: any, width: number): void {
     var ctx = Mx.canvas.getContext("2d");
     var ctx_wid = Mx.wid_canvas.getContext("2d");
 
-    if ((Mx.font) && (Mx.font.width === width)) {
+    if (Mx.font && Mx.font.width === width) {
         // use the cached font
         ctx.font = Mx.font.font;
         ctx_wid.font = Mx.font.font;
@@ -2774,7 +2972,7 @@ mx.set_font = function(Mx: any, width: number): void {
             text_h = text_h + 1;
             ctx.font = text_h + "px " + Mx.font_family;
             ctx_wid.font = text_h + "px " + Mx.font_family;
-            var font_size = ctx.measureText('M'); // the capital M is typically the same height and width
+            var font_size = ctx.measureText("M"); // the capital M is typically the same height and width
             Mx.text_w = font_size.width;
             Mx.text_h = text_h;
         } while (Mx.text_w < width);
@@ -2785,7 +2983,6 @@ mx.set_font = function(Mx: any, width: number): void {
     }
 };
 
-
 /**
  * @param Mx
  * @param xstart
@@ -2795,7 +2992,7 @@ mx.set_font = function(Mx: any, width: number): void {
  * @param style
  */
 // ~= MX$FTEXTLINE
-mx.textline = function(Mx: any, xstart: number, ystart: number, xend: number, yend: number, style?: any): void {
+mx.textline = function (Mx: any, xstart: number, ystart: number, xend: number, yend: number, style?: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
     if (!style) {
         style = {};
@@ -2815,7 +3012,7 @@ mx.textline = function(Mx: any, xstart: number, ystart: number, xend: number, ye
  * @param ndiv
  */
 // ~= MX$TICS
-mx.tics = function(dmin: number, dmax: number, ndiv: number, timecode?: boolean): { dtic: number; dtic1: number } {
+mx.tics = function (dmin: number, dmax: number, ndiv: number, timecode?: boolean): { dtic: number; dtic1: number } {
     var dtic = 1;
     var dtic1 = dmin;
 
@@ -2840,12 +3037,12 @@ mx.tics = function(dmin: number, dmax: number, ndiv: number, timecode?: boolean)
         nsig = Math.floor(sig);
     }
 
-    var ddf = df * Math.pow(10.0, (-nsig));
+    var ddf = df * Math.pow(10.0, -nsig);
     sig = Math.pow(10.0, nsig);
     var dft = ddf * sig;
     // If timecode has been requested and it looks like
     // timecode
-    if (timecode && (dft >= 5.0 && dft <= 59.5 * 3600 * 24)) {
+    if (timecode && dft >= 5.0 && dft <= 59.5 * 3600 * 24) {
         var dscl;
         if (dft < 17.5) {
             dscl = 5.0; // align to 5 sec tics
@@ -2877,7 +3074,7 @@ mx.tics = function(dmin: number, dmax: number, ndiv: number, timecode?: boolean)
         } else if (ddf < 2.25) {
             dtic = 2.0 * sig;
         } else if (ddf < 3.5) {
-            dtic = 2.50 * sig;
+            dtic = 2.5 * sig;
         } else if (ddf < 7.0) {
             dtic = 5.0 * sig;
         } else {
@@ -2927,7 +3124,7 @@ mx.tics = function(dmin: number, dmax: number, ndiv: number, timecode?: boolean)
  * @param flags
  */
 // ~= MX$FDRAWAXIS
-mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: number, ylab: number, flags: any): void {
+mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: number, ylab: number, flags: any): void {
     var stk1 = mx.origin(Mx.origin, 1, Mx.stk[Mx.level]);
     var iscl = 0;
     var isct = 0;
@@ -2936,9 +3133,8 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
     var width = 0;
     var height = 0;
 
-    xlab = (xlab === undefined) ? 30 : xlab;
-    ylab = (ylab === undefined) ? 30 : ylab;
-
+    xlab = xlab === undefined ? 30 : xlab;
+    ylab = ylab === undefined ? 30 : ylab;
 
     if (flags.exactbox) {
         iscl = Math.floor(stk1.x1);
@@ -2991,9 +3187,9 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
         xTIC = mx.tics(stk1.xmin, stk1.xmax, xdiv, flags.xtimecode);
     }
 
-
     var _xmult = 1.0;
-    if (flags.xmult) { // if xmult was provided
+    if (flags.xmult) {
+        // if xmult was provided
         _xmult = flags.xmult;
     } else if (!flags.xtimecode) {
         _xmult = mx.mult(stk1.xmin, stk1.xmax);
@@ -3005,7 +3201,8 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
         yTIC = mx.tics(stk1.ymin, stk1.ymax, ydiv, flags.ytimecode);
     }
     var _ymult = 1.0;
-    if (flags.ymult) { // if ymult was provided
+    if (flags.ymult) {
+        // if ymult was provided
         _ymult = flags.ymult;
     } else if (!flags.ytimecode) {
         _ymult = mx.mult(stk1.ymin, stk1.ymax);
@@ -3101,12 +3298,12 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
 
     var endticx;
     if (stk1.xmax >= stk1.xmin) {
-        endticx = function(val: any) {
-            return (val <= stk1.xmax);
+        endticx = function (val: any) {
+            return val <= stk1.xmax;
         };
     } else {
-        endticx = function(val: any) {
-            return (val >= stk1.xmax);
+        endticx = function (val: any) {
+            return val >= stk1.xmax;
         };
     }
 
@@ -3117,7 +3314,7 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
         if (flags.xtimecode) {
             xlbl = m.sec2tod(xTIC.dtic1);
             // If the label is no longer than half of the total width display multiple labels
-            sp = (xlbl.length * Mx.text_w < (iscr - iscl) / 2);
+            sp = xlbl.length * Mx.text_w < (iscr - iscl) / 2;
         } else {
             // Ensure that all of the tic labels will render uniquely
             var last_xlbl;
@@ -3153,7 +3350,7 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
                     };
                 } else {
                     flags.gridStyle = {
-                        "color": Mx.xwms,
+                        color: Mx.xwms,
                         mode: "dashed",
                         on: 1,
                         off: 3
@@ -3172,7 +3369,7 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
                     // If we have enough space to draw the next tic label
                     if (i > ix) {
                         xlbl = m.sec2tod(x, true);
-                        ix = i + (Mx.text_w * (xlbl.length + 1));
+                        ix = i + Mx.text_w * (xlbl.length + 1);
                     }
                 } else {
                     xlbl = mx.format_f(x * fmul, xlbl_maxlen, xlbl_maxlen / 2);
@@ -3200,14 +3397,15 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
                     if (flags.inside) {
                         i = Math.floor(Math.max(iscl + itext, i));
                     }
-                    mx.text(Mx, i - itext, jtext, xlbl + " +\u0394 " + (xTIC.dtic * fmul));
+                    mx.text(Mx, i - itext, jtext, xlbl + " +\u0394 " + xTIC.dtic * fmul);
                 }
             }
         }
     }
 
     // Add y-tick marks
-    if (flags.yonright) { // TODO - yonright probably doesn't work
+    if (flags.yonright) {
+        // TODO - yonright probably doesn't work
         if (flags.inside) {
             itext = Math.min(iscr - 6 * Mx.text_w, Mx.width - 5 * Mx.text_w);
         } else {
@@ -3236,12 +3434,12 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
         ytic = stk1.ymax - yTIC.dtic1 + 1.0;
     }
     if (stk1.ymax >= stk1.ymin) {
-        endticy = function(val: any) {
-            return (val <= stk1.ymax);
+        endticy = function (val: any) {
+            return val <= stk1.ymax;
         };
     } else {
-        endticy = function(val: any) {
-            return (val >= stk1.ymax);
+        endticy = function (val: any) {
+            return val >= stk1.ymax;
         };
     }
     var ylbl;
@@ -3265,8 +3463,7 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
         }
         if (yticlabels) {
             // TODO
-            if (flags.inside &&
-                ((i < isct + Mx.text_h) || (i > iscb - Mx.text_h * 2))) {
+            if (flags.inside && (i < isct + Mx.text_h || i > iscb - Mx.text_h * 2)) {
                 // out of range for inside labels
             } else if (flags.ytimecode) {
                 ylbl = m.sec2tod(y); // don't trim zeros because we use them later
@@ -3289,7 +3486,7 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
                 // Finally the sections portion if it fits on the screen
                 // and is necessary
                 k = i + jtext + Mx.text_h;
-                if ((k > isct && k < iscb)) {
+                if (k > isct && k < iscb) {
                     if (ylbl.substring(sep + 7, sep + 9) !== "00") {
                         // add the .00 which is safe to do unconditionally because
                         // we truncate on the following line and we know that
@@ -3316,9 +3513,15 @@ mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numbe
  * @param rect_height
  * @private
  */
-mx.inrect = function(x: number, y: number, rect_x: number, rect_y: number, rect_width: number, rect_height: number): boolean {
-    return (x >= rect_x && x <= rect_x + rect_width &&
-        y >= rect_y && y <= rect_y + rect_height);
+mx.inrect = function (
+    x: number,
+    y: number,
+    rect_x: number,
+    rect_y: number,
+    rect_width: number,
+    rect_height: number
+): boolean {
+    return x >= rect_x && x <= rect_x + rect_width && y >= rect_y && y <= rect_y + rect_height;
 };
 /**
  * @private
@@ -3355,135 +3558,134 @@ function _menu_redraw(Mx: any, menu: any): void {
         MENU_CONSTANTS.n_show = n_items;
     }
 
+    menu.animationFrameHandle = requestAnimationFrame(
+        mx.withWidgetLayer(Mx, function () {
+            mx.erase_window(Mx);
 
-    menu.animationFrameHandle = requestAnimationFrame(mx.withWidgetLayer(Mx, function() {
-        mx.erase_window(Mx);
+            menu.animationFrameHandle = undefined;
+            var yb = Mx.text_h * 1.5;
+            menu.x = Math.max(menu.x, 0);
+            menu.y = Math.max(menu.y, 0);
+            menu.x = Math.min(menu.x, Mx.width - menu.w);
+            menu.y = Math.min(menu.y, Mx.height - menu.h);
 
-        menu.animationFrameHandle = undefined;
-        var yb = Mx.text_h * 1.5;
-        menu.x = Math.max(menu.x, 0);
-        menu.y = Math.max(menu.y, 0);
-        menu.x = Math.min(menu.x, Mx.width - menu.w);
-        menu.y = Math.min(menu.y, Mx.height - menu.h);
+            var xcc = menu.x + MENU_CONSTANTS.GBorder + Math.max(0, MENU_CONSTANTS.sidelab);
+            var ycc = menu.y + MENU_CONSTANTS.GBorder + MENU_CONSTANTS.toplab * (yb + MENU_CONSTANTS.GBorder);
 
-        var xcc = menu.x + MENU_CONSTANTS.GBorder + Math.max(0, MENU_CONSTANTS.sidelab);
-        var ycc = menu.y + MENU_CONSTANTS.GBorder + MENU_CONSTANTS.toplab * (yb + MENU_CONSTANTS.GBorder);
+            var xss = menu.w - 2 * MENU_CONSTANTS.GBorder - Math.abs(MENU_CONSTANTS.sidelab);
+            var yss = menu.h - 2 * MENU_CONSTANTS.GBorder - MENU_CONSTANTS.toplab * (yb + MENU_CONSTANTS.GBorder);
 
-        var xss = menu.w - 2 * MENU_CONSTANTS.GBorder - Math.abs(MENU_CONSTANTS.sidelab);
-        var yss = menu.h - 2 * MENU_CONSTANTS.GBorder - MENU_CONSTANTS.toplab * (yb + MENU_CONSTANTS.GBorder);
+            mx.widgetbox(Mx, menu.x, menu.y, menu.w, menu.h, xcc, ycc, xss, yss, menu.title);
 
-        mx.widgetbox(Mx, menu.x, menu.y, menu.w, menu.h, xcc, ycc, xss, yss, menu.title);
+            //ctx.fillStyle = xwlo;
+            //ctx.fillRect(xcc, ycc, xss, yss);
 
-        //ctx.fillStyle = xwlo;
-        //ctx.fillRect(xcc, ycc, xss, yss);
+            var ctx = Mx.wid_canvas.getContext("2d");
+            ctx.lineWidth = 1;
 
-        var ctx = Mx.wid_canvas.getContext("2d");
-        ctx.lineWidth = 1;
+            ctx.strokeStyle = Mx.xwbs; // xwbs
+            ctx.beginPath();
+            ctx.moveTo(xcc, ycc - 4 + 0.5);
+            ctx.lineTo(xcc + xss - 1, ycc - 4 + 0.5);
+            ctx.stroke();
 
-        ctx.strokeStyle = Mx.xwbs; // xwbs
-        ctx.beginPath();
-        ctx.moveTo(xcc, ycc - 4 + 0.5);
-        ctx.lineTo(xcc + xss - 1, ycc - 4 + 0.5);
-        ctx.stroke();
+            ctx.strokeStyle = Mx.xwts; // xwts
+            ctx.beginPath();
+            ctx.moveTo(xcc, ycc - 3 + 0.5);
+            ctx.lineTo(xcc + xss - 1, ycc - 3 + 0.5);
+            ctx.stroke();
 
-        ctx.strokeStyle = Mx.xwts; // xwts
-        ctx.beginPath();
-        ctx.moveTo(xcc, ycc - 3 + 0.5);
-        ctx.lineTo(xcc + xss - 1, ycc - 3 + 0.5);
-        ctx.stroke();
-
-        var i_begin = menu.queue[0];
-        var i_end = menu.queue[MENU_CONSTANTS.n_show - 1];
-        if (i_end === 0) {
-            // now we are starting over
-            for (var q = 0; q < MENU_CONSTANTS.n_show; q++) {
-                menu.queue[q] = q;
-            }
-            i_begin = menu.queue[0];
-            i_end = menu.queue[MENU_CONSTANTS.n_show - 1];
-        }
-        var menu_counter = 0;
-        for (var i = i_begin; i <= i_end; i++) {
-            var item = menu.items[i];
-            var y = ycc + yb * menu_counter;
-            menu_counter = menu_counter + 1;
-
-            if (item.style === "separator") {
-                ctx.fillStyle = Mx.xwbs;
-                ctx.fillRect(xcc, y, xss, yb);
-
-                ctx.beginPath();
-                ctx.moveTo(xcc, y + 0.5);
-                ctx.lineTo(xcc + xss, y + 0.5);
-                ctx.stroke();
-
-                ctx.textBaseline = "middle";
-                ctx.textAlign = "left";
-                ctx.fillStyle = Mx.xwfg;
-                ctx.fillText(" " + item.text + " ", xcc + Mx.text_w * 2, y + yb / 2);
-            } else {
-                if (mx.LEGACY_RENDER) {
-                    ctx.fillStyle = Mx.xwlo;
-                    ctx.fillRect(xcc, y, xss, yb);
-                    ctx.beginPath();
-                    ctx.moveTo(xcc, y + 0.5);
-                    ctx.lineTo(xcc + xss, y + 0.5);
-                    ctx.stroke();
-                    if (item.selected) {
-                        mx.shadowbox(Mx, xcc - 1, y, xss + 2, yb, 1, 2, "", 0.75);
-                    }
-                } else {
-                    ctx.save();
-                    ctx.globalAlpha = 0.75;
-                    if (item.selected) {
-                        ctx.fillStyle = Mx.xwts;
-                    } else {
-                        ctx.fillStyle = Mx.xwlo;
-                    }
-                    ctx.fillRect(xcc, y, xss, yb);
-                    ctx.restore();
-                    ctx.strokeStyle = Mx.bg;
-                    ctx.beginPath();
-                    ctx.moveTo(xcc, y + 0.5);
-                    ctx.lineTo(xcc + xss, y + 0.5);
-                    ctx.stroke();
+            var i_begin = menu.queue[0];
+            var i_end = menu.queue[MENU_CONSTANTS.n_show - 1];
+            if (i_end === 0) {
+                // now we are starting over
+                for (var q = 0; q < MENU_CONSTANTS.n_show; q++) {
+                    menu.queue[q] = q;
                 }
+                i_begin = menu.queue[0];
+                i_end = menu.queue[MENU_CONSTANTS.n_show - 1];
+            }
+            var menu_counter = 0;
+            for (var i = i_begin; i <= i_end; i++) {
+                var item = menu.items[i];
+                var y = ycc + yb * menu_counter;
+                menu_counter = menu_counter + 1;
 
-                ctx.textBaseline = "middle";
-                ctx.textAlign = "left";
-                ctx.fillStyle = Mx.xwfg;
-                if (item.style === "checkbox") {
+                if (item.style === "separator") {
+                    ctx.fillStyle = Mx.xwbs;
+                    ctx.fillRect(xcc, y, xss, yb);
+
+                    ctx.beginPath();
+                    ctx.moveTo(xcc, y + 0.5);
+                    ctx.lineTo(xcc + xss, y + 0.5);
+                    ctx.stroke();
+
+                    ctx.textBaseline = "middle";
+                    ctx.textAlign = "left";
+                    ctx.fillStyle = Mx.xwfg;
                     ctx.fillText(" " + item.text + " ", xcc + Mx.text_w * 2, y + yb / 2);
-                    ctx.strokeStyle = Mx.xwfg;
-                    ctx.strokeRect(xcc + 1 + Mx.text_w, y + ((yb - Mx.text_w) / 2), Mx.text_w, Mx.text_w);
-                    if (item.checked) {
+                } else {
+                    if (mx.LEGACY_RENDER) {
+                        ctx.fillStyle = Mx.xwlo;
+                        ctx.fillRect(xcc, y, xss, yb);
                         ctx.beginPath();
-                        ctx.moveTo(xcc + 1 + Mx.text_w, y + ((yb - Mx.text_w) / 2));
-                        ctx.lineTo(xcc + 1 + Mx.text_w + Mx.text_w, y + ((yb - Mx.text_w) / 2) + Mx.text_w);
+                        ctx.moveTo(xcc, y + 0.5);
+                        ctx.lineTo(xcc + xss, y + 0.5);
                         ctx.stroke();
+                        if (item.selected) {
+                            mx.shadowbox(Mx, xcc - 1, y, xss + 2, yb, 1, 2, "", 0.75);
+                        }
+                    } else {
+                        ctx.save();
+                        ctx.globalAlpha = 0.75;
+                        if (item.selected) {
+                            ctx.fillStyle = Mx.xwts;
+                        } else {
+                            ctx.fillStyle = Mx.xwlo;
+                        }
+                        ctx.fillRect(xcc, y, xss, yb);
+                        ctx.restore();
+                        ctx.strokeStyle = Mx.bg;
                         ctx.beginPath();
-                        ctx.moveTo(xcc + 1 + Mx.text_w + Mx.text_w, y + ((yb - Mx.text_w) / 2));
-                        ctx.lineTo(xcc + 1 + Mx.text_w, y + ((yb - Mx.text_w) / 2) + Mx.text_w);
+                        ctx.moveTo(xcc, y + 0.5);
+                        ctx.lineTo(xcc + xss, y + 0.5);
                         ctx.stroke();
                     }
-                } else {
-                    ctx.fillText(" " + item.text + " ", xcc, y + yb / 2);
 
-                    // draw the triangle
-                    if (item.checked) {
-                        ctx.beginPath();
-                        ctx.moveTo(xcc + 1, y + Mx.text_h / 4);
-                        ctx.lineTo(xcc + 1 + Mx.text_w - 2, y + Mx.text_h / 4 + Mx.text_h / 2);
-                        ctx.lineTo(xcc + 1, y + Mx.text_h / 4 + Mx.text_h);
-                        ctx.lineTo(xcc + 1, y + Mx.text_h / 4);
-                        ctx.fill();
+                    ctx.textBaseline = "middle";
+                    ctx.textAlign = "left";
+                    ctx.fillStyle = Mx.xwfg;
+                    if (item.style === "checkbox") {
+                        ctx.fillText(" " + item.text + " ", xcc + Mx.text_w * 2, y + yb / 2);
+                        ctx.strokeStyle = Mx.xwfg;
+                        ctx.strokeRect(xcc + 1 + Mx.text_w, y + (yb - Mx.text_w) / 2, Mx.text_w, Mx.text_w);
+                        if (item.checked) {
+                            ctx.beginPath();
+                            ctx.moveTo(xcc + 1 + Mx.text_w, y + (yb - Mx.text_w) / 2);
+                            ctx.lineTo(xcc + 1 + Mx.text_w + Mx.text_w, y + (yb - Mx.text_w) / 2 + Mx.text_w);
+                            ctx.stroke();
+                            ctx.beginPath();
+                            ctx.moveTo(xcc + 1 + Mx.text_w + Mx.text_w, y + (yb - Mx.text_w) / 2);
+                            ctx.lineTo(xcc + 1 + Mx.text_w, y + (yb - Mx.text_w) / 2 + Mx.text_w);
+                            ctx.stroke();
+                        }
+                    } else {
+                        ctx.fillText(" " + item.text + " ", xcc, y + yb / 2);
+
+                        // draw the triangle
+                        if (item.checked) {
+                            ctx.beginPath();
+                            ctx.moveTo(xcc + 1, y + Mx.text_h / 4);
+                            ctx.lineTo(xcc + 1 + Mx.text_w - 2, y + Mx.text_h / 4 + Mx.text_h / 2);
+                            ctx.lineTo(xcc + 1, y + Mx.text_h / 4 + Mx.text_h);
+                            ctx.lineTo(xcc + 1, y + Mx.text_h / 4);
+                            ctx.fill();
+                        }
                     }
                 }
             }
-        }
-
-
-    }));
+        })
+    );
 }
 
 /**
@@ -3493,7 +3695,7 @@ function _menu_redraw(Mx: any, menu: any): void {
  * @private
  */
 function _menu_takeaction(Mx: any, menu: any): void {
-    mx.onWidgetLayer(Mx, function() {
+    mx.onWidgetLayer(Mx, function () {
         mx.erase_window(Mx);
     });
     Mx.menu = undefined;
@@ -3506,7 +3708,7 @@ function _menu_takeaction(Mx: any, menu: any): void {
                 item.handler();
             } else if (item.menu) {
                 var newmenu = item.menu;
-                if (typeof item.menu === 'function') {
+                if (typeof item.menu === "function") {
                     newmenu = item.menu();
                 }
                 newmenu.finalize = menu.finalize;
@@ -3515,7 +3717,7 @@ function _menu_takeaction(Mx: any, menu: any): void {
             break;
         }
     }
-    if ((!Mx.menu) && (menu.finalize)) {
+    if (!Mx.menu && menu.finalize) {
         menu.finalize();
     }
 }
@@ -3527,7 +3729,7 @@ function _menu_takeaction(Mx: any, menu: any): void {
  * @private
  */
 function _menu_dismiss(Mx: any, menu: any): void {
-    mx.onWidgetLayer(Mx, function() {
+    mx.onWidgetLayer(Mx, function () {
         mx.erase_window(Mx);
     });
     if (Mx.useDomMenu) {
@@ -3536,7 +3738,7 @@ function _menu_dismiss(Mx: any, menu: any): void {
     Mx.menu = undefined;
     Mx.widget = null;
 
-    if ((!Mx.menu) && (menu.finalize)) {
+    if (!Mx.menu && menu.finalize) {
         menu.finalize();
     }
 }
@@ -3557,7 +3759,12 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
         _menu_redraw(Mx, menu);
     } else if (event.type === "mousemove") {
         // Update position
-        if (menu.drag_x !== undefined && menu.drag_y !== undefined && Math.abs(Mx.xpos - menu.drag_x) > 2 && Math.abs(Mx.ypos - menu.drag_y) > 2) {
+        if (
+            menu.drag_x !== undefined &&
+            menu.drag_y !== undefined &&
+            Math.abs(Mx.xpos - menu.drag_x) > 2 &&
+            Math.abs(Mx.ypos - menu.drag_y) > 2
+        ) {
             menu.x += Mx.xpos - menu.drag_x;
             menu.y += Mx.ypos - menu.drag_y;
             menu.drag_x = Mx.xpos;
@@ -3582,7 +3789,7 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
     } else if (event.type === "mouseup") {
         // No longer dragging menu
         if (event.which === 1) {
-            if ((menu.drag_x !== undefined) && (menu.drag_y !== undefined)) {
+            if (menu.drag_x !== undefined && menu.drag_y !== undefined) {
                 menu.drag_x = undefined;
                 menu.drag_y = undefined;
             } else {
@@ -3594,7 +3801,12 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
     } else if (event.type === "mousedown") {
         event.preventDefault();
         if (event.which === 1) {
-            if (Mx.xpos > menu.x && Mx.xpos < (menu.x + menu.w) && Mx.ypos > menu.y && Mx.ypos < (menu.y + Mx.text_h * 1.5)) {
+            if (
+                Mx.xpos > menu.x &&
+                Mx.xpos < menu.x + menu.w &&
+                Mx.ypos > menu.y &&
+                Mx.ypos < menu.y + Mx.text_h * 1.5
+            ) {
                 menu.drag_x = Mx.xpos;
                 menu.drag_y = Mx.ypos;
             }
@@ -3607,9 +3819,11 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
             var menu = Mx.menu;
             event.preventDefault();
             var keyCode = common.getKeyCode(event);
-            if (keyCode === 13) { // enter
+            if (keyCode === 13) {
+                // enter
                 _menu_takeaction(Mx, menu);
-            } else if (keyCode === 38) { // up arrow
+            } else if (keyCode === 38) {
+                // up arrow
                 for (var i = i_begin; i < i_end; i++) {
                     var item = menu.items[i];
                     if (item.selected) {
@@ -3625,14 +3839,14 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
                         menu.queue.unshift(i_begin - 1);
                         _menu_redraw(Mx, menu);
                         menu.items[i_end - 1].selected = true;
-
                     } else if (i_begin === 0 && menu.items[i_begin].selected === true) {
                         _menu_redraw(Mx, menu);
                         menu.items[0].selected = true;
                     }
                 }
                 _menu_redraw(Mx, menu);
-            } else if (keyCode === 40) { // down arrow
+            } else if (keyCode === 40) {
+                // down arrow
                 for (var i = i_begin; i < i_end; i++) {
                     var item = menu.items[i];
                     if (item.selected) {
@@ -3641,7 +3855,7 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
                             menu.items[i + 1].selected = true;
                         }
                         break;
-                    } else if (i === (i_end - 1)) {
+                    } else if (i === i_end - 1) {
                         // nothing was selected so select the top
                         var next_item = i_end + 1;
 
@@ -3700,7 +3914,7 @@ function _menu_callback(Mx: any, menu: any, event: any): void {
  * @param menu
  * @private
  */
-mx.menu = function(Mx: any, menu: any): void {
+mx.menu = function (Mx: any, menu: any): void {
     if (Mx.useDomMenu) {
         new mx.DomMenu(Mx, menu);
         return;
@@ -3726,8 +3940,16 @@ mx.menu = function(Mx: any, menu: any): void {
             menu.y = Mx.ypos;
             menu.val = 0;
 
-            menu.h = MENU_CONSTANTS.GBorder * 2 + yb * MENU_CONSTANTS.n_show + MENU_CONSTANTS.toplab * (yb + MENU_CONSTANTS.GBorder) - 1;
-            menu.y = menu.y - ((MENU_CONSTANTS.toplab + (Math.max(1, menu.val)) - 0.5) * yb + (1 + MENU_CONSTANTS.toplab) * MENU_CONSTANTS.GBorder) + 1;
+            menu.h =
+                MENU_CONSTANTS.GBorder * 2 +
+                yb * MENU_CONSTANTS.n_show +
+                MENU_CONSTANTS.toplab * (yb + MENU_CONSTANTS.GBorder) -
+                1;
+            menu.y =
+                menu.y -
+                ((MENU_CONSTANTS.toplab + Math.max(1, menu.val) - 0.5) * yb +
+                    (1 + MENU_CONSTANTS.toplab) * MENU_CONSTANTS.GBorder) +
+                1;
 
             var xb = menu.title.length;
             var yadj = 0;
@@ -3749,7 +3971,6 @@ mx.menu = function(Mx: any, menu: any): void {
 
             for (var q = 0; q < MENU_CONSTANTS.n_show; q++) {
                 menu.queue.push(q);
-
             }
 
             menu.y = menu.y - yadj;
@@ -3763,7 +3984,7 @@ mx.menu = function(Mx: any, menu: any): void {
 
             Mx.widget = {
                 type: "MENU",
-                callback: function(event: any) {
+                callback: function (event: any) {
                     _menu_callback(Mx, menu, event);
                 }
             };
@@ -3785,7 +4006,18 @@ mx.menu = function(Mx: any, menu: any): void {
  * @param name
  * @private
  */
-mx.widgetbox = function(Mx: any, x: number, y: number, w: number, h: number, inx: number, iny: number, inw: any, inh: any, name?: string): void {
+mx.widgetbox = function (
+    Mx: any,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    inx: number,
+    iny: number,
+    inw: any,
+    inh: any,
+    name?: string
+): void {
     var GBorder = 3;
     mx.shadowbox(Mx, x, y, w, h, 1, 2, "", 0.75);
     if (name) {
@@ -3824,12 +4056,12 @@ mx.widgetbox = function(Mx: any, x: number, y: number, w: number, h: number, inx
 //
 // ~= MX$TEXT
 //
-mx.text = function(Mx: any, x: number, y: number, lbl: string, color?: string): void {
+mx.text = function (Mx: any, x: number, y: number, lbl: string, color?: string): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     x = Math.max(0, x);
     y = Math.max(0, y);
-    if ((x < 0) || (y < 0)) {
+    if (x < 0 || y < 0) {
         throw "On No!";
     }
     ctx.textBaseline = "bottom";
@@ -3893,7 +4125,16 @@ function clipt(denom: number, num: number, o: { tL: number; tE: number }): boole
  * @param width
  * @private
  */
-function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, style?: any, color?: string | CanvasGradient, width?: number): void {
+function draw_line(
+    ctx: CanvasRenderingContext2D,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    style?: any,
+    color?: string | CanvasGradient,
+    width?: number
+): void {
     // For odd width lines (i.e. 1,3,5...) if you draw right
     // on the pixel boundry the canvas will actually draw a slightly
     // grey line 2 px wide.  You have to add .5 to get what you want.
@@ -3956,7 +4197,7 @@ function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
                     ctx.moveTo(x, y1);
                     ctx.lineTo(x + style.on, y1);
                     ctx.stroke();
-                    x += (style.on + style.off);
+                    x += style.on + style.off;
                 }
             } else if (x1 === x2) {
                 // vertical line
@@ -3966,7 +4207,7 @@ function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
                     ctx.moveTo(x1, y);
                     ctx.lineTo(x1, y + style.on);
                     ctx.stroke();
-                    y += (style.on + style.off);
+                    y += style.on + style.off;
                 }
             } else {
                 throw "Only horizontal or vertical dashed lines are supported";
@@ -3974,7 +4215,7 @@ function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
             ctx.beginPath();
         }
     } else if (style.mode === "xor") {
-        if (typeof Uint8ClampedArray === 'undefined') {
+        if (typeof Uint8ClampedArray === "undefined") {
             // we don't have typed arrays, so canvas getImageData operations
             // will be very slow, so use color instead
             ctx.beginPath();
@@ -3998,7 +4239,7 @@ function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
                 throw "Only horizontal and vertical lines can be drawn with XOR";
             }
 
-            if ((w === 0) || (h === 0)) {
+            if (w === 0 || h === 0) {
                 return;
             }
 
@@ -4032,7 +4273,8 @@ function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
  * @param width - The line width to set.
  * @private
  */
-function draw_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], color?: string, width?: number): void { // TODO Should this be a public method?
+function draw_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], color?: string, width?: number): void {
+    // TODO Should this be a public method?
     start_poly(ctx, pix, width);
 
     if (color) {
@@ -4061,7 +4303,14 @@ function draw_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], color?: str
  * @param lineWidth - The line width to set
  * @private
  */
-function fill_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], lineColor?: string, fillColor?: string, width?: number): void { // TODO Should this be a public method?
+function fill_poly(
+    ctx: CanvasRenderingContext2D,
+    pix: PixelPoint[],
+    lineColor?: string,
+    fillColor?: string,
+    width?: number
+): void {
+    // TODO Should this be a public method?
     start_poly(ctx, pix, width);
 
     if (lineColor) {
@@ -4126,7 +4375,16 @@ function start_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], width?: nu
  * @param lineWidth - The line width to set.
  * @private
  */
-function draw_rectangle(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, color?: string, lineWidth?: number): void { // TODO Should this be a public method?
+function draw_rectangle(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color?: string,
+    lineWidth?: number
+): void {
+    // TODO Should this be a public method?
     if (lineWidth) {
         ctx.lineWidth = lineWidth;
     }
@@ -4152,7 +4410,17 @@ function draw_rectangle(ctx: CanvasRenderingContext2D, x: number, y: number, wid
  * @param lineWidth - The line width to set.
  * @private
  */
-function fill_rectangle(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, fillColor?: string, strokeColor?: string, lineWidth?: number): void { // TODO Should this be a public method?
+function fill_rectangle(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    fillColor?: string,
+    strokeColor?: string,
+    lineWidth?: number
+): void {
+    // TODO Should this be a public method?
     if (lineWidth) {
         ctx.lineWidth = lineWidth;
     }
@@ -4195,26 +4463,26 @@ function to_rgb(red: number, green: number, blue: number): string {
  * @param z
  * @private
  */
-mx.getcolor = function(Mx: any, map: any[], z: number): string {
+mx.getcolor = function (Mx: any, map: any[], z: number): string {
     var iz = 0;
     for (; iz < 6 && map[iz + 1].pos === 0; iz++) {}
 
     while (z > map[iz].pos && iz < 6) {
         iz++;
     }
-    if ((iz === 0) || (z >= map[iz].pos)) {
+    if (iz === 0 || z >= map[iz].pos) {
         // above, below, or directly on boundry
-        return to_rgb(
-            pc2px(map[iz].red),
-            pc2px(map[iz].green),
-            pc2px(map[iz].blue));
+        return to_rgb(pc2px(map[iz].red), pc2px(map[iz].green), pc2px(map[iz].blue));
     } else {
         // interpolation my dear watson
         var pf = (z - map[iz - 1].pos) / (map[iz].pos - map[iz - 1].pos);
         var zf = pc2px(pf * 100);
         var zf1 = 255 - zf;
         return to_rgb(
-            (zf * (map[iz].red / 100) + zf1 * (map[iz - 1].red / 100)), (zf * (map[iz].green / 100) + zf1 * (map[iz - 1].green / 100)), (zf * (map[iz].blue / 100) + zf1 * (map[iz - 1].blue / 100)));
+            zf * (map[iz].red / 100) + zf1 * (map[iz - 1].red / 100),
+            zf * (map[iz].green / 100) + zf1 * (map[iz - 1].green / 100),
+            zf * (map[iz].blue / 100) + zf1 * (map[iz - 1].blue / 100)
+        );
     }
 };
 
@@ -4228,7 +4496,8 @@ mx.getcolor = function(Mx: any, map: any[], z: number): string {
 function trimlabel(lbl: string, inside?: boolean): string {
     var k;
     var j;
-    if (lbl.substring(5, 8) === ".000000") { // this line seems to always evaluate to false
+    if (lbl.substring(5, 8) === ".000000") {
+        // this line seems to always evaluate to false
         k = 4;
     } else {
         k = lbl.length - 1;
@@ -4237,7 +4506,7 @@ function trimlabel(lbl: string, inside?: boolean): string {
         }
     }
     j = 0;
-    while ((lbl[j] === " ") && ((k - j + 1 > 5) || inside)) {
+    while (lbl[j] === " " && (k - j + 1 > 5 || inside)) {
         j = j + 1;
     }
     var res = lbl.substring(j, k + 1);
@@ -4251,12 +4520,12 @@ function trimlabel(lbl: string, inside?: boolean): string {
  * @param Mx
  * @private
  */
-mx.redraw_warpbox = function(Mx: any): void {
+mx.redraw_warpbox = function (Mx: any): void {
     if (Mx.warpbox) {
         if (Mx._animationFrameHandle) {
             cancelAnimationFrame(Mx._animationFrameHandle);
         }
-        Mx._animationFrameHandle = requestAnimationFrame(function() {
+        Mx._animationFrameHandle = requestAnimationFrame(function () {
             display_warpbox(Mx);
         });
     }
@@ -4276,9 +4545,7 @@ function display_warpbox(Mx: any): void {
         return;
     }
 
-    if (((Mx.xpos >= warpbox.xmin) && (Mx.xpos <= warpbox.xmax)) &&
-        ((Mx.ypos >= warpbox.ymin) && (Mx.ypos <= warpbox.ymax))) {
-
+    if (Mx.xpos >= warpbox.xmin && Mx.xpos <= warpbox.xmax && Mx.ypos >= warpbox.ymin && Mx.ypos <= warpbox.ymax) {
         // Update the position
         if (mx.LEGACY_BEHAVIOR) {
             warpbox.xl = Mx.xpos;
@@ -4294,7 +4561,7 @@ function display_warpbox(Mx: any): void {
         var w = Math.abs(warpbox.xl - warpbox.xo);
         var h = Math.abs(warpbox.yl - warpbox.yo);
 
-        if ((w === 0) || (h === 0)) {
+        if (w === 0 || h === 0) {
             // Nothing to draw
             return;
         }
@@ -4307,12 +4574,11 @@ function display_warpbox(Mx: any): void {
             h = Mx.b - Mx.t;
         } // else box
 
-        mx.onWidgetLayer(Mx, function() {
+        mx.onWidgetLayer(Mx, function () {
             mx.erase_window(Mx);
             mx.draw_box(Mx, "xor", x, y, w, h, warpbox.style.opacity, warpbox.style.fill_color);
         });
     }
-
 }
 
 /**
@@ -4323,7 +4589,6 @@ function display_warpbox(Mx: any): void {
 function log10(val: number): number {
     return Math.log(val) / Math.log(10);
 }
-
 
 /**
  * Attempts to format a number in the same manner
@@ -4355,7 +4620,7 @@ function log10(val: number): number {
  * @param leading_nonzer
  * @private
  */
-mx.format_g = function(num: number, w: number, d: number, leading_nonzero?: boolean): string {
+mx.format_g = function (num: number, w: number, d: number, leading_nonzero?: boolean): string {
     var w = Math.min(w, d + 7);
     var f = Math.abs(num).toString();
 
@@ -4431,10 +4696,10 @@ mx.format_g = function(num: number, w: number, d: number, leading_nonzero?: bool
  * @param d number of digits after the decimal
  * @private
  */
-mx.format_f = function(num: number, s: number, d: number): string {
+mx.format_f = function (num: number, s: number, d: number): string {
     d = Math.max(Math.min(d, 20), 0);
     var f = num.toFixed(d).toString();
-    f = mx.pad(f, (s + d), " ");
+    f = mx.pad(f, s + d, " ");
     return f;
 };
 
@@ -4444,7 +4709,7 @@ mx.format_f = function(num: number, s: number, d: number): string {
  * @param c
  * @private
  */
-mx.pad = function(s: string, size: number, c: string): string {
+mx.pad = function (s: string, size: number, c: string): string {
     while (s.length < size) {
         s = c + s;
     }
@@ -4463,7 +4728,16 @@ mx.pad = function(s: string, size: number, c: string): string {
  * @private
  */
 // ~= MX$SHADOWBOX
-mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: number, shape: number, func: number, label: string): void {
+mx.legacy_shadowbox = function (
+    Mx: any,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    shape: number,
+    func: number,
+    label: string
+): void {
     var length = label.length; // Original method declaration includes a length - but it only represents the length of the label
 
     var xt = 0; // Originally an int
@@ -4471,7 +4745,8 @@ mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: numb
     var bw = 0; // Originally an int
 
     var pix: any = []; // Originally declared as a size 11 XPoint array
-    for (var cnt = 0; cnt < 11; cnt++) { // initializing 11 points in the array
+    for (var cnt = 0; cnt < 11; cnt++) {
+        // initializing 11 points in the array
         pix[cnt] = {
             x: 0,
             y: 0
@@ -4482,7 +4757,7 @@ mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: numb
 
     // Removed the G.BW section - since we don't need to support black & white displays
 
-    var j = (shape === mx.L_ArrowLeft || shape === mx.L_ArrowUp) ? 1 : 2;
+    var j = shape === mx.L_ArrowLeft || shape === mx.L_ArrowUp ? 1 : 2;
 
     if (func !== 0 && mx.GBorder > 0) {
         bw = m.trunc(Math.min(w, h) / 3);
@@ -4551,11 +4826,11 @@ mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: numb
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (bw > 0) {
-        ctx.fillStyle = (func > 0) ? Mx.xwts : Mx.xwbs; // Set foreground color
+        ctx.fillStyle = func > 0 ? Mx.xwts : Mx.xwbs; // Set foreground color
         fill_poly(ctx, pix.slice(0, 7));
         //	if (shape !== 1) { draw_poly(ctx, pix.slice(0,7)); } // TODO what shape is this neccessary with - causes an issue with arrows
 
-        ctx.fillStyle = (func < 0) ? Mx.xwts : Mx.xwbs; // Set foreground color
+        ctx.fillStyle = func < 0 ? Mx.xwts : Mx.xwbs; // Set foreground color
         fill_poly(ctx, pix.slice(5, 11));
         //if (shape !== 1) { draw_poly(ctx, pix.slice(5, 11)); } // TODO what shape is this neccessary with - causes an issue with arrows
     }
@@ -4590,23 +4865,33 @@ mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: numb
  * @private
  */
 // ~= MX$SHADOWBOX
-mx.sigplot_shadowbox = function(Mx: any, x: number, y: number, w: number, h: number, shape: number, func: number, label: string, alpha?: number): void {
+mx.sigplot_shadowbox = function (
+    Mx: any,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    shape: number,
+    func: number,
+    label: string,
+    alpha?: number
+): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     var length = label.length; // Original method declaration includes a length - but it only represents the length of the label
 
-    var color = (func < 0) ? Mx.xwts : Mx.xwbs;
+    var color = func < 0 ? Mx.xwts : Mx.xwbs;
 
     alpha = alpha || 1.0;
 
     var pix: any[] = []; // Originally declared as a size 11 XPoint array
-    for (var cnt = 0; cnt < 11; cnt++) { // initializing 11 points in the array
+    for (var cnt = 0; cnt < 11; cnt++) {
+        // initializing 11 points in the array
         pix[cnt] = {
             x: 0,
             y: 0
         };
     }
-
 
     switch (shape) {
         case mx.L_ArrowLeft:
@@ -4614,7 +4899,7 @@ mx.sigplot_shadowbox = function(Mx: any, x: number, y: number, w: number, h: num
         case mx.L_ArrowUp:
         case mx.L_ArrowDown:
             pix = mx.chevron(shape, x, y, w, h);
-            ctx.fillStyle = (func > 0) ? Mx.xwts : Mx.xwbs;
+            ctx.fillStyle = func > 0 ? Mx.xwts : Mx.xwbs;
             fill_poly(ctx, pix.slice(0, 6));
             break;
         default:
@@ -4635,13 +4920,14 @@ mx.sigplot_shadowbox = function(Mx: any, x: number, y: number, w: number, h: num
     }
 };
 
-if (mx.LEGACY_RENDER) { // TODO new-style conditional
+if (mx.LEGACY_RENDER) {
+    // TODO new-style conditional
     mx.shadowbox = mx.legacy_shadowbox;
 } else {
     mx.shadowbox = mx.sigplot_shadowbox;
 }
 
-mx.chevron = function(shape: number, x: number, y: number, w: number, h: number, e?: number): PixelPoint[] {
+mx.chevron = function (shape: number, x: number, y: number, w: number, h: number, e?: number): PixelPoint[] {
     // Figure out the largest square dimension
     var q = Math.min(w, h);
 
@@ -4650,20 +4936,18 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
         e = q * 0.25;
     }
 
-
-
     // Initialize the pixel array
     var pix: any = [];
-    for (var cnt = 0; cnt < 6; cnt++) { // initializing 11 points in the array
+    for (var cnt = 0; cnt < 6; cnt++) {
+        // initializing 11 points in the array
         pix[cnt] = {
             x: 0,
             y: 0
         };
     }
 
-
-    var x_offset = m.trunc(((w - q) / 2) + (q / 4) - (e / (2 * 1.414)));
-    var y_offset = m.trunc(((h - q) / 2) + (q / 4) - (e / (2 * 1.414)));
+    var x_offset = m.trunc((w - q) / 2 + q / 4 - e / (2 * 1.414));
+    var y_offset = m.trunc((h - q) / 2 + q / 4 - e / (2 * 1.414));
     switch (shape) {
         case mx.L_ArrowLeft:
             // Chevron points from the tip around the edge clockwise
@@ -4671,11 +4955,11 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
             pix[0].y = y + m.trunc(q / 2);
             pix[1].x = x + x_offset + m.trunc(q / 2);
             pix[1].y = y;
-            pix[2].x = x + x_offset + m.trunc((q / 2) + (e / 1.414));
+            pix[2].x = x + x_offset + m.trunc(q / 2 + e / 1.414);
             pix[2].y = y + m.trunc(e / 1.414);
             pix[3].x = x + x_offset + m.trunc((2 * e) / 1.414);
             pix[3].y = y + m.trunc(q / 2);
-            pix[4].x = x + x_offset + m.trunc((q / 2) + (e / 1.414));
+            pix[4].x = x + x_offset + m.trunc(q / 2 + e / 1.414);
             pix[4].y = y + h - m.trunc(e / 1.414);
             pix[5].x = x + x_offset + m.trunc(q / 2);
             pix[5].y = y + q;
@@ -4686,11 +4970,11 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
             pix[0].y = y + m.trunc(q / 2);
             pix[1].x = x + w - x_offset - m.trunc(q / 2);
             pix[1].y = y;
-            pix[2].x = x + w - x_offset - m.trunc((q / 2) + (e / 1.414));
+            pix[2].x = x + w - x_offset - m.trunc(q / 2 + e / 1.414);
             pix[2].y = y + m.trunc(e / 1.414);
             pix[3].x = x + w - x_offset - m.trunc((2 * e) / 1.414);
             pix[3].y = y + m.trunc(q / 2);
-            pix[4].x = x + w - x_offset - m.trunc((q / 2) + (e / 1.414));
+            pix[4].x = x + w - x_offset - m.trunc(q / 2 + e / 1.414);
             pix[4].y = y + h - m.trunc(e / 1.414);
             pix[5].x = x + w - x_offset - m.trunc(q / 2);
             pix[5].y = y + q;
@@ -4702,11 +4986,11 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
             pix[1].x = x;
             pix[1].y = y + y_offset + m.trunc(q / 2);
             pix[2].x = x + m.trunc(e / 1.414);
-            pix[2].y = y + y_offset + m.trunc((q / 2) + (e / 1.414));
+            pix[2].y = y + y_offset + m.trunc(q / 2 + e / 1.414);
             pix[3].x = x + m.trunc(q / 2);
             pix[3].y = y + y_offset + m.trunc((2 * e) / 1.414);
             pix[4].x = x + w - m.trunc(e / 1.414);
-            pix[4].y = y + y_offset + m.trunc((q / 2) + (e / 1.414));
+            pix[4].y = y + y_offset + m.trunc(q / 2 + e / 1.414);
             pix[5].x = x + q;
             pix[5].y = y + y_offset + m.trunc(q / 2);
             break;
@@ -4717,11 +5001,11 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
             pix[1].x = x;
             pix[1].y = y + h - y_offset - m.trunc(q / 2);
             pix[2].x = x + m.trunc(e / 1.414);
-            pix[2].y = y + h - y_offset - m.trunc((q / 2) + (e / 1.414));
+            pix[2].y = y + h - y_offset - m.trunc(q / 2 + e / 1.414);
             pix[3].x = x + m.trunc(q / 2);
             pix[3].y = y + h - y_offset - m.trunc((2 * e) / 1.414);
             pix[4].x = x + w - m.trunc(e / 1.414);
-            pix[4].y = y + h - y_offset - m.trunc((q / 2) + (e / 1.414));
+            pix[4].y = y + h - y_offset - m.trunc(q / 2 + e / 1.414);
             pix[5].x = x + q;
             pix[5].y = y + h - y_offset - m.trunc(q / 2);
             break;
@@ -4736,14 +5020,16 @@ mx.chevron = function(shape: number, x: number, y: number, w: number, h: number,
  * @private
  */
 // ~= mx_ifevent
-mx.ifevent = function(Mx: any, mouseEvent: any): void {
+mx.ifevent = function (Mx: any, mouseEvent: any): void {
     Mx.button_press = 0;
     Mx.button_release = 0;
     Mx.state_mask = 0;
 
     var rect = mouseEvent.target.getBoundingClientRect();
-    var eventXPos = (mouseEvent.offsetX === undefined) ? (mouseEvent.pageX - rect.left - window.scrollX) : mouseEvent.offsetX;
-    var eventYPos = (mouseEvent.offsetX === undefined) ? (mouseEvent.pageY - rect.top - window.scrollY) : mouseEvent.offsetY;
+    var eventXPos =
+        mouseEvent.offsetX === undefined ? mouseEvent.pageX - rect.left - window.scrollX : mouseEvent.offsetX;
+    var eventYPos =
+        mouseEvent.offsetX === undefined ? mouseEvent.pageY - rect.top - window.scrollY : mouseEvent.offsetY;
 
     //		var eventXPos = (mouseEvent.offsetX === undefined) ? mouseEvent.layerX : mouseEvent.offsetX;
     //		var eventYPos = (mouseEvent.offsetY === undefined) ? mouseEvent.layerY : mouseEvent.offsetY;
@@ -4802,7 +5088,7 @@ mx.ifevent = function(Mx: any, mouseEvent: any): void {
 // ~= scroll_real2pix
 //
 // TODO Refactor real2pix to return an object instead of sending in reference vars?
-mx.scroll_real2pix = function(sv: any): { s1: number; sw: number } {
+mx.scroll_real2pix = function (sv: any): { s1: number; sw: number } {
     // Param types:
     // sv - mx.SCROLLBAR
 
@@ -4851,7 +5137,7 @@ mx.scroll_real2pix = function(sv: any): { s1: number; sw: number } {
  * @param op Optional op-code for XW_DRAW
  * @private
  */
-mx.redrawScrollbar = function(sv: any, Mx: any, op: number): void {
+mx.redrawScrollbar = function (sv: any, Mx: any, op: number): void {
     var x;
     var y;
     var xcc;
@@ -4890,7 +5176,6 @@ mx.redrawScrollbar = function(sv: any, Mx: any, op: number): void {
             mx.shadowbox(Mx, xcc, ycc, arrow, yss - 1, mx.L_ArrowLeft, 2, "", 0);
             mx.shadowbox(Mx, xcc + xss - arrow, ycc, arrow - 1, yss, mx.L_ArrowRight, 2, "", 0);
         }
-
 
         if (mx.LEGACY_RENDER) {
             mx.draw_line(Mx, Mx.fg, xcc + sv.a1, y, xcc + sv.a2, y);
@@ -4938,14 +5223,20 @@ mx.redrawScrollbar = function(sv: any, Mx: any, op: number): void {
             lingrad.addColorStop(0.75, Mx.xwbs);
             mx.draw_round_box(Mx, Mx.xwbg, xcc - 1, ycc + p1, xss, sw + 1, 1, lingrad, 8, Mx.xwbs);
         }
-
     }
 
     sv.s1 = s1;
     sv.sw = sw;
 };
 
-mx.real_distance_to_pixel = function(Mx: any, x1: number, y1: number, x2: number, y2: number, clip?: boolean): { x: number; y: number; d: number; clipped: boolean } {
+mx.real_distance_to_pixel = function (
+    Mx: any,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    clip?: boolean
+): { x: number; y: number; d: number; clipped: boolean } {
     var pos1 = mx.real_to_pixel(Mx, x1, y1, clip);
     var pos2 = mx.real_to_pixel(Mx, x2, y2, clip);
 
@@ -4955,12 +5246,12 @@ mx.real_distance_to_pixel = function(Mx: any, x1: number, y1: number, x2: number
     return {
         x: dx,
         y: dy,
-        d: Math.sqrt((dx * dx) + (dy * dy)),
+        d: Math.sqrt(dx * dx + dy * dy),
         clipped: pos1.clipped || pos2.clipped
     };
 };
 
-mx.real_box_to_pixel = function(Mx: any, x: number, y: number, w: number, h: number, clip?: boolean): any {
+mx.real_box_to_pixel = function (Mx: any, x: number, y: number, w: number, h: number, clip?: boolean): any {
     var ul, lr;
     if (Mx.origin === 1) {
         // regular x, regular y
@@ -4997,9 +5288,9 @@ mx.real_box_to_pixel = function(Mx: any, x: number, y: number, w: number, h: num
  * @returns {number} pixel.clipped - true if the point would have or has been clipped
  * @private
  */
-mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: boolean): any {
+mx.real_to_pixel = function (Mx: any, x: number | null, y: number | null, clip?: boolean): any {
     var stk4 = mx.origin(Mx.origin, 4, Mx.stk[Mx.level]);
-    if ((stk4.xscl === 0.0) || (stk4.yscl === 0.0)) {
+    if (stk4.xscl === 0.0 || stk4.yscl === 0.0) {
         return {
             x: 0,
             y: 0
@@ -5019,14 +5310,14 @@ mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: 
     var clipped_y = false;
 
     if (x !== null) {
-        if ((Mx.origin === 1) || (Mx.origin === 4)) {
-            clipped_x = ((x > stk4.xmax) || (x < stk4.xmin));
+        if (Mx.origin === 1 || Mx.origin === 4) {
+            clipped_x = x > stk4.xmax || x < stk4.xmin;
             if (clip) {
                 x = Math.min(x, stk4.xmax);
                 x = Math.max(x, stk4.xmin);
             }
         } else {
-            clipped_x = ((x < stk4.xmax) || (x > stk4.xmin));
+            clipped_x = x < stk4.xmax || x > stk4.xmin;
             if (clip) {
                 x = Math.max(x, stk4.xmax);
                 x = Math.min(x, stk4.xmin);
@@ -5035,14 +5326,14 @@ mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: 
         x = Math.round((x - xxmin) * xscl) + left;
     }
     if (y !== null) {
-        if ((Mx.origin === 1) || (Mx.origin === 2)) {
-            clipped_y = ((y > stk4.ymin) || (y < stk4.ymax));
+        if (Mx.origin === 1 || Mx.origin === 2) {
+            clipped_y = y > stk4.ymin || y < stk4.ymax;
             if (clip) {
                 y = Math.min(y, stk4.ymin);
                 y = Math.max(y, stk4.ymax);
             }
         } else {
-            clipped_y = ((y < stk4.ymin) || (y > stk4.ymax));
+            clipped_y = y < stk4.ymin || y > stk4.ymax;
             if (clip) {
                 y = Math.max(y, stk4.ymin);
                 y = Math.min(y, stk4.ymax);
@@ -5059,7 +5350,7 @@ mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: 
         y: y,
         clipped_x: clipped_x,
         clipped_y: clipped_y,
-        clipped: (clipped_x || clipped_y)
+        clipped: clipped_x || clipped_y
     };
 };
 
@@ -5069,14 +5360,14 @@ mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: 
  * @param ypos
  * @private
  */
-mx.pixel_to_real = function(Mx: any, xpos: number, ypos: number): { x: number; y: number } {
+mx.pixel_to_real = function (Mx: any, xpos: number, ypos: number): { x: number; y: number } {
     var iretx = Math.min(Mx.r, Math.max(Mx.l, xpos));
     var irety = Math.min(Mx.b, Math.max(Mx.t, ypos));
     var retx;
     var rety;
 
     var k = Mx.level;
-    if ((Mx.origin !== 2) && (Mx.origin !== 3)) {
+    if (Mx.origin !== 2 && Mx.origin !== 3) {
         retx = Mx.stk[k].xmin + (iretx - Mx.stk[k].x1) * Mx.stk[k].xscl;
     } else {
         retx = Mx.stk[k].xmin + (Mx.stk[k].x2 - iretx) * Mx.stk[k].xscl;
@@ -5099,7 +5390,7 @@ mx.pixel_to_real = function(Mx: any, xpos: number, ypos: number): { x: number; y
  * @param ncolors
  * @private
  */
-mx.colormap = function(Mx: any, map: any, ncolors?: number): void {
+mx.colormap = function (Mx: any, map: any, ncolors?: number): void {
     Mx.pixel = new ColorMap(map, {
         ncolors: ncolors
     });
@@ -5114,14 +5405,14 @@ mx.colormap = function(Mx: any, map: any, ncolors?: number): void {
  * @param h
  * @private
  */
-mx.colorbar = function(Mx: any, x: number, y: number, w: number, h: number): void {
+mx.colorbar = function (Mx: any, x: number, y: number, w: number, h: number): void {
     if (!Mx.pixel) {
         m.log.warn("COLORMAP not initialized, cannot draw colorbar");
         return;
     }
     Mx.pixel.setRange(0, Mx.pixel.map.length);
     for (var j = 1; j < h; j++) {
-        var cidx = Math.floor(Mx.pixel.map.length * (j - 1) / h);
+        var cidx = Math.floor((Mx.pixel.map.length * (j - 1)) / h);
         mx.draw_line(Mx, cidx, x, y + h - j, x + w, y + h - j);
     }
     mx.draw_box(Mx, Mx.fg, x + 0.5, y, w, h);
@@ -5135,14 +5426,14 @@ mx.colorbar = function(Mx: any, x: number, y: number, w: number, h: number): voi
  * @param h
  * @private
  */
-mx.legend_colorbar = function(Mx: any, x: number, y: number, w: number, h: number): void {
+mx.legend_colorbar = function (Mx: any, x: number, y: number, w: number, h: number): void {
     if (!Mx.pixel) {
         m.log.warn("COLORMAP not initialized, cannot draw colorbar");
         return;
     }
     Mx.pixel.setRange(0, Mx.pixel.map.length);
     for (var j = 1; j < w; j++) {
-        var cidx = Math.floor(Mx.pixel.map.length * (j - 1) / w);
+        var cidx = Math.floor((Mx.pixel.map.length * (j - 1)) / w);
         mx.draw_line(Mx, cidx, x + w - j, y, x + w - j, y + h);
     }
     mx.draw_box(Mx, Mx.fg, x + 0.5, y, w, h);
@@ -5181,7 +5472,23 @@ mx.legend_colorbar = function(Mx: any, x: number, y: number, w: number, h: numbe
  * @param h
  *   optional height
  */
-function renderImageNoTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any, opacity: number, downscaling: any, smoothing: boolean, x: number, y: number, w: number, h: number, sx?: number, sy?: number, sw?: number, sh?: number, rotationAngle?: number): void {
+function renderImageNoTypedArrays(
+    Mx: any,
+    ctx: CanvasRenderingContext2D,
+    buf: any,
+    opacity: number,
+    downscaling: any,
+    smoothing: boolean,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    sx?: number,
+    sy?: number,
+    sw?: number,
+    sh?: number,
+    rotationAngle?: number
+): void {
     if (sx === undefined) {
         sx = 0;
     }
@@ -5259,7 +5566,23 @@ function renderImageNoTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: a
  * @param h
  *   optional height
  */
-function renderImageTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any, opacity: number, downscaling: any, smoothing: boolean, x: number, y: number, w: number, h: number, sx?: number, sy?: number, sw?: number, sh?: number, rotationAngle?: number): void {
+function renderImageTypedArrays(
+    Mx: any,
+    ctx: CanvasRenderingContext2D,
+    buf: any,
+    opacity: number,
+    downscaling: any,
+    smoothing: boolean,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    sx?: number,
+    sy?: number,
+    sw?: number,
+    sh?: number,
+    rotationAngle?: number
+): void {
     if (sx === undefined) {
         sx = 0;
     }
@@ -5273,7 +5596,7 @@ function renderImageTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any
         sh = buf.height - sy;
     }
 
-    if ((buf.width < 32768) && (buf.height < 32768)) {
+    if (buf.width < 32768 && buf.height < 32768) {
         // If the source buffer is small enough to be directly rendered, do that
         Mx._renderCanvas.width = buf.width;
         Mx._renderCanvas.height = buf.height;
@@ -5299,7 +5622,7 @@ function renderImageTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any
         imgctx.putImageData(imgd, 0, 0);
     } else {
         if (!downscaling) {
-            if ((sw < 32767) && (sh < 32767)) {
+            if (sw < 32767 && sh < 32767) {
                 // The clipped image is small enough to directly render
                 Mx._renderCanvas.width = sw;
                 Mx._renderCanvas.height = sh;
@@ -5356,7 +5679,16 @@ function renderImageTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any
  *
  * @private
  */
-function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?: number, sw?: number, sh?: number, downscaling?: string): void {
+function scaleImage(
+    Mx: any,
+    img: HTMLCanvasElement,
+    buf: any,
+    sx?: number,
+    sy?: number,
+    sw?: number,
+    sh?: number,
+    downscaling?: string
+): void {
     // Source buffer, expected to have .width and .height elements
     let colorMap = Mx.pixel;
 
@@ -5390,8 +5722,8 @@ function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?:
     var dest = new Uint32Array(Mx.scaledImgd.data.buffer);
 
     // Scaling factor
-    var width_scaling = (sw! / w);
-    var height_scaling = (sh! / h);
+    var width_scaling = sw! / w;
+    var height_scaling = sh! / h;
 
     // Perform the scaling
     var xx = 0;
@@ -5406,9 +5738,9 @@ function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?:
     // where downscaling isn't used
     if (!downscaling || buf.contents === "rgba") {
         for (var ii = 0; ii < dest.length; ii++) {
-            xx = Math.floor(ii % w * width_scaling) + sx;
-            yy = Math.floor(ii / w * height_scaling) + sy;
-            jj = Math.floor((yy * buf.width) + xx);
+            xx = Math.floor((ii % w) * width_scaling) + sx;
+            yy = Math.floor((ii / w) * height_scaling) + sy;
+            jj = Math.floor(yy * buf.width + xx);
 
             value = src[jj];
             if (buf.contents !== "rgba") {
@@ -5419,27 +5751,31 @@ function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?:
         }
     } else {
         for (var ii = 0; ii < dest.length; ii++) {
-            xx = Math.floor(ii % w * width_scaling) + sx;
-            yy = Math.floor(ii / w * height_scaling) + sy;
-            jj = Math.floor((yy * buf.width) + xx);
+            xx = Math.floor((ii % w) * width_scaling) + sx;
+            yy = Math.floor((ii / w) * height_scaling) + sy;
+            jj = Math.floor(yy * buf.width + xx);
 
             value = src[jj];
-            if (downscaling === "avg") { // average
+            if (downscaling === "avg") {
+                // average
                 for (var j = 1; j < width_scaling; j++) {
                     value += src[jj + j];
                 }
                 value = Math.round(value / width_scaling);
-            } else if (downscaling === "min") { // min
+            } else if (downscaling === "min") {
+                // min
                 for (var j = 1; j < width_scaling; j++) {
                     value = Math.min(value, src[jj + j]);
                 }
-            } else if (downscaling === "max") { // max
+            } else if (downscaling === "max") {
+                // max
                 for (var j = 1; j < width_scaling; j++) {
                     value = Math.max(value, src[jj + j]);
                 }
-            } else if (downscaling === "minmax") { // min/max
+            } else if (downscaling === "minmax") {
+                // min/max
                 for (var j = 1; j < width_scaling; j++) {
-                    value = (Math.abs(value - colorOffset) > Math.abs(src[jj + j] - colorOffset)) ? value : src[jj + j];
+                    value = Math.abs(value - colorOffset) > Math.abs(src[jj + j] - colorOffset) ? value : src[jj + j];
                 }
             }
 
@@ -5451,7 +5787,7 @@ function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?:
     imgctx!.putImageData(Mx.scaledImgd, 0, 0);
 }
 
-var renderImage = (typeof Uint8ClampedArray === 'undefined') ? renderImageNoTypedArrays : renderImageTypedArrays;
+var renderImage = typeof Uint8ClampedArray === "undefined" ? renderImageNoTypedArrays : renderImageTypedArrays;
 
 /**
  * @param Mx
@@ -5459,15 +5795,17 @@ var renderImage = (typeof Uint8ClampedArray === 'undefined') ? renderImageNoType
  * @param shift
  * @private
  */
-mx.shift_image_rows = function(Mx: any, buf: any, shift: number, zerofill?: boolean): any {
+mx.shift_image_rows = function (Mx: any, buf: any, shift: number, zerofill?: boolean): any {
     var imgd = new Uint32Array(buf);
-    if (shift > 0) { // shift down
+    if (shift > 0) {
+        // shift down
         shift = shift * buf.width;
         imgd.set(imgd.subarray(0, imgd.length - shift), shift);
         if (zerofill) {
             imgd.fill(0, 0, shift);
         }
-    } else if (shift < 0) { // shift up
+    } else if (shift < 0) {
+        // shift up
         shift = Math.abs(shift) * buf.width;
         imgd.set(imgd.subarray(shift));
         if (zerofill) {
@@ -5487,7 +5825,15 @@ mx.shift_image_rows = function(Mx: any, buf: any, shift: number, zerofill?: bool
  * @param zmax
  * @private
  */
-mx.update_image_row = function(Mx: any, buf: any, data: ArrayLike<number>, row: number, zmin: number, zmax: number, xcompression?: number): Uint32Array {
+mx.update_image_row = function (
+    Mx: any,
+    buf: any,
+    data: ArrayLike<number>,
+    row: number,
+    zmin: number,
+    zmax: number,
+    xcompression?: number
+): Uint32Array {
     var imgd = new Uint32Array(buf, row * buf.width * 4, buf.width);
 
     Mx.pixel.setRange(zmin, zmax);
@@ -5497,22 +5843,27 @@ mx.update_image_row = function(Mx: any, buf: any, data: ArrayLike<number>, row: 
         var didx = Math.floor(i * xc);
         var value = data[didx];
         if (xc > 1) {
-            if (xcompression === 1) { // average
+            if (xcompression === 1) {
+                // average
                 for (var j = 1; j < xc; j++) {
                     value += data[didx + j];
                 }
-                value = (value / xc);
-            } else if (xcompression === 2) { // min
+                value = value / xc;
+            } else if (xcompression === 2) {
+                // min
                 for (var j = 1; j < xc; j++) {
                     value = Math.min(value, data[didx + j]);
                 }
-            } else if (xcompression === 3) { // max
+            } else if (xcompression === 3) {
+                // max
                 for (var j = 1; j < xc; j++) {
                     value = Math.max(value, data[didx + j]);
                 }
-            } else if (xcompression === 4) { // first
+            } else if (xcompression === 4) {
+                // first
                 value = data[i];
-            } else if (xcompression === 5) { // max abs
+            } else if (xcompression === 5) {
+                // max abs
                 for (var j = 1; j < xc; j++) {
                     value = Math.max(Math.abs(value), Math.abs(data[didx + j]));
                 }
@@ -5534,7 +5885,15 @@ mx.update_image_row = function(Mx: any, buf: any, data: ArrayLike<number>, row: 
  * @param zmax
  * @private
  */
-mx.update_image_col = function(Mx: any, buf: any, data: ArrayLike<number>, col: number, zmin: number, zmax: number, xcompression?: number): Uint32Array {
+mx.update_image_col = function (
+    Mx: any,
+    buf: any,
+    data: ArrayLike<number>,
+    col: number,
+    zmin: number,
+    zmax: number,
+    xcompression?: number
+): Uint32Array {
     var imgd = new Uint32Array(buf);
 
     Mx.pixel.setRange(zmin, zmax);
@@ -5545,29 +5904,34 @@ mx.update_image_col = function(Mx: any, buf: any, data: ArrayLike<number>, col: 
         var didx = Math.floor(i * xc);
         var value = data[didx];
         if (xc > 1) {
-            if (xcompression === 1) { // average
+            if (xcompression === 1) {
+                // average
                 for (var j = 1; j < xc; j++) {
                     value += data[didx + j];
                 }
-                value = (value / xc);
-            } else if (xcompression === 2) { // min
+                value = value / xc;
+            } else if (xcompression === 2) {
+                // min
                 for (var j = 1; j < xc; j++) {
                     value = Math.min(value, data[didx + j]);
                 }
-            } else if (xcompression === 3) { // max
+            } else if (xcompression === 3) {
+                // max
                 for (var j = 1; j < xc; j++) {
                     value = Math.max(value, data[didx + j]);
                 }
-            } else if (xcompression === 4) { // first
+            } else if (xcompression === 4) {
+                // first
                 value = data[i];
-            } else if (xcompression === 5) { // max abs
+            } else if (xcompression === 5) {
+                // max abs
                 for (var j = 1; j < xc; j++) {
                     value = Math.max(Math.abs(value), Math.abs(data[didx + j]));
                 }
             }
         }
         var colorIdx = Mx.pixel.getColorIndex(value);
-        imgd[((buf.height - i) * buf.width) + col] = colorIdx;
+        imgd[(buf.height - i) * buf.width + col] = colorIdx;
     }
 
     return imgd;
@@ -5583,7 +5947,17 @@ mx.update_image_col = function(Mx: any, buf: any, data: ArrayLike<number>, col: 
  * @param zmax
  * @private
  */
-mx.create_image = function(Mx: any, data: ArrayLike<number> | null, subsize: number, w: number, h: number, zmin: number, zmax: number, xcompression?: number, drawdirection?: string): ArrayBuffer {
+mx.create_image = function (
+    Mx: any,
+    data: ArrayLike<number> | null,
+    subsize: number,
+    w: number,
+    h: number,
+    zmin: number,
+    zmax: number,
+    xcompression?: number,
+    drawdirection?: string
+): ArrayBuffer {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (!Mx.pixel) {
@@ -5620,12 +5994,12 @@ mx.create_image = function(Mx: any, data: ArrayLike<number> | null, subsize: num
             var didx;
 
             // Figure out what pixel we are at (upper left is 0,0)
-            if ((Mx.origin === 1) || (Mx.origin === 4)) {
+            if (Mx.origin === 1 || Mx.origin === 4) {
                 ix = Math.floor(i % w);
             } else {
                 ix = w - Math.floor(i % w) - 1;
             }
-            if ((Mx.origin === 3) || (Mx.origin === 4)) {
+            if (Mx.origin === 3 || Mx.origin === 4) {
                 iy = Math.floor(i / w);
             } else {
                 iy = h - Math.floor(i / w) - 1;
@@ -5633,34 +6007,38 @@ mx.create_image = function(Mx: any, data: ArrayLike<number> | null, subsize: num
 
             // Map that pixel to it's nearest data
             if (drawdirection !== "horizontal") {
-                didx = (iy * subsize) + Math.floor(ix * nxc);
+                didx = iy * subsize + Math.floor(ix * nxc);
             } else {
-                didx = (ix * subsize) + Math.floor(iy * nxc);
+                didx = ix * subsize + Math.floor(iy * nxc);
             }
             var value = data[didx];
             if (nxc > 1) {
-                if (xcompression === 1) { // average
+                if (xcompression === 1) {
+                    // average
                     for (var j = 1; j < nxc; j++) {
                         value += data[didx + j];
                     }
                     value = value / nxc;
-                } else if (xcompression === 2) { // min
+                } else if (xcompression === 2) {
+                    // min
                     for (var j = 1; j < nxc; j++) {
                         value = Math.min(value, data[didx + j]);
                     }
-                } else if (xcompression === 3) { // max
+                } else if (xcompression === 3) {
+                    // max
                     for (var j = 1; j < nxc; j++) {
                         value = Math.max(value, data[didx + j]);
                     }
-                } else if (xcompression === 4) { // first
+                } else if (xcompression === 4) {
+                    // first
                     value = data[didx];
-                } else if (xcompression === 5) { // max abs
+                } else if (xcompression === 5) {
+                    // max abs
                     for (var j = 1; j < nxc; j++) {
                         value = Math.max(Math.abs(value), Math.abs(data[didx + j]));
                     }
                 }
             }
-
 
             var colorIdx = Mx.pixel.getColorIndex(value);
             imgd[i] = colorIdx;
@@ -5671,12 +6049,12 @@ mx.create_image = function(Mx: any, data: ArrayLike<number> | null, subsize: num
     return buf;
 };
 
-mx.resize_image_height = function(Mx: any, buf: any, h: number): any {
+mx.resize_image_height = function (Mx: any, buf: any, h: number): any {
     if (buf.height === h) {
         return buf;
     }
 
-    var buf2: any = (ArrayBuffer as any).transfer(buf, (buf.width * h * 4));
+    var buf2: any = (ArrayBuffer as any).transfer(buf, buf.width * h * 4);
     (Object as any).assign(buf2, buf);
     buf2.height = h;
 
@@ -5697,7 +6075,20 @@ mx.resize_image_height = function(Mx: any, buf: any, h: number): any {
  * @param smoothing
  * @private
  */
-mx.put_image = function(Mx: any, data: ArrayLike<number>, nx: number, ny: number, nex: number, ney: number, xd: number, yd: number, level: number, opacity: number, smoothing: boolean, downscaling?: string): ArrayBuffer {
+mx.put_image = function (
+    Mx: any,
+    data: ArrayLike<number>,
+    nx: number,
+    ny: number,
+    nex: number,
+    ney: number,
+    xd: number,
+    yd: number,
+    level: number,
+    opacity: number,
+    smoothing: boolean,
+    downscaling?: string
+): ArrayBuffer {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (!Mx.pixel) {
@@ -5748,8 +6139,20 @@ mx.put_image = function(Mx: any, data: ArrayLike<number>, nx: number, ny: number
  * @param {number} rotationAngle  Angle of rotation in radians // TODO-MRA we might need to have very fixed rotations
  * @private
  */
-mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: number, ymax: number, opacity: number, smoothing: boolean | number, downscaling?: string, rotationAngle?: number, strokeStyle?: string, text?: string): void {
-
+mx.draw_image = function (
+    Mx: any,
+    buf: any,
+    xmin: number,
+    ymin: number,
+    xmax: number,
+    ymax: number,
+    opacity: number,
+    smoothing: boolean | number,
+    downscaling?: string,
+    rotationAngle?: number,
+    strokeStyle?: string,
+    text?: string
+): void {
     var view_xmin = Math.max(xmin, Mx.stk[Mx.level].xmin);
     var view_xmax = Math.min(xmax, Mx.stk[Mx.level].xmax);
     var view_ymin = Math.max(ymin, Mx.stk[Mx.level].ymin);
@@ -5765,10 +6168,10 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
         return;
     }
 
-    if ((buf.width <= 1) || Math.abs(xmax - xmin) === 0) {
+    if (buf.width <= 1 || Math.abs(xmax - xmin) === 0) {
         return;
     }
-    if ((buf.height <= 1) || Math.abs(ymax - ymin) === 0) {
+    if (buf.height <= 1 || Math.abs(ymax - ymin) === 0) {
         return;
     }
     var rx = buf.width / (xmax - xmin);
@@ -5797,14 +6200,14 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
             sw = Math.min(buf.width - sx, Math.ceil((view_xmax - view_xmin) * rx) + 1);
 
             // Now determine the specific view area
-            render_xmin = (sx / rx) + xmin;
-            render_xmax = ((sx + sw) / rx) + xmin;
-            render_ymin = ymax - ((sy + sh) / ry);
-            render_ymax = ymax - (sy / ry);
+            render_xmin = sx / rx + xmin;
+            render_xmax = (sx + sw) / rx + xmin;
+            render_ymin = ymax - (sy + sh) / ry;
+            render_ymax = ymax - sy / ry;
 
             ul = mx.real_to_pixel(Mx, render_xmin, render_ymax);
             lr = mx.real_to_pixel(Mx, render_xmax, render_ymin);
-        } else if (Math.abs(rotationAngle - (-Math.PI / 2)) < 1E-12) {
+        } else if (Math.abs(rotationAngle - -Math.PI / 2) < 1e-12) {
             // The x-axis is now distributed against the height of the buffer
             // and the y-axis against the width of the buffer
             rx = buf.height / (xmax - xmin);
@@ -5817,13 +6220,13 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
             sy = Math.max(0, Math.floor((view_xmin - xmin) * rx));
             sh = Math.min(buf.height - sy, Math.ceil((view_xmax - view_xmin) * rx) + 1);
 
-            // Given the calculated buffer boundary, we need to figure out back in 
-            // plot coordinates where that is rendered in the view.  This is very confusing 
+            // Given the calculated buffer boundary, we need to figure out back in
+            // plot coordinates where that is rendered in the view.  This is very confusing
             // because the start x related to ratio-y and ymin and vice versa
-            render_ymin = (sx / ry) + ymin;
-            render_ymax = ((sx + sw) / ry) + ymin;
-            render_xmin = (sy / rx) + xmin;
-            render_xmax = ((sy + sh) / rx) + xmin;
+            render_ymin = sx / ry + ymin;
+            render_ymax = (sx + sw) / ry + ymin;
+            render_xmin = sy / rx + xmin;
+            render_xmax = (sy + sh) / rx + xmin;
 
             ul = mx.real_to_pixel(Mx, render_xmin, render_ymax);
             lr = mx.real_to_pixel(Mx, render_xmax, render_ymin);
@@ -5837,10 +6240,10 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
         sx = Math.max(0, Math.floor((view_xmax - xmax) * rx));
         sw = Math.min(buf.width - sx, Math.floor((view_xmax - view_xmin) * rx));
 
-        render_xmin = xmax - ((sx + sw) / rx);
-        render_xmax = xmax - (sx / rx);
-        render_ymin = ymax - ((sy + sh) / ry);
-        render_ymax = ymax - (sy / ry);
+        render_xmin = xmax - (sx + sw) / rx;
+        render_xmax = xmax - sx / rx;
+        render_ymin = ymax - (sy + sh) / ry;
+        render_ymax = ymax - sy / ry;
 
         ul = mx.real_to_pixel(Mx, render_xmax, render_ymax);
         lr = mx.real_to_pixel(Mx, render_xmin, render_ymin);
@@ -5851,10 +6254,10 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
         sx = Math.max(0, Math.floor((view_xmax - xmax) * rx));
         sw = Math.min(buf.width - sx, Math.ceil((view_xmax - view_xmin) * rx) + 1);
 
-        render_xmin = xmax - ((sx + sw) / rx);
-        render_xmax = xmax - (sx / rx);
-        render_ymin = (sy / ry) + ymin;
-        render_ymax = ((sy + sh) / ry) + ymin;
+        render_xmin = xmax - (sx + sw) / rx;
+        render_xmax = xmax - sx / rx;
+        render_ymin = sy / ry + ymin;
+        render_ymax = (sy + sh) / ry + ymin;
 
         ul = mx.real_to_pixel(Mx, render_xmax, render_ymin);
         lr = mx.real_to_pixel(Mx, render_xmin, render_ymax);
@@ -5865,10 +6268,10 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
         sx = Math.max(0, Math.floor((view_xmin - xmin) * rx));
         sw = Math.min(buf.width - sx, Math.ceil((view_xmax - view_xmin) * rx) + 1);
 
-        render_xmin = (sx / rx) + xmin;
-        render_xmax = ((sx + sw) / rx) + xmin;
-        render_ymin = (sy / ry) + ymin;
-        render_ymax = ((sy + sh) / ry) + ymin;
+        render_xmin = sx / rx + xmin;
+        render_xmax = (sx + sw) / rx + xmin;
+        render_ymin = sy / ry + ymin;
+        render_ymax = (sy + sh) / ry + ymin;
 
         ul = mx.real_to_pixel(Mx, render_xmin, render_ymin);
         lr = mx.real_to_pixel(Mx, render_xmax, render_ymax);
@@ -5888,7 +6291,7 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
         var ratio = (Mx.r - Mx.l) / sw;
         // if the ratio is greater than the smoothing value
         // turn on smoothing
-        smoothing = (ratio <= smoothing);
+        smoothing = ratio <= smoothing;
     }
 
     //render the buffered canvas onto the original canvas element
@@ -5904,12 +6307,7 @@ mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: nu
         ctx.strokeRect(ul.x, ul.y, iw, ih);
     }
     if (text) {
-        mx.text(Mx,
-            ul.x,
-            ul.y + Mx.text_h,
-            text,
-            Mx.fg
-        );
+        mx.text(Mx, ul.x, ul.y + Mx.text_h, text, Mx.fg);
     }
     ctx.restore();
 };

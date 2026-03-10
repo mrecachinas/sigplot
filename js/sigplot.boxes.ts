@@ -98,7 +98,6 @@ interface BoxSelectEvent extends Event {
     which: number;
 }
 
-
 class BoxesPlugin {
     options: {
         display: boolean;
@@ -120,7 +119,7 @@ class BoxesPlugin {
 
     /**
      * Constructor for the BoxesPlugin
-     * 
+     *
      * @param options - options for the plugin
      */
     constructor({
@@ -149,7 +148,7 @@ class BoxesPlugin {
             fillStyle,
             absolutePlacement
         };
-        
+
         this.boxes = [];
         this._clickTimer = null;
         this._selected = undefined;
@@ -164,7 +163,8 @@ class BoxesPlugin {
      * Initializer called when plot.add_plugin() is used.
      * This should not be called directly.
      */
-    init(plot: any): void { // TODO: Type plot parameter
+    init(plot: any): void {
+        // TODO: Type plot parameter
         this.plot = plot;
         this.boxes = [];
         this._clickTimer = null;
@@ -261,7 +261,7 @@ class BoxesPlugin {
             alpha: box.alpha,
             strokeStyle: box.strokeStyle,
             lineWidth: box.lineWidth,
-            absolutePlacement: box.absolutePlacement,
+            absolutePlacement: box.absolutePlacement
         };
         // Handle deprecated options
         if (box.absolute_placement) {
@@ -271,9 +271,9 @@ class BoxesPlugin {
 
         this.plot.redraw();
 
-        const evt: any = document.createEvent('Event') as BoxEvent;
+        const evt: any = document.createEvent("Event") as BoxEvent;
         evt.box = _box;
-        evt.initEvent('boxadd', true, true);
+        evt.initEvent("boxadd", true, true);
         mx.dispatchEvent(Mx, evt);
 
         return _box.id;
@@ -286,7 +286,7 @@ class BoxesPlugin {
         const selectedBoxes: Box[] = [];
         let box: Box;
         let ii: number;
-        for (ii = (this.boxes.length - 1); ii > -1; ii--) {
+        for (ii = this.boxes.length - 1; ii > -1; ii--) {
             box = this.boxes[ii];
             if (box.selected) {
                 selectedBoxes.push(box);
@@ -297,13 +297,13 @@ class BoxesPlugin {
 
     /**
      * Brings a box to the front of the z-order
-     * 
+     *
      * @param id - the unique id of the box to remove
      */
     bringBoxToFront(id: any) {
         let box;
         let ii;
-        for (ii = (this.boxes.length - 1); ii > -1; ii--) {
+        for (ii = this.boxes.length - 1; ii > -1; ii--) {
             box = this.boxes[ii];
             if (box.id === id) {
                 this.boxes.splice(ii, 1);
@@ -315,13 +315,13 @@ class BoxesPlugin {
 
     /**
      * Sends a box to the back of the z-order
-     * 
+     *
      * @param {string} id - the unique id of the box to remove
      */
     sendBoxToBack(id: string): void {
         let box;
         let ii;
-        for (ii = (this.boxes.length - 1); ii > -1; ii--) {
+        for (ii = this.boxes.length - 1; ii > -1; ii--) {
             box = this.boxes[ii];
             if (box.id === id) {
                 this.boxes.splice(ii, 1);
@@ -333,7 +333,7 @@ class BoxesPlugin {
 
     /**
      * Removes a box.
-     * 
+     *
      * @param id - the unique id of the box to remove
      */
     removeBox(id: string): void {
@@ -341,14 +341,14 @@ class BoxesPlugin {
 
         let box;
         let ii;
-        for (ii = (this.boxes.length - 1); ii > -1; ii--) {
+        for (ii = this.boxes.length - 1; ii > -1; ii--) {
             box = this.boxes[ii];
             if (box.id === id) {
                 this.boxes.splice(ii, 1);
 
-                const evt = document.createEvent('Event') as any;
+                const evt = document.createEvent("Event") as any;
                 evt.box = box;
-                evt.initEvent('boxremove', true, true);
+                evt.initEvent("boxremove", true, true);
                 mx.dispatchEvent(Mx, evt);
                 // TODO - should we allow prevent default
                 // to block a box removal?
@@ -366,13 +366,13 @@ class BoxesPlugin {
 
         let box;
         let ii;
-        for (ii = (this.boxes.length - 1); ii > -1; ii--) {
+        for (ii = this.boxes.length - 1; ii > -1; ii--) {
             box = this.boxes[ii];
             this.boxes.splice(ii, 1);
 
-            const evt = document.createEvent('Event') as any;
+            const evt = document.createEvent("Event") as any;
             evt.box = box;
-            evt.initEvent('boxremove', true, true);
+            evt.initEvent("boxremove", true, true);
             mx.dispatchEvent(Mx, evt);
         }
         this.plot.redraw();
@@ -442,10 +442,10 @@ class BoxesPlugin {
     _isWithinBox(xpos: number, ypos: number, box: Box) {
         const rect = mx.real_box_to_pixel(this.plot._Mx, box.x, box.y, box.w, box.h);
 
-        const in_x = (rect.ul.x <= xpos) && (xpos <= rect.lr.x);
-        const in_y = (rect.ul.y <= ypos) && (ypos <= rect.lr.y);
+        const in_x = rect.ul.x <= xpos && xpos <= rect.lr.x;
+        const in_y = rect.ul.y <= ypos && ypos <= rect.lr.y;
 
-        return (in_x && in_y);
+        return in_x && in_y;
     }
 
     // Checks if the xpos/ypos is over a box control point
@@ -454,7 +454,7 @@ class BoxesPlugin {
         for (const [key, value] of Object.entries(controlPoints)) {
             const dist_x = Math.abs(value.x - xpos);
             const dist_y = Math.abs(value.y - ypos);
-            if ((dist_x < 5) && (dist_y < 5)) {
+            if (dist_x < 5 && dist_y < 5) {
                 return key;
             }
         }
@@ -465,13 +465,13 @@ class BoxesPlugin {
     _selectBoxes(xpos: number, ypos: number, multi_select: boolean) {
         // See if the mouse is within any boxes
         const boxes_selected = [];
-        for (let ii = (this.boxes.length - 1); ii > -1; ii--) {
+        for (let ii = this.boxes.length - 1; ii > -1; ii--) {
             const box = this.boxes[ii];
             const rect = mx.real_box_to_pixel(this.plot._Mx, box.x, box.y, box.w, box.h);
 
-            const in_x = (rect.ul.x <= xpos) && (xpos <= rect.lr.x);
-            const in_y = (rect.ul.y <= ypos) && (ypos <= rect.lr.y);
-            if ((multi_select || boxes_selected.length === 0) && (in_x && in_y)) {
+            const in_x = rect.ul.x <= xpos && xpos <= rect.lr.x;
+            const in_y = rect.ul.y <= ypos && ypos <= rect.lr.y;
+            if ((multi_select || boxes_selected.length === 0) && in_x && in_y) {
                 boxes_selected.push(box);
                 if (this.options.enableSelect) {
                     box.selected = true;
@@ -509,10 +509,10 @@ class BoxesPlugin {
 
         // If the event is outside the plot entirely
         // we can just skip it
-        if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+        if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
             return;
         }
-        if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+        if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
             return;
         }
 
@@ -535,7 +535,7 @@ class BoxesPlugin {
                 orig_box: Object.assign({}, boxes_selected[0]),
                 box: boxes_selected[0],
                 controlPoint: controlPoint,
-                which: evt.which,
+                which: evt.which
             };
 
             // Prevent a rubber box from being drawn
@@ -559,10 +559,10 @@ class BoxesPlugin {
         }
 
         // Ignore if the mouse is outside of the plot area
-        if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+        if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
             return;
         }
-        if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+        if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
             return;
         }
 
@@ -570,8 +570,8 @@ class BoxesPlugin {
         if (this._selected && this._selected.which === 1) {
             // If we are dragging, update the box size/location
             const pos = mx.pixel_to_real(Mx, evt.xpos - this._selected.xpos, evt.ypos - this._selected.ypos);
-            const xdelta = (evt.x - this._selected.x);
-            const ydelta = (evt.y - this._selected.y);
+            const xdelta = evt.x - this._selected.x;
+            const ydelta = evt.y - this._selected.y;
 
             if (this.options.enableMove) {
                 if (!this._selected.controlPoint) {
@@ -582,8 +582,12 @@ class BoxesPlugin {
             }
 
             if (this.options.enableResize) {
-                if ((this._selected.controlPoint === "ul") || (this._selected.controlPoint === "um") || (this._selected.controlPoint === "ur")) {
-                    if ((Mx.origin === 1) || (Mx.origin === 2)) {
+                if (
+                    this._selected.controlPoint === "ul" ||
+                    this._selected.controlPoint === "um" ||
+                    this._selected.controlPoint === "ur"
+                ) {
+                    if (Mx.origin === 1 || Mx.origin === 2) {
                         // regular y
                         this._selected.box.y = this._selected.orig_box.y + ydelta;
                         this._selected.box.h = this._selected.orig_box.h + ydelta;
@@ -592,8 +596,12 @@ class BoxesPlugin {
                         this._selected.box.y = this._selected.orig_box.y + ydelta;
                         this._selected.box.h = this._selected.orig_box.h - ydelta;
                     }
-                } else if ((this._selected.controlPoint === "ll") || (this._selected.controlPoint === "lm") || (this._selected.controlPoint === "lr")) {
-                    if ((Mx.origin === 1) || (Mx.origin === 2)) {
+                } else if (
+                    this._selected.controlPoint === "ll" ||
+                    this._selected.controlPoint === "lm" ||
+                    this._selected.controlPoint === "lr"
+                ) {
+                    if (Mx.origin === 1 || Mx.origin === 2) {
                         // regular y
                         this._selected.box.h = this._selected.orig_box.h - ydelta;
                     } else {
@@ -602,8 +610,12 @@ class BoxesPlugin {
                     }
                 }
 
-                if ((this._selected.controlPoint === "ul") || (this._selected.controlPoint === "ml") || (this._selected.controlPoint === "ll")) {
-                    if ((Mx.origin === 1) || (Mx.origin === 4)) {
+                if (
+                    this._selected.controlPoint === "ul" ||
+                    this._selected.controlPoint === "ml" ||
+                    this._selected.controlPoint === "ll"
+                ) {
+                    if (Mx.origin === 1 || Mx.origin === 4) {
                         // regular x
                         this._selected.box.x = this._selected.orig_box.x + xdelta;
                         this._selected.box.w = this._selected.orig_box.w - xdelta;
@@ -612,8 +624,12 @@ class BoxesPlugin {
                         this._selected.box.x = this._selected.orig_box.x + xdelta;
                         this._selected.box.x = this._selected.orig_box.w - xdelta;
                     }
-                } else if ((this._selected.controlPoint === "ur") || (this._selected.controlPoint === "mr") || (this._selected.controlPoint === "lr")) {
-                    if ((Mx.origin === 1) || (Mx.origin === 4)) {
+                } else if (
+                    this._selected.controlPoint === "ur" ||
+                    this._selected.controlPoint === "mr" ||
+                    this._selected.controlPoint === "lr"
+                ) {
+                    if (Mx.origin === 1 || Mx.origin === 4) {
                         // regular x
                         this._selected.box.w = this._selected.orig_box.w + xdelta;
                     } else {
@@ -646,13 +662,13 @@ class BoxesPlugin {
                 controlPoint = this._isOverControlPoint(evt.xpos, evt.ypos, box);
                 if (controlPoint && this.options.enableResize) {
                     // TODO change cursor
-                    if ((controlPoint === 'ul') || (controlPoint === 'lr')) {
+                    if (controlPoint === "ul" || controlPoint === "lr") {
                         cursor = "nw-resize";
-                    } else if ((controlPoint === 'll') || (controlPoint === 'ur')) {
+                    } else if (controlPoint === "ll" || controlPoint === "ur") {
                         cursor = "ne-resize";
-                    } else if ((controlPoint === 'lm') || (controlPoint === 'um')) {
+                    } else if (controlPoint === "lm" || controlPoint === "um") {
                         cursor = "ns-resize";
-                    } else if ((controlPoint === 'ml') || (controlPoint === 'mr')) {
+                    } else if (controlPoint === "ml" || controlPoint === "mr") {
                         cursor = "ew-resize";
                     }
                     box.highlight = true;
@@ -691,7 +707,7 @@ class BoxesPlugin {
                         orig_box: Object.assign({}, boxes_selected[0]),
                         box: boxes_selected[0],
                         controlPoint: controlPoint,
-                        which: evt.which,
+                        which: evt.which
                     };
                 }
             }
@@ -718,10 +734,15 @@ class BoxesPlugin {
                 selected.box.y + selected.box.h
             );
 
-            if ((Math.abs(move_dist.x) > 3) || (Math.abs(move_dist.y) > 3) || (Math.abs(size_dist.x) > 3) || (Math.abs(size_dist.y) > 3)) {
+            if (
+                Math.abs(move_dist.x) > 3 ||
+                Math.abs(move_dist.y) > 3 ||
+                Math.abs(size_dist.x) > 3 ||
+                Math.abs(size_dist.y) > 3
+            ) {
                 // If the control point has been dragged causing negative w/h adjust the box
                 if (selected.box.w < 0) {
-                    if ((Mx.origin === 1) || (Mx.origin === 4)) {
+                    if (Mx.origin === 1 || Mx.origin === 4) {
                         // Regular x
                         selected.box.x = selected.box.x + selected.box.w;
                         selected.box.w = Math.abs(selected.box.w);
@@ -732,7 +753,7 @@ class BoxesPlugin {
                     }
                 }
                 if (selected.box.h < 0) {
-                    if ((Mx.origin === 1) || (Mx.origin === 2)) {
+                    if (Mx.origin === 1 || Mx.origin === 2) {
                         // Regular y
                         selected.box.y = selected.box.y - selected.box.h;
                         selected.box.h = Math.abs(selected.box.h);
@@ -744,11 +765,11 @@ class BoxesPlugin {
                 }
 
                 // Only issue box move if the box has moved
-                const sevt = document.createEvent('Event') as any;
+                const sevt = document.createEvent("Event") as any;
                 sevt.source = this;
                 sevt.box = selected.box;
                 sevt.action = evt.type;
-                sevt.initEvent('boxmove', true, true);
+                sevt.initEvent("boxmove", true, true);
                 mx.dispatchEvent(Mx, sevt);
                 evt.preventDefault();
                 this.plot.redraw();
@@ -767,18 +788,18 @@ class BoxesPlugin {
                 clearTimeout(this._clickTimer);
             }
 
-            if ((selected_boxes.length > 0) && (this.options.enableSelect)) {
+            if (selected_boxes.length > 0 && this.options.enableSelect) {
                 // If a box is selected we need to stop other actions (i.e. unzoom)
                 // that might be associated with the 'mup' event
                 evt.preventDefault();
                 allowDefault = false;
                 this._clickTimer = setTimeout(() => {
-                    const sevt = document.createEvent('Event') as any;
+                    const sevt = document.createEvent("Event") as any;
                     sevt.source = this;
                     sevt.boxes = selected_boxes;
                     sevt.action = evt.type;
                     sevt.which = evt.which;
-                    sevt.initEvent('boxselect', true, true);
+                    sevt.initEvent("boxselect", true, true);
 
                     mx.dispatchEvent(Mx, sevt);
 
@@ -802,42 +823,48 @@ class BoxesPlugin {
             text: "Boxes...",
             menu: {
                 title: "BOXES",
-                items: [{
-                    text: "Display",
-                    checked: this.display(),
-                    style: "checkbox",
-                    handler: () => this.display(!this.display())
-                }, {
-                    text: "Enable Select",
-                    checked: this.enableSelect(),
-                    style: "checkbox",
-                    handler: () => this.enableSelect(!this.enableSelect())
-                }, {
-                    text: "Enable Move",
-                    checked: this.enableMove(),
-                    style: "checkbox",
-                    handler: () => this.enableMove(!this.enableMove())
-                }, {
-                    text: "Enable Resize",
-                    checked: this.enableResize(),
-                    style: "checkbox",
-                    handler: () => this.enableResize(!this.enableResize())
-                }, {
-                    text: "Clear All",
-                    handler: () => this.clearBoxes()
-                }]
+                items: [
+                    {
+                        text: "Display",
+                        checked: this.display(),
+                        style: "checkbox",
+                        handler: () => this.display(!this.display())
+                    },
+                    {
+                        text: "Enable Select",
+                        checked: this.enableSelect(),
+                        style: "checkbox",
+                        handler: () => this.enableSelect(!this.enableSelect())
+                    },
+                    {
+                        text: "Enable Move",
+                        checked: this.enableMove(),
+                        style: "checkbox",
+                        handler: () => this.enableMove(!this.enableMove())
+                    },
+                    {
+                        text: "Enable Resize",
+                        checked: this.enableResize(),
+                        style: "checkbox",
+                        handler: () => this.enableResize(!this.enableResize())
+                    },
+                    {
+                        text: "Clear All",
+                        handler: () => this.clearBoxes()
+                    }
+                ]
             }
         };
     }
 
     /**
      * Refresh the plugin by drawing upon the plot canvas.
-     * 
-     * @param {canvas} canvas 
+     *
+     * @param {canvas} canvas
      */
     refresh(canvas: HTMLCanvasElement) {
         // Quick abort if we have nothing to do
-        if ((!this.options.display) || (this.boxes.length === 0)) {
+        if (!this.options.display || this.boxes.length === 0) {
             return;
         }
 
@@ -849,7 +876,7 @@ class BoxesPlugin {
             return;
         }
 
-        if ((Gx.x_cut_press_on || Gx.y_cut_press_on)) {
+        if (Gx.x_cut_press_on || Gx.y_cut_press_on) {
             return;
         }
 
@@ -871,7 +898,7 @@ class BoxesPlugin {
         for (ii = 0; ii < this.boxes.length; ii++) {
             box = this.boxes[ii];
 
-            if ((box.absolutePlacement === true) || (this.options.absolutePlacement === true)) {
+            if (box.absolutePlacement === true || this.options.absolutePlacement === true) {
                 x = box.x + Mx.l;
                 y = box.y + Mx.t;
                 w = box.w;
@@ -909,10 +936,7 @@ class BoxesPlugin {
             }
 
             // Now draw the box
-            ctx.strokeRect(x,
-                y,
-                w,
-                h);
+            ctx.strokeRect(x, y, w, h);
 
             // Draw control points if necessary
             if (this.options.enableResize) {
@@ -924,10 +948,10 @@ class BoxesPlugin {
                 ctx.fillRect(x + w - 3, y + h - 3, 6, 6); // lr
                 ctx.fillRect(x - 3, y + h - 3, 6, 6); // ll
 
-                ctx.fillRect(x + (w / 2) - 3, y - 3, 6, 6); // um
-                ctx.fillRect(x + (w / 2) - 3, y + h - 3, 6, 6); // lm
-                ctx.fillRect(x - 3, y + (h / 2) - 3, 6, 6); // ml
-                ctx.fillRect(x + w - 3, y + (h / 2) - 3, 6, 6); // mr
+                ctx.fillRect(x + w / 2 - 3, y - 3, 6, 6); // um
+                ctx.fillRect(x + w / 2 - 3, y + h - 3, 6, 6); // lm
+                ctx.fillRect(x - 3, y + h / 2 - 3, 6, 6); // ml
+                ctx.fillRect(x + w - 3, y + h / 2 - 3, 6, 6); // mr
             }
 
             // Render text
@@ -941,12 +965,12 @@ class BoxesPlugin {
                 // the capital M is typically the same height and width
                 let letter_w = ctx.measureText("M").width;
                 x = x - letter_w;
-                y = y - (letter_w / 3);
+                y = y - letter_w / 3;
 
                 text_w = ctx.measureText(box.text).width;
 
-                if ((x - text_w) < Mx.l) {
-                    x = (x + w);
+                if (x - text_w < Mx.l) {
+                    x = x + w;
                 }
 
                 ctx.fillText(box.text, x, y);

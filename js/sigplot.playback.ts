@@ -77,7 +77,7 @@ class PlaybackControlsPlugin {
         // Register for mouse events
         const self = this;
         const Mx = this.plot._Mx;
-        this.onmousemove = function(evt: any): void {
+        this.onmousemove = function (evt: any): void {
             if (Mx.warpbox) {
                 return;
             } // Don't highlight if a warpbox is being drawn
@@ -91,7 +91,7 @@ class PlaybackControlsPlugin {
         };
         this.plot.addListener("mmove", this.onmousemove);
 
-        this.onmousedown = function(evt: any): void {
+        this.onmousedown = function (evt: any): void {
             if (Mx.warpbox) {
                 return;
             } // Don't handle if a warpbox is being drawn
@@ -104,7 +104,7 @@ class PlaybackControlsPlugin {
         // Prevents zooms and stuff from occuring
         this.plot.addListener("mdown", this.onmousedown);
 
-        this.onmouseclick = function(evt: any): void {
+        this.onmouseclick = function (evt: any): void {
             if (Mx.warpbox) {
                 return;
             } // Don't handle if a warpbox is being drawn
@@ -137,8 +137,8 @@ class PlaybackControlsPlugin {
         if (new_state !== this.state) {
             if (this.plot) {
                 const Mx = this.plot._Mx;
-                const evt: any = document.createEvent('Event');
-                evt.initEvent('playbackevt', true, true);
+                const evt: any = document.createEvent("Event");
+                evt.initEvent("playbackevt", true, true);
                 evt.state = new_state;
                 const executeDefault: boolean = mx.dispatchEvent(Mx, evt);
                 if (executeDefault) {
@@ -164,7 +164,7 @@ class PlaybackControlsPlugin {
         const distance_from_ctr = Math.pow(xpos - position.x!, 2) + Math.pow(ypos - position.y!, 2);
         const R = this.options.size / 2;
 
-        return (distance_from_ctr < Math.pow(R, 2));
+        return distance_from_ctr < Math.pow(R, 2);
     }
 
     position(): { x: number | null; y: number | null } {
@@ -203,7 +203,6 @@ class PlaybackControlsPlugin {
 
         const position = this.position();
 
-
         ctx.beginPath();
         ctx.arc(position.x!, position.y!, R - ctx.lineWidth, 0, Math.PI * 2, true);
         ctx.closePath();
@@ -230,12 +229,12 @@ class PlaybackControlsPlugin {
                 y: R * 1.45
             };
 
-            p1.x += (position.x! - R);
-            p2.x += (position.x! - R);
-            p3.x += (position.x! - R);
-            p1.y += (position.y! - R);
-            p2.y += (position.y! - R);
-            p3.y += (position.y! - R);
+            p1.x += position.x! - R;
+            p2.x += position.x! - R;
+            p3.x += position.x! - R;
+            p1.y += position.y! - R;
+            p2.y += position.y! - R;
+            p3.y += position.y! - R;
 
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
@@ -246,7 +245,7 @@ class PlaybackControlsPlugin {
             ctx.fillStyle = (this.options.strokeStyle || Mx.fg) as string;
             ctx.fill();
         } else {
-            ctx.lineCap = 'round';
+            ctx.lineCap = "round";
             ctx.lineWidth = Math.floor(Math.min(1, this.options.size / 8));
 
             const p1a: PixelPoint = {
@@ -257,10 +256,10 @@ class PlaybackControlsPlugin {
                 x: R * 0.8,
                 y: R * 1.5
             };
-            p1a.x += (position.x! - R);
-            p2a.x += (position.x! - R);
-            p1a.y += (position.y! - R);
-            p2a.y += (position.y! - R);
+            p1a.x += position.x! - R;
+            p2a.x += position.x! - R;
+            p1a.y += position.y! - R;
+            p2a.y += position.y! - R;
 
             ctx.beginPath();
             ctx.moveTo(p1a.x, p1a.y);
@@ -269,17 +268,17 @@ class PlaybackControlsPlugin {
             ctx.stroke();
 
             const p1b: PixelPoint = {
-                x: R + (R / 5),
+                x: R + R / 5,
                 y: R / 2
             };
             const p2b: PixelPoint = {
-                x: R + (R / 5),
+                x: R + R / 5,
                 y: R * 1.5
             };
-            p1b.x += (position.x! - R);
-            p2b.x += (position.x! - R);
-            p1b.y += (position.y! - R);
-            p2b.y += (position.y! - R);
+            p1b.x += position.x! - R;
+            p2b.x += position.x! - R;
+            p1b.y += position.y! - R;
+            p2b.y += position.y! - R;
 
             ctx.beginPath();
             ctx.moveTo(p1b.x, p1b.y);

@@ -7,7 +7,20 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            sigplot: "/js/sigplot.js",
+            sigplot: "/js/sigplot.ts",
         },
     },
+    plugins: [
+        {
+            name: "sigplot-dev-redirect",
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    if (req.url === "/sigplot.js") {
+                        req.url = "/dist/sigplot.js";
+                    }
+                    next();
+                });
+            },
+        },
+    ],
 });

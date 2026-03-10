@@ -25,15 +25,7 @@
 
 import m from "./m.js";
 import mx from "./mx.js";
-import type {
-    BlueHeader,
-    GxContext,
-    MxContext,
-    Layer,
-    LayerOptions,
-    TraceHighlight,
-    TraceOptions,
-} from "./types.js";
+import type { BlueHeader, GxContext, MxContext, Layer, LayerOptions, TraceHighlight, TraceOptions } from "./types.js";
 
 // TODO: replace with proper Plot type when sigplot.ts exports it
 type Plot = any;
@@ -277,20 +269,20 @@ class Layer1D implements Layer {
         if (hcb["class"]! <= 2) {
             this.xsub = -1;
             this.ysub = 1;
-            this.cx = (hcb.format!![0] === 'C');
+            this.cx = hcb.format!![0] === "C";
         } else {
             // TODO
         }
 
         this.skip = 1;
-        if ((this.cx) || (this.mode === "XY")) {
+        if (this.cx || this.mode === "XY") {
             this.skip = 2;
         }
 
         this.xstart = hcb.xstart!;
         this.xdelta = hcb.xdelta!;
 
-        if ((this.size > 0) && (this.mode === "XDELTA")) {
+        if (this.size > 0 && this.mode === "XDELTA") {
             // a single data-point is not infintesimally small, so xmin/xmax
             // are defined as the start of the data point, hence we subtract
             // one from the size.  This logic works if xdelta is postive or
@@ -311,11 +303,12 @@ class Layer1D implements Layer {
             this.position = 0;
             this.tle = options.tl;
 
-            this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
+            this.ybufn =
+                this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
             this.ybuf = new ArrayBuffer(this.ybufn);
 
             const self = this;
-            m.addPipeWriteListener(this.hcb, function() {
+            m.addPipeWriteListener(this.hcb, function () {
                 self._onpipewrite();
             });
         }
@@ -335,7 +328,6 @@ class Layer1D implements Layer {
         // Calculate transfer length in scalars
         let tl: number = tle * this.hcb!.spa!;
         while (m.pavail(this.hcb!) >= tl) {
-
             if (this.drawmode === "lefttoright") {
                 this.position = 0;
                 ybuf.set(ybuf.subarray(0, this.size - tl), tl);
@@ -351,7 +343,8 @@ class Layer1D implements Layer {
             // transfer length is adjusted to the remaining size
             // before wrapping
             const ngot: number = m.grabx(
-                this.hcb!, ybuf,
+                this.hcb!,
+                ybuf,
                 Math.min(tle, this.size - this.position!) * this.hcb!.spa!,
                 this.position! * this.hcb!.spa!
             );
@@ -360,10 +353,10 @@ class Layer1D implements Layer {
             }
 
             // update the position
-            this.position = (this.position! + tle);
+            this.position = this.position! + tle;
             // after we get one full buffer of data we can initialize maxhold and
             // no longer rescale on first push
-            if ((this.position! >= this.size) && (this.firstpush === false)) {
+            if (this.position! >= this.size && this.firstpush === false) {
                 this.firstpush = true;
                 if (this.mhpoint) {
                     this.mhpoint.fill(-Infinity);
@@ -402,7 +395,6 @@ class Layer1D implements Layer {
             imin = Math.floor((xmin - HCB.xstart!) / HCB.xdelta!) - 1;
             imax = Math.floor((xmax - HCB.xstart!) / HCB.xdelta! + 0.5);
         } else {
-
             imin = Math.floor((xmax - HCB.xstart!) / HCB.xdelta!) - 1;
             imax = Math.floor((xmin - HCB.xstart!) / HCB.xdelta! + 0.5);
         }
@@ -414,7 +406,12 @@ class Layer1D implements Layer {
             imin = imax - npts + 1;
         }
 
-        if ((this.ybufmin !== undefined) && (this.ybufmax !== undefined) && (imin >= this.ybufmin) && (imin + npts <= this.ybufmax)) {
+        if (
+            this.ybufmin !== undefined &&
+            this.ybufmax !== undefined &&
+            imin >= this.ybufmin &&
+            imin + npts <= this.ybufmax
+        ) {
             // data already in buffers
             return npts;
         } else if (this.modified) {
@@ -424,9 +421,8 @@ class Layer1D implements Layer {
             // load new data
             const start: number = this.offset + imin;
             skip = this.skip;
-            this.ybufn = npts * Math.max(skip * m.PointArray.BYTES_PER_ELEMENT,
-                m.PointArray.BYTES_PER_ELEMENT);
-            if ((this.ybuf === undefined) || (this.ybuf.byteLength < this.ybufn)) {
+            this.ybufn = npts * Math.max(skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
+            if (this.ybuf === undefined || this.ybuf.byteLength < this.ybufn) {
                 this.ybuf = new ArrayBuffer(this.ybufn);
             }
             const ybuf: Float64Array | Float32Array = new m.PointArray(this.ybuf);
@@ -439,7 +435,6 @@ class Layer1D implements Layer {
             // TODO yeah right
             return 0;
         }
-
     }
 
     /** Update layer display properties */
@@ -451,7 +446,7 @@ class Layer1D implements Layer {
                 this.xmin = 1.0;
                 this.xmax = this.size;
             } else {
-                this.xstart = this.hcb!.xstart! + (this.imin) * this.xdelta;
+                this.xstart = this.hcb!.xstart! + this.imin * this.xdelta;
                 this.xdelta = this.hcb!.xdelta!;
                 const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.size - 1.0);
                 this.xmin = Math.min(this.hcb!.xstart!, d);
@@ -463,7 +458,8 @@ class Layer1D implements Layer {
             this.drawmode = settings.drawmode;
             // Reset the buffer
             this.position = 0;
-            this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
+            this.ybufn =
+                this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
             this.ybuf = new ArrayBuffer(this.ybufn);
         }
 
@@ -487,12 +483,13 @@ class Layer1D implements Layer {
 
         if (settings.framesize !== undefined) {
             this.size = settings.framesize;
-            this.xstart = this.hcb!.xstart! + (this.imin) * this.xdelta;
+            this.xstart = this.hcb!.xstart! + this.imin * this.xdelta;
             this.xdelta = this.hcb!.xdelta!;
             const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.size - 1.0);
             this.xmin = Math.min(this.hcb!.xstart!, d);
             this.xmax = Math.max(this.hcb!.xstart!, d);
-            this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
+            this.ybufn =
+                this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
             this.ybuf = new ArrayBuffer(this.ybufn);
             if (this.maxhold) {
                 this.mhptr = new ArrayBuffer(this.pointbufsize);
@@ -504,7 +501,6 @@ class Layer1D implements Layer {
         if (settings.color !== undefined) {
             this.color = settings.color as number;
         }
-
     }
 
     /** Replace all layer data (non-pipe mode) */
@@ -512,7 +508,7 @@ class Layer1D implements Layer {
         if (this.hcb!.pipe) {
             throw "reload cannot be used with pipe, use push instead";
         }
-        let axis_change: boolean = ((this.hcb!.dview as any).length !== data.length) || !!hdrmod;
+        let axis_change: boolean = (this.hcb!.dview as any).length !== data.length || !!hdrmod;
         if (hdrmod) {
             for (const k in hdrmod) {
                 this.hcb![k] = hdrmod[k];
@@ -565,13 +561,15 @@ class Layer1D implements Layer {
                 }
             }
 
-            if (hdrmod.subsize && (hdrmod.subsize !== this.size)) {
+            if (hdrmod.subsize && hdrmod.subsize !== this.size) {
                 if (this.hcb!["class"] === 2) {
                     m.force1000(this.hcb!);
                     this.size = this.hcb!.subsize!;
                     // Reset the buffer
                     this.position = 0;
-                    this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
+                    this.ybufn =
+                        this.size *
+                        Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
                     this.ybuf = new ArrayBuffer(this.ybufn);
                     this.ymin = undefined;
                     this.ymax = undefined;
@@ -580,7 +578,7 @@ class Layer1D implements Layer {
             }
 
             this.xdelta = this.hcb!.xdelta!;
-            this.xstart = this.hcb!.xstart! + (this.imin) * this.xdelta;
+            this.xstart = this.hcb!.xstart! + this.imin * this.xdelta;
 
             const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.size - 1.0);
             this.xmin = Math.min(this.hcb!.xstart!, d);
@@ -596,7 +594,6 @@ class Layer1D implements Layer {
             hdrmod = true as any;
         }
         return hdrmod ? true : false;
-
     }
 
     /**
@@ -645,15 +642,15 @@ class Layer1D implements Layer {
         let n2: number = 0;
         let mxmn: { smax: number; smin: number; imax: number; imin: number } | undefined;
         // xsub isn't really used yet, so it can largely be ignored
-        if ((Gx.cmode === 5) || (this.xsub > 0) || (this.mode === "XY")) {
+        if (Gx.cmode === 5 || this.xsub > 0 || this.mode === "XY") {
             if (npts <= 0) {
                 // This is a degenerate case when there are no points
                 qmin = Gx.panxmin;
                 qmax = Gx.panxmax;
-            } else if ((Gx.cmode !== 5) && (this.mode === "XDELTA")) {
+            } else if (Gx.cmode !== 5 && this.mode === "XDELTA") {
                 // Largely unused code since xsub isn't used
                 this.xpoint = new m.PointArray(this.xbuf);
-            } else if ((this.cx) || (this.mode === "XY")) {
+            } else if (this.cx || this.mode === "XY") {
                 // This is the pre-dominate condition
                 m.vmov(dbuf, skip, this.xpoint!, 1, npts);
             } else if (this.line !== 0) {
@@ -704,7 +701,7 @@ class Layer1D implements Layer {
                 npts = 0;
             }
             dbuf = new m.PointArray(this.ybuf);
-            xstart = xstart + xdelta * (n1);
+            xstart = xstart + xdelta * n1;
             for (let i = 0; i < npts; i++) {
                 if (Gx.index) {
                     this.xpoint![i] = this.imin + i + 1;
@@ -744,9 +741,11 @@ class Layer1D implements Layer {
         } else if (this.mode === "XY") {
             m.vmov(dbuf.subarray(1), skip, this.ypoint!, 1, npts);
         } else {
-            if (Gx.cmode === 5) { // I vs. R
+            if (Gx.cmode === 5) {
+                // I vs. R
                 m.vfill(this.ypoint!, 0, npts);
-            } else if ((Gx.cmode === 1) || (Gx.cmode >= 6)) { // Mag, log
+            } else if (Gx.cmode === 1 || Gx.cmode >= 6) {
+                // Mag, log
                 for (let i = 0; i < npts; i++) {
                     this.ypoint![i] = Math.abs(dbuf[i]);
                 }
@@ -763,14 +762,14 @@ class Layer1D implements Layer {
             if (Gx.cmode === 7) {
                 dbscale = 20.0;
             }
-            if ((Gx.lyr.length > 0) && (Gx.lyr[0].cx)) {
+            if (Gx.lyr.length > 0 && Gx.lyr[0].cx) {
                 dbscale = dbscale / 2.0;
             }
             m.vsmul(this.ypoint!, dbscale, this.ypoint!);
         }
         mxmn = m.vmxmn(this.ypoint!, npts);
 
-        if ((this.maxhold && this.mhpoint)) {
+        if (this.maxhold && this.mhpoint) {
             m.vmovmax(this.ypoint!, 0, 1, this.mhpoint!, n1, 1, npts, this.maxhold.decay);
         }
 
@@ -816,16 +815,10 @@ class Layer1D implements Layer {
         // pan boundaries are based off the first bufmax of points.
         if (this.xdelta >= 0) {
             xmin = this.xmin;
-            xmax = Math.min(
-                xmin + (this.size * this.xdelta),
-                xmin + (Gx.bufmax * this.xdelta)
-            );
+            xmax = Math.min(xmin + this.size * this.xdelta, xmin + Gx.bufmax * this.xdelta);
         } else {
             xmax = this.xmax;
-            xmin = Math.max(
-                xmax + (this.size * this.xdelta),
-                xmax + (Gx.bufmax * this.xdelta)
-            );
+            xmin = Math.max(xmax + this.size * this.xdelta, xmax + Gx.bufmax * this.xdelta);
         }
 
         if (view) {
@@ -844,8 +837,8 @@ class Layer1D implements Layer {
         while (xmin < xmax) {
             const prep: PrepResult = this.prep(xmin, xmax);
 
-            panymin = (panymin === undefined) ? prep.panymin : Math.min(panymin, prep.panymin!);
-            panymax = (panymax === undefined) ? prep.panymax : Math.max(panymax, prep.panymax!);
+            panymin = panymin === undefined ? prep.panymin : Math.min(panymin, prep.panymin!);
+            panymax = panymax === undefined ? prep.panymax : Math.max(panymax, prep.panymax!);
             num += prep.num;
 
             if (Gx.all) {
@@ -856,9 +849,9 @@ class Layer1D implements Layer {
                         xmin = xmin + prep.num;
                     } else {
                         if (this.xdelta >= 0) {
-                            xmin = xmin + (prep.num * this.xdelta);
+                            xmin = xmin + prep.num * this.xdelta;
                         } else {
-                            xmax = xmax + (prep.num * this.xdelta);
+                            xmax = xmax + prep.num * this.xdelta;
                         }
                     }
                 }
@@ -929,7 +922,7 @@ class Layer1D implements Layer {
             }
         }
 
-        const segment: boolean = (Gx.segment) && (Gx.cmode !== 5) && (this.xsub > 0) && (mask === 0);
+        const segment: boolean = Gx.segment && Gx.cmode !== 5 && this.xsub > 0 && mask === 0;
         const xdelta: number = this.xdelta;
 
         let xmin: number;
@@ -940,16 +933,17 @@ class Layer1D implements Layer {
         } else {
             xmin = Math.max(this.xmin, Mx.stk[Mx.level].xmin);
             xmax = Math.min(this.xmax, Mx.stk[Mx.level].xmax);
-            if (xmin >= xmax) { // no data but do scaling
+            if (xmin >= xmax) {
+                // no data but do scaling
                 Gx.panxmin = Math.min(Gx.panxmin, this.xmin);
                 Gx.panxmax = Math.max(Gx.panxmax, this.xmax);
             }
         }
 
-        if ((line === 0) && (symbol === 0)) {
+        if (line === 0 && symbol === 0) {
             // Nothing to draw
             return {
-                num: 0,
+                num: 0
             };
         }
 
@@ -963,15 +957,16 @@ class Layer1D implements Layer {
 
             const pts: PrepResult = this.prep(xmin, xmax);
 
-            panymin = (panymin === undefined) ? pts.panymin : Math.min(panymin, pts.panymin!);
-            panymax = (panymax === undefined) ? pts.panymax : Math.max(panymax, pts.panymax!);
+            panymin = panymin === undefined ? pts.panymin : Math.min(panymin, pts.panymin!);
+            panymax = panymax === undefined ? pts.panymax : Math.max(panymax, pts.panymax!);
             num += pts.num;
 
             if (pts.num > 0) {
                 if (segment) {
                     // TODO
                 } else {
-                    mx.trace(Mx,
+                    mx.trace(
+                        Mx,
                         ic,
                         new m.PointArray(this.xptr),
                         new m.PointArray(this.yptr),
@@ -981,10 +976,12 @@ class Layer1D implements Layer {
                         line,
                         symbol,
                         rad,
-                        traceoptions);
+                        traceoptions
+                    );
 
                     if (this.maxhold) {
-                        mx.trace(Mx,
+                        mx.trace(
+                            Mx,
                             this.maxhold.color,
                             new m.PointArray(this.xptr),
                             this.mhpoint!.slice(pts.start, pts.end),
@@ -994,7 +991,8 @@ class Layer1D implements Layer {
                             this.maxhold.line,
                             this.maxhold.symbol,
                             this.maxhold.rad,
-                            this.maxhold.traceoptions);
+                            this.maxhold.traceoptions
+                        );
                     }
                 }
             }
@@ -1006,17 +1004,17 @@ class Layer1D implements Layer {
                     xmin = xmin + pts.num;
                 } else {
                     if (xdelta >= 0) {
-                        xmin = xmin + (pts.num * xdelta);
+                        xmin = xmin + pts.num * xdelta;
                     } else {
-                        xmax = xmax + (pts.num * xdelta);
+                        xmax = xmax + pts.num * xdelta;
                     }
                 }
             }
         }
 
-        if ((this.position) && (this.drawmode === "scrolling")) {
+        if (this.position && this.drawmode === "scrolling") {
             const pnt = mx.real_to_pixel(Mx, this.position * this.xdelta, 0);
-            if ((pnt.x > Mx.l) && (pnt.x < Mx.r)) {
+            if (pnt.x > Mx.l && pnt.x < Mx.r) {
                 mx.draw_line(Mx, "white", pnt.x, Mx.t, pnt.x, Mx.b);
             }
         }
@@ -1069,7 +1067,7 @@ class Layer1D implements Layer {
         if (this.options.highlight) {
             let i: number = this.options.highlight.length;
             while (i--) {
-                if ((highlight === this.options.highlight[i]) || (highlight === this.options.highlight[i].id)) {
+                if (highlight === this.options.highlight[i] || highlight === this.options.highlight[i].id) {
                     this.options.highlight.splice(i, 1);
                 }
             }
@@ -1108,7 +1106,7 @@ class Layer1D implements Layer {
         // If the input is type 2000, each row becomes its own layer
         const n1: number = 0;
         let n2: number = 1;
-        if ((hcb["class"] === 2) && (hcb.size! > 0)) {
+        if (hcb["class"] === 2 && hcb.size! > 0) {
             const num_rows: number = hcb.size! / hcb.subsize!!;
             n2 = Math.min(num_rows, 16 - Gx.lyr.length);
         }
@@ -1124,7 +1122,7 @@ class Layer1D implements Layer {
             layer.init(hcb, layerOptions);
 
             // Provide a default color for the layer
-            const n: number = (Gx.lyr.length) % mixc.length;
+            const n: number = Gx.lyr.length % mixc.length;
             layer.color = mx.getcolor(Mx, m.Mc.colormap[3].colors, mixc[n]);
 
             // Provide the layer name

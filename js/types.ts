@@ -10,21 +10,10 @@
 // ---------------------------------------------------------------------------
 
 /** Union of typed arrays commonly used for vector math operations. */
-export type NumericArray =
-    | Float32Array
-    | Float64Array
-    | Int16Array
-    | Int32Array
-    | Uint8ClampedArray
-    | number[];
+export type NumericArray = Float32Array | Float64Array | Int16Array | Int32Array | Uint8ClampedArray | number[];
 
 /** Union of actual TypedArray types (excludes number[]). */
-export type TypedArray =
-    | Float32Array
-    | Float64Array
-    | Int16Array
-    | Int32Array
-    | Uint8ClampedArray;
+export type TypedArray = Float32Array | Float64Array | Int16Array | Int32Array | Uint8ClampedArray;
 
 /** Union type for PointArray (Float32Array on iOS/legacy, Float64Array otherwise). */
 export type PointArray = Float32Array | Float64Array;

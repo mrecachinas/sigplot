@@ -5,7 +5,7 @@ process.env.TZ = "UTC";
 
 export default defineConfig({
     test: {
-        include: ["test/**/*.test.js"],
+        include: ["test/**/*.test.{js,ts}"],
         globals: true,
 
         // jsdom for unit tests (sigfile dep doesn't support Vitest browser mode's

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * File: sigplot.annotations.ts
@@ -89,7 +88,7 @@ class AnnotationPlugin {
         this.plot = plot;
         const Mx = this.plot._Mx;
 
-        this.onmousemove = function(evt: any): void {
+        this.onmousemove = function (evt: any): void {
             // Ignore if there are no annotations
             if (self.annotations.length === 0) {
                 return;
@@ -101,11 +100,11 @@ class AnnotationPlugin {
             }
 
             // Ignore if the mouse is outside of the plot area, clear the highlights
-            if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+            if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
                 self.set_highlight(false);
                 return;
             }
-            if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+            if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
                 self.set_highlight(false);
                 return;
             }
@@ -144,9 +143,11 @@ class AnnotationPlugin {
                     x: pxl.x!,
                     y: pxl.y!
                 };
-                if ((annotation.value instanceof HTMLImageElement) ||
-                    (annotation.value instanceof HTMLCanvasElement) ||
-                    ((typeof HTMLVideoElement !== 'undefined') && annotation.value instanceof HTMLVideoElement)) {
+                if (
+                    annotation.value instanceof HTMLImageElement ||
+                    annotation.value instanceof HTMLCanvasElement ||
+                    (typeof HTMLVideoElement !== "undefined" && annotation.value instanceof HTMLVideoElement)
+                ) {
                     // For image, pxl.x and pxl.y are center
                     rect_upperleft.x -= annotation.width / 2;
                     rect_upperleft.y -= annotation.height / 2;
@@ -155,7 +156,16 @@ class AnnotationPlugin {
                     rect_upperleft.y -= annotation.height;
                 }
 
-                if (mx.inrect(evt.xpos, evt.ypos, rect_upperleft.x, rect_upperleft.y, annotation.width, annotation.height)) {
+                if (
+                    mx.inrect(
+                        evt.xpos,
+                        evt.ypos,
+                        rect_upperleft.x,
+                        rect_upperleft.y,
+                        annotation.width,
+                        annotation.height
+                    )
+                ) {
                     if (!annotation.highlight) {
                         self.set_highlight(true, [annotation], pxl.x, pxl.y);
                         need_refresh = true;
@@ -176,7 +186,7 @@ class AnnotationPlugin {
         };
         this.plot.addListener("mmove", this.onmousemove);
 
-        this.onmousedown = function(evt: any): void {
+        this.onmousedown = function (evt: any): void {
             for (let i = 0; i < self.annotations.length; i++) {
                 // leverage the fact that annotation.highlight is
                 // set when the mouse is over the annotation
@@ -187,17 +197,17 @@ class AnnotationPlugin {
         };
         this.plot.addListener("mdown", this.onmousedown);
 
-        this.onmouseup = function(_evt: any): void {
+        this.onmouseup = function (_evt: any): void {
             for (let i = 0; i < self.annotations.length; i++) {
                 // leverage the fact that annotation.highlight is
                 // set when the mouse is over the annotation
                 if (self.annotations[i].selected) {
                     // Issue a highlight event
-                    const clickEvt: any = document.createEvent('Event');
-                    clickEvt.initEvent('annotationclick', true, true);
+                    const clickEvt: any = document.createEvent("Event");
+                    clickEvt.initEvent("annotationclick", true, true);
                     clickEvt.annotation = self.annotations[i];
                     const executeDefault: boolean = mx.dispatchEvent(self.plot!._Mx, clickEvt);
-                    if ((executeDefault) && (self.annotations[i].onclick)) {
+                    if (executeDefault && self.annotations[i].onclick) {
                         self.annotations[i].onclick!();
                     }
                 }
@@ -211,8 +221,8 @@ class AnnotationPlugin {
         const _annotations = annotations || this.annotations;
         for (let i = 0; i < _annotations.length; i++) {
             // Issue a highlight event
-            const evt: any = document.createEvent('Event');
-            evt.initEvent('annotationhighlight', true, true);
+            const evt: any = document.createEvent("Event");
+            evt.initEvent("annotationhighlight", true, true);
             evt.annotation = _annotations[i];
             evt.state = state;
             evt.x = x;
@@ -224,34 +234,40 @@ class AnnotationPlugin {
         }
     }
 
-    menu(): { text: string; menu: { title: string; items: Array<{ text: string; checked?: boolean; style?: string; handler: () => void }> } } {
-        const _display_handler = (function(self: AnnotationPlugin) {
-            return function(): void {
+    menu(): {
+        text: string;
+        menu: { title: string; items: Array<{ text: string; checked?: boolean; style?: string; handler: () => void }> };
+    } {
+        const _display_handler = (function (self: AnnotationPlugin) {
+            return function (): void {
                 self.options.display = !self.options.display;
                 self.plot!.redraw();
             };
-        }(this));
+        })(this);
 
-        const _clearall_handler = (function(self: AnnotationPlugin) {
-            return function(): void {
+        const _clearall_handler = (function (self: AnnotationPlugin) {
+            return function (): void {
                 self.annotations = [];
                 self.plot!.redraw();
             };
-        }(this));
+        })(this);
 
         return {
             text: "Annotations...",
             menu: {
                 title: "ANNOTATIONS",
-                items: [{
-                    text: "Display",
-                    checked: this.options.display,
-                    style: "checkbox",
-                    handler: _display_handler
-                }, {
-                    text: "Clear All",
-                    handler: _clearall_handler
-                }]
+                items: [
+                    {
+                        text: "Display",
+                        checked: this.options.display,
+                        style: "checkbox",
+                        handler: _display_handler
+                    },
+                    {
+                        text: "Clear All",
+                        handler: _clearall_handler
+                    }
+                ]
             }
         };
     }
@@ -283,8 +299,7 @@ class AnnotationPlugin {
         ctx.rect(Mx.l, Mx.t, Mx.r - Mx.l, Mx.b - Mx.t);
         ctx.clip();
 
-        mx.onCanvas(Mx, canvas, function(): void {
-
+        mx.onCanvas(Mx, canvas, function (): void {
             // iterate backwards so we can remove from the end...in the future
             // if we decide to have annotations auto-remove
             for (let i = self.annotations.length - 1; i >= 0; i--) {
@@ -319,12 +334,22 @@ class AnnotationPlugin {
                     continue;
                 }
 
-                if ((annotation.value instanceof HTMLImageElement) ||
-                    (annotation.value instanceof HTMLCanvasElement) ||
-                    ((typeof HTMLVideoElement !== 'undefined') && annotation.value instanceof HTMLVideoElement)) {
-                    annotation.width = (annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement).width;
-                    annotation.height = (annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement).height;
-                    ctx.drawImage(annotation.value as CanvasImageSource, pxl.x! - (annotation.width / 2), pxl.y! - (annotation.height / 2));
+                if (
+                    annotation.value instanceof HTMLImageElement ||
+                    annotation.value instanceof HTMLCanvasElement ||
+                    (typeof HTMLVideoElement !== "undefined" && annotation.value instanceof HTMLVideoElement)
+                ) {
+                    annotation.width = (
+                        annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement
+                    ).width;
+                    annotation.height = (
+                        annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement
+                    ).height;
+                    ctx.drawImage(
+                        annotation.value as CanvasImageSource,
+                        pxl.x! - annotation.width / 2,
+                        pxl.y! - annotation.height / 2
+                    );
                 } else {
                     // Setup the text styles
                     ctx.font = annotation.font || "bold italic 20px new century schoolbook";
@@ -344,12 +369,10 @@ class AnnotationPlugin {
                     ctx.fillText(annotation.value as string, pxl.x!, pxl.y!);
                 }
 
-
                 if (annotation.highlight && annotation.popup) {
                     mx.render_message_box(Mx, annotation.popup, pxl.x! + 5, pxl.y! + 5, annotation.popupTextColor);
                 }
             }
-
         });
 
         ctx.restore();

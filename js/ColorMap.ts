@@ -1,4 +1,3 @@
-
 import tinycolor from "tinycolor2";
 
 /** Internal RGBA color with optional position and computed fields */
@@ -37,18 +36,21 @@ interface ColorMapOptions {
     alpha?: number;
 }
 
-if (typeof Object.assign !== 'function') {
+if (typeof Object.assign !== "function") {
     // Must be writable: true, enumerable: false, configurable: true
     Object.defineProperty(Object, "assign", {
-        value: function assign(target: any, _varArgs: any) { // .length of function is 2
-            'use strict';
-            if (target == null) { // TypeError if undefined or null
-                throw new TypeError('Cannot convert undefined or null to object');
+        value: function assign(target: any, _varArgs: any) {
+            // .length of function is 2
+            "use strict";
+            if (target == null) {
+                // TypeError if undefined or null
+                throw new TypeError("Cannot convert undefined or null to object");
             }
             var to = Object(target);
             for (var index = 1; index < arguments.length; index++) {
                 var nextSource = arguments[index];
-                if (nextSource != null) { // Skip over if undefined or null
+                if (nextSource != null) {
+                    // Skip over if undefined or null
                     for (var nextKey in nextSource) {
                         // Avoid bugs when hasOwnProperty is shadowed
                         if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
@@ -106,9 +108,9 @@ class ColorMap {
                 if (col2 === undefined) {
                     break;
                 }
-                if ((col1.pos! >= 100) && (col2.pos! >= 100)) {
-                   break;
-               }
+                if (col1.pos! >= 100 && col2.pos! >= 100) {
+                    break;
+                }
                 colorStop = col2.pos! - col1.pos!;
                 colorsInBlock = ncolors * (colorStop / 100);
                 factorStep = 1 / colorsInBlock;
@@ -119,16 +121,17 @@ class ColorMap {
             colorBlockIndex += 1;
         }
 
-       this._addColor(parsedColors[colorindex]);
-       this._addColor(parsedColors[0], true);
+        this._addColor(parsedColors[colorindex]);
+        this._addColor(parsedColors[0], true);
     }
 
     _addColor(color: ColorRGBA, front?: boolean): void {
         color.hex = this._rgbToHex(color.red, color.green, color.blue);
-        color.color = (color.alpha << 24) | // alpha
+        color.color =
+            (color.alpha << 24) | // alpha
             (color.blue << 16) | // blue
             (color.green << 8) | // green
-            (color.red);
+            color.red;
         if (front) {
             this.map.unshift(color);
         } else {
@@ -143,28 +146,32 @@ class ColorMap {
                 colors[i] = this._hexToRgb(color);
                 color = tinycolor(color);
                 color = color.toRgb();
-                colors[i] = {red:color.r,green:color.g,blue:color.b,alpha:this.options.alpha};
-
+                colors[i] = { red: color.r, green: color.g, blue: color.b, alpha: this.options.alpha };
             } else if (color.hasOwnProperty("color")) {
                 var newColor: any = tinycolor(color.color);
                 newColor = newColor.toRgb();
-                newColor = {red:newColor.r,green:newColor.g,blue:newColor.b,alpha:this.options.alpha} as ColorRGBA;
+                newColor = {
+                    red: newColor.r,
+                    green: newColor.g,
+                    blue: newColor.b,
+                    alpha: this.options.alpha
+                } as ColorRGBA;
                 if (color.hasOwnProperty("pos")) {
                     newColor.pos = color.pos;
                 }
                 colors[i] = newColor;
             } else {
-               if (color.red === undefined && color.green === undefined && color.blue === undefined) {
-                   //assume if it doesn't have rgb values it is a matplotlib style color map
-                   colors[i].red = Math.floor(Math.round(255 * color[0]));
-                   colors[i].green = Math.floor(Math.round(255 * color[1]));
-                   colors[i].blue = Math.floor(Math.round(255 * color[2]));
-               } else {
-                   //assume if it has rgb values it is a percentage
-                   colors[i].red = Math.floor(Math.round(255 * (color.red / 100)));
-                   colors[i].green = Math.floor(Math.round(255 * (color.green / 100)));
-                   colors[i].blue = Math.floor(Math.round(255 * (color.blue / 100)));
-               }
+                if (color.red === undefined && color.green === undefined && color.blue === undefined) {
+                    //assume if it doesn't have rgb values it is a matplotlib style color map
+                    colors[i].red = Math.floor(Math.round(255 * color[0]));
+                    colors[i].green = Math.floor(Math.round(255 * color[1]));
+                    colors[i].blue = Math.floor(Math.round(255 * color[2]));
+                } else {
+                    //assume if it has rgb values it is a percentage
+                    colors[i].red = Math.floor(Math.round(255 * (color.red / 100)));
+                    colors[i].green = Math.floor(Math.round(255 * (color.green / 100)));
+                    colors[i].blue = Math.floor(Math.round(255 * (color.blue / 100)));
+                }
             }
             if (!colors[i].hasOwnProperty("alpha")) {
                 colors[i].alpha = this.options.alpha;
@@ -220,11 +227,13 @@ class ColorMap {
 
     _hexToRgb(hex: string): { red: number; green: number; blue: number } | null {
         var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            red: parseInt(result[1], 16),
-            green: parseInt(result[2], 16),
-            blue: parseInt(result[3], 16)
-        } : null;
+        return result
+            ? {
+                  red: parseInt(result[1], 16),
+                  green: parseInt(result[2], 16),
+                  blue: parseInt(result[3], 16)
+              }
+            : null;
     }
 
     getColor(number: number): ColorRGBA {
@@ -233,18 +242,18 @@ class ColorMap {
     }
 
     getColorByIndex(colorindex: number): ColorRGBA {
-       return this.map[colorindex];
+        return this.map[colorindex];
     }
 
     getColorIndex(number: number): number {
-       var n = (number - this._low) * this._fscale;
-       var colorindex = ~~n; //make int fastest method
-       if (colorindex > this.map.length - 1) {
-           colorindex = this.map.length - 1;
-       } else if (colorindex < 0) {
-           colorindex = 0;
-       }
-       return colorindex;
+        var n = (number - this._low) * this._fscale;
+        var colorindex = ~~n; //make int fastest method
+        if (colorindex > this.map.length - 1) {
+            colorindex = this.map.length - 1;
+        } else if (colorindex < 0) {
+            colorindex = 0;
+        }
+        return colorindex;
     }
 
     getNColors(): number {
@@ -253,7 +262,7 @@ class ColorMap {
 
     setRange(low: number, high: number): void {
         // only recalculate if a value has changed
-        if ((this._low !== low) || (this._high !== high)) {
+        if (this._low !== low || this._high !== high) {
             this._low = low;
             this._high = high;
             this._fscale = this.map.length / Math.abs(this._high - this._low);

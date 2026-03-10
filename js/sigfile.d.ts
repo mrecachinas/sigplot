@@ -40,11 +40,7 @@ declare module "sigfile" {
         cleanup: (() => void) | undefined;
 
         setData(data: any): void;
-        createArray(
-            buf: ArrayBuffer | null,
-            offset: number,
-            length: number,
-        ): any;
+        createArray(buf: ArrayBuffer | null, offset: number, length: number): any;
 
         [key: string]: any;
     }
@@ -52,20 +48,14 @@ declare module "sigfile" {
     /** BlueFileReader for reading BLUE files from URLs or File objects */
     class BlueFileReader {
         constructor();
-        read_http(
-            href: string,
-            onload: (header: BlueHeader) => void,
-        ): XMLHttpRequest | any;
+        read_http(href: string, onload: (header: BlueHeader) => void): XMLHttpRequest | any;
         read(file: File, onload: (header: BlueHeader) => void): void;
     }
 
     /** MatFileReader for reading MATLAB .mat files from URLs */
     class MatFileReader {
         constructor();
-        read_http(
-            href: string,
-            onload: (header: any) => void,
-        ): XMLHttpRequest | any;
+        read_http(href: string, onload: (header: any) => void): XMLHttpRequest | any;
     }
 
     interface BluefileModule {

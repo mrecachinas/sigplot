@@ -1,7 +1,3 @@
-
-
-
-
 /**
  * @license
  * File: sigplot.layer2dSDS.js
@@ -33,7 +29,6 @@ import common from "./common.js";
 import LRU from "./lru.js";
 import type { BlueHeader, MxContext, GxContext, LayerOptions, Layer, TraceOptions } from "./types.js";
 
-
 const decimationModeLookup: Record<number, number> = {
     1: 1,
     2: 2,
@@ -44,7 +39,7 @@ const decimationModeLookup: Record<number, number> = {
     64: 7,
     128: 8,
     256: 9,
-    512: 10,
+    512: 10
 };
 
 const decimationPossibilities: number[] = [512, 256, 128, 64, 32, 16, 8, 4, 2, 1];
@@ -278,7 +273,8 @@ LayerSDS.prototype = {
      */
     get_z: function (this: LayerSDS, x: number, y: number): any {}, // TODO: return type
 
-    change_settings: function (this: LayerSDS, settings: any): void { // TODO: type settings properly
+    change_settings: function (this: LayerSDS, settings: any): void {
+        // TODO: type settings properly
         const Gx: GxContext = this.plot._Gx;
         if (settings.subsize) {
             this.hcb!.subsize = settings.subsize;
@@ -358,7 +354,11 @@ LayerSDS.prototype = {
         return this.lps;
     },
 
-    get_pan_bounds: function (this: LayerSDS, view: any): { xmin?: number; xmax?: number; ymin?: number; ymax?: number } { // TODO: type view
+    get_pan_bounds: function (
+        this: LayerSDS,
+        view: any
+    ): { xmin?: number; xmax?: number; ymin?: number; ymax?: number } {
+        // TODO: type view
         let xmin: number | undefined, xmax: number | undefined, ymin: number | undefined, ymax: number | undefined;
         if (this.xmin! < this.xmax!) {
             xmin = this.xmin;
@@ -373,11 +373,16 @@ LayerSDS.prototype = {
             xmin: xmin,
             xmax: xmax,
             ymin: ymin,
-            ymax: ymax,
+            ymax: ymax
         };
     },
 
-    load_tile: function (this: LayerSDS, url: string, oReq: XMLHttpRequest, oEvent: ProgressEvent<XMLHttpRequestEventTarget>): void {
+    load_tile: function (
+        this: LayerSDS,
+        url: string,
+        oReq: XMLHttpRequest,
+        oEvent: ProgressEvent<XMLHttpRequestEventTarget>
+    ): void {
         if (oReq.readyState === 4) {
             if (oReq.status === 200 || oReq.status === 0) {
                 // status = 0 is necessary for file URL
@@ -416,7 +421,8 @@ LayerSDS.prototype = {
      * @param {number} tileY
      * @returns {string}
      */
-    make_tile_request_url: function (this: LayerSDS,
+    make_tile_request_url: function (
+        this: LayerSDS,
         tileXsize: number,
         tileYsize: number,
         decx: number,
@@ -486,7 +492,7 @@ LayerSDS.prototype = {
             evt.layer = this;
             var executeDefault = mx.dispatchEvent(Mx, evt);
             if (executeDefault) {
-                this.plot.show_spinner();    
+                this.plot.show_spinner();
             }
         }
 
@@ -594,17 +600,10 @@ LayerSDS.prototype = {
         const x2 = x1 + w;
         const y2 = y1 + h;
 
-        const rotationAngle =
-            this.drawdirection === "horizontal" ? -Math.PI / 2 : null;
+        const rotationAngle = this.drawdirection === "horizontal" ? -Math.PI / 2 : null;
         if (this.usetiles) {
-            const maxtileXsize = Math.min(
-                Math.max(Math.ceil(out_x_pixel_size / 300) * 100, 100),
-                500
-            );
-            const maxtileYsize = Math.min(
-                Math.max(Math.ceil(out_y_pixel_size / 300) * 100, 100),
-                500
-            );
+            const maxtileXsize = Math.min(Math.max(Math.ceil(out_x_pixel_size / 300) * 100, 100), 500);
+            const maxtileYsize = Math.min(Math.max(Math.ceil(out_y_pixel_size / 300) * 100, 100), 500);
             const requestedDecx = Math.max(1, w / out_x_pixel_size);
             const requestedDecy = Math.max(1, h / out_y_pixel_size);
             let i = 0;
@@ -635,22 +634,14 @@ LayerSDS.prototype = {
 
             for (let tileY = firstrow; tileY < lastrow; tileY++) {
                 for (let tileX = firstcolumn; tileX < lastcolumn; tileX++) {
-                    const url = this.make_tile_request_url(
-                        maxtileXsize,
-                        maxtileYsize,
-                        decx,
-                        decy,
-                        tileX,
-                        tileY
-                    );
+                    const url = this.make_tile_request_url(maxtileXsize, maxtileYsize, decx, decy, tileX, tileY);
                     const img = this.cache!.get(url);
                     if (img) {
                         //Get the data from this tile out of the cache and plot it.
                         let strokeStyle, text;
                         if (this.debug) {
                             strokeStyle = Mx.fg;
-                            text =
-                                tileX.toString() + "," + tileY.toString();
+                            text = tileX.toString() + "," + tileY.toString();
                         }
                         if (this.drawdirection !== "horizontal") {
                             mx.draw_image(
@@ -696,9 +687,7 @@ LayerSDS.prototype = {
             const base_url = `${sds_host}/sds`;
             const url_params = `rds/${x1}/${y1}/${x2}/${y2}/${out_x_pixel_size}/${out_y_pixel_size}/${filepath}`;
 
-            let query_string = `?outfmt=RGBA&colormap=${
-                m.Mc.colormap[Gx.cmap!].name
-            }&subsize=${HCB.subsize!}`;
+            let query_string = `?outfmt=RGBA&colormap=${m.Mc.colormap[Gx.cmap!].name}&subsize=${HCB.subsize!}`;
             if (Gx.zmin !== undefined) {
                 query_string = `${query_string}&zmin=${Gx.zmin}`;
             }
@@ -708,23 +697,12 @@ LayerSDS.prototype = {
 
             if (Gx.cmode !== undefined) {
                 const cxm = ["Ma", "Ph", "Re", "Im", "IR", "Lo", "L2"];
-                query_string = `${query_string}&cxmode=${
-                    cxm[Gx.cmode - 1]
-                }`;
+                query_string = `${query_string}&cxmode=${cxm[Gx.cmode - 1]}`;
             }
 
             if (this.xcompression !== undefined) {
-                const xcmp = [
-                    "first",
-                    "mean",
-                    "min",
-                    "max",
-                    "first",
-                    "absmax",
-                ];
-                query_string = `${query_string}&transform=${
-                    xcmp[this.xcompression]
-                }`;
+                const xcmp = ["first", "mean", "min", "max", "first", "absmax"];
+                query_string = `${query_string}&transform=${xcmp[this.xcompression]}`;
             }
 
             const url = `${base_url}/${url_params}${query_string}`;
@@ -829,7 +807,7 @@ LayerSDS.prototype = {
             xmin: this.xmin,
             xmax: this.xmax,
             ymin: this.ymin,
-            ymax: this.ymax,
+            ymax: this.ymax
         };
     },
 
@@ -839,7 +817,8 @@ LayerSDS.prototype = {
      * @param {number?} ypos  the y-position to extract the x-cut, leave undefined to
      *                       leave xCut
      */
-    xCut: function (this: LayerSDS, ypos?: number): any { // TODO: return type
+    xCut: function (this: LayerSDS, ypos?: number): any {
+        // TODO: return type
         const Mx: MxContext = this.plot._Mx;
         const Gx: GxContext = this.plot._Gx;
 
@@ -856,7 +835,7 @@ LayerSDS.prototype = {
                 panymin: Gx.panymin,
                 panymax: Gx.panymax,
                 panxmin: Gx.panxmin,
-                panxmax: Gx.panxmax,
+                panxmax: Gx.panxmax
             };
 
             const row = Math.round((ypos - this.ystart) / this.ydelta);
@@ -881,12 +860,12 @@ LayerSDS.prototype = {
                 mode = "ycut";
             }
 
-            var cx = ((Gx.lyr.length > 0) && this.cx);
+            var cx = Gx.lyr.length > 0 && this.cx;
             if (Gx.cmode === 1) {
                 Gx.ylabel = m.UNITS[28][0];
             } else if (Gx.cmode === 2) {
                 Gx.ylabel = Gx.plab;
-            } else if ((Gx.cmode === 3) && (cx)) {
+            } else if (Gx.cmode === 3 && cx) {
                 Gx.ylabel = m.UNITS[21][0];
             } else if (Gx.cmode === 4) {
                 Gx.ylabel = m.UNITS[22][0];
@@ -900,7 +879,7 @@ LayerSDS.prototype = {
                 Gx.ylabel = "Intensity";
             }
 
-            if ((m.UNITS[Gx.xlab!][0] !== "None") && (m.UNITS[Gx.xlab!][0] !== "Unknown")) {
+            if (m.UNITS[Gx.xlab!][0] !== "None" && m.UNITS[Gx.xlab!][0] !== "Unknown") {
                 Gx.xlabel = m.UNITS[Gx.xlab!][0];
             } else {
                 Gx.xlabel = "Frequency";
@@ -916,7 +895,7 @@ LayerSDS.prototype = {
                     layerType: "1DSDS",
                     mode: mode,
                     xypos_index: row,
-                    bottom_level: Mx.level,
+                    bottom_level: Mx.level
                 },
                 {}
             );
@@ -960,7 +939,7 @@ LayerSDS.prototype = {
                 this.xcut_layer = undefined;
                 this.plot.change_settings({
                     drawmode: this.old_drawmode,
-                    autol: this.old_autol,
+                    autol: this.old_autol
                 });
             }
         }
@@ -972,7 +951,8 @@ LayerSDS.prototype = {
      * @param {number?} xpos  the x-position to extract the y-cut, leave undefined to
      *                        leave yCut
      */
-    yCut: function (this: LayerSDS, xpos?: number): any { // TODO: return type
+    yCut: function (this: LayerSDS, xpos?: number): any {
+        // TODO: return type
         const Mx: MxContext = this.plot._Mx;
         const Gx: GxContext = this.plot._Gx;
 
@@ -990,7 +970,7 @@ LayerSDS.prototype = {
                 panymin: Gx.panymin,
                 panymax: Gx.panymax,
                 panxmin: Gx.panxmin,
-                panxmax: Gx.panxmax,
+                panxmax: Gx.panxmax
             };
 
             const column = Math.round((xpos - this.xstart) / this.xdelta);
@@ -1020,12 +1000,12 @@ LayerSDS.prototype = {
                 mode = "xcut";
             }
 
-            var cx = ((Gx.lyr.length > 0) && this.cx);
+            var cx = Gx.lyr.length > 0 && this.cx;
             if (Gx.cmode === 1) {
                 Gx.ylabel = m.UNITS[28][0];
             } else if (Gx.cmode === 2) {
                 Gx.ylabel = Gx.plab;
-            } else if ((Gx.cmode === 3) && (cx)) {
+            } else if (Gx.cmode === 3 && cx) {
                 Gx.ylabel = m.UNITS[21][0];
             } else if (Gx.cmode === 4) {
                 Gx.ylabel = m.UNITS[22][0];
@@ -1039,7 +1019,7 @@ LayerSDS.prototype = {
                 Gx.ylabel = "Intensity";
             }
 
-            if ((m.UNITS[Gx.ylab!][0] !== "None") && (m.UNITS[Gx.ylab!][0] !== "Unknown")) {
+            if (m.UNITS[Gx.ylab!][0] !== "None" && m.UNITS[Gx.ylab!][0] !== "Unknown") {
                 Gx.xlabel = m.UNITS[Gx.ylab!][0];
             } else {
                 Gx.xlabel = "Time";
@@ -1055,7 +1035,7 @@ LayerSDS.prototype = {
                     layerType: "1DSDS",
                     mode: mode,
                     xypos_index: column,
-                    bottom_level: Mx.level,
+                    bottom_level: Mx.level
                 },
                 {}
             );
@@ -1096,11 +1076,11 @@ LayerSDS.prototype = {
                 this.ycut_layer = undefined;
                 this.plot.change_settings({
                     drawmode: this.old_drawmode,
-                    autol: this.old_autol,
+                    autol: this.old_autol
                 });
             }
         }
-    },
+    }
 };
 
 /**
@@ -1113,7 +1093,8 @@ LayerSDS.prototype = {
  *
  * @private
  */
-LayerSDS.overlay = function (plot: any, hcb: BlueHeader, layerOptions: LayerOptions): LayerSDS[] { // TODO: type plot properly
+LayerSDS.overlay = function (plot: any, hcb: BlueHeader, layerOptions: LayerOptions): LayerSDS[] {
+    // TODO: type plot properly
     const Gx: GxContext = plot._Gx;
     hcb.buf_type = "D";
 

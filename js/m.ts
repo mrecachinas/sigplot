@@ -57,11 +57,8 @@ m.log = loglevel;
 /**
  * @private
  */
-var iOS = (navigator.userAgent.match(/(iPad|iPhone|iPod)/i) ? true : false);
-if ((iOS) ||
-    (typeof Float64Array === 'undefined') ||
-    ((Float64Array as any).emulated) ||
-    (!Float64Array.BYTES_PER_ELEMENT)) {
+var iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/i) ? true : false;
+if (iOS || typeof Float64Array === "undefined" || (Float64Array as any).emulated || !Float64Array.BYTES_PER_ELEMENT) {
     m.PointArray = Float32Array as any;
 } else {
     m.PointArray = Float64Array as any;
@@ -138,303 +135,432 @@ m.UNITS = UNITS;
  * @private
  */
 m.Mc = {
-    colormap: [{
+    colormap: [
+        {
             name: "Greyscale",
-            colors: [{
-                pos: 0,
-                red: 0,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 60,
-                red: 50,
-                green: 50,
-                blue: 50
-            }, {
-                pos: 100,
-                red: 100,
-                green: 100,
-                blue: 100
-            }, {
-                pos: 100,
-                red: 0,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 0,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 0,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 0,
-                green: 0,
-                blue: 0
-            }]
-        }, {
+            colors: [
+                {
+                    pos: 0,
+                    red: 0,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 60,
+                    red: 50,
+                    green: 50,
+                    blue: 50
+                },
+                {
+                    pos: 100,
+                    red: 100,
+                    green: 100,
+                    blue: 100
+                },
+                {
+                    pos: 100,
+                    red: 0,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 0,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 0,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 0,
+                    green: 0,
+                    blue: 0
+                }
+            ]
+        },
+        {
             name: "Ramp Colormap",
-            colors: [{
-                pos: 0,
-                red: 0,
-                green: 0,
-                blue: 15
-            }, {
-                pos: 10,
-                red: 0,
-                green: 0,
-                blue: 50
-            }, {
-                pos: 31,
-                red: 0,
-                green: 65,
-                blue: 75
-            }, {
-                pos: 50,
-                red: 0,
-                green: 85,
-                blue: 0
-            }, {
-                pos: 70,
-                red: 75,
-                green: 80,
-                blue: 0
-            }, {
-                pos: 83,
-                red: 100,
-                green: 60,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 100,
-                green: 0,
-                blue: 0
-            }]
-        }, {
+            colors: [
+                {
+                    pos: 0,
+                    red: 0,
+                    green: 0,
+                    blue: 15
+                },
+                {
+                    pos: 10,
+                    red: 0,
+                    green: 0,
+                    blue: 50
+                },
+                {
+                    pos: 31,
+                    red: 0,
+                    green: 65,
+                    blue: 75
+                },
+                {
+                    pos: 50,
+                    red: 0,
+                    green: 85,
+                    blue: 0
+                },
+                {
+                    pos: 70,
+                    red: 75,
+                    green: 80,
+                    blue: 0
+                },
+                {
+                    pos: 83,
+                    red: 100,
+                    green: 60,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 100,
+                    green: 0,
+                    blue: 0
+                }
+            ]
+        },
+        {
             name: "Color Wheel",
-            colors: [{
-                pos: 0,
-                red: 100,
-                green: 100,
-                blue: 0
-            }, {
-                pos: 20,
-                red: 0,
-                green: 80,
-                blue: 40
-            }, {
-                pos: 30,
-                red: 0,
-                green: 100,
-                blue: 100
-            }, {
-                pos: 50,
-                red: 10,
-                green: 10,
-                blue: 0
-            }, {
-                pos: 65,
-                red: 100,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 88,
-                red: 100,
-                green: 40,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 100,
-                green: 100,
-                blue: 0
-            }]
-        }, {
+            colors: [
+                {
+                    pos: 0,
+                    red: 100,
+                    green: 100,
+                    blue: 0
+                },
+                {
+                    pos: 20,
+                    red: 0,
+                    green: 80,
+                    blue: 40
+                },
+                {
+                    pos: 30,
+                    red: 0,
+                    green: 100,
+                    blue: 100
+                },
+                {
+                    pos: 50,
+                    red: 10,
+                    green: 10,
+                    blue: 0
+                },
+                {
+                    pos: 65,
+                    red: 100,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 88,
+                    red: 100,
+                    green: 40,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 100,
+                    green: 100,
+                    blue: 0
+                }
+            ]
+        },
+        {
             name: "Spectrum",
-            colors: [{
-                pos: 0,
-                red: 0,
-                green: 75,
-                blue: 0
-            }, {
-                pos: 22,
-                red: 0,
-                green: 90,
-                blue: 90
-            }, {
-                pos: 37,
-                red: 0,
-                green: 0,
-                blue: 85
-            }, {
-                pos: 49,
-                red: 90,
-                green: 0,
-                blue: 85
-            }, {
-                pos: 68,
-                red: 90,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 80,
-                red: 90,
-                green: 90,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 95,
-                green: 95,
-                blue: 95
-            }]
-        }, {
+            colors: [
+                {
+                    pos: 0,
+                    red: 0,
+                    green: 75,
+                    blue: 0
+                },
+                {
+                    pos: 22,
+                    red: 0,
+                    green: 90,
+                    blue: 90
+                },
+                {
+                    pos: 37,
+                    red: 0,
+                    green: 0,
+                    blue: 85
+                },
+                {
+                    pos: 49,
+                    red: 90,
+                    green: 0,
+                    blue: 85
+                },
+                {
+                    pos: 68,
+                    red: 90,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 80,
+                    red: 90,
+                    green: 90,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 95,
+                    green: 95,
+                    blue: 95
+                }
+            ]
+        },
+        {
             name: "calewhite",
-            colors: [{
-                pos: 0,
-                red: 100,
-                green: 100,
-                blue: 100
-            }, {
-                pos: 16.666,
-                red: 0,
-                green: 0,
-                blue: 100
-            }, {
-                pos: 33.333,
-                red: 0,
-                green: 100,
-                blue: 100
-            }, {
-                pos: 50,
-                red: 0,
-                green: 100,
-                blue: 0
-            }, {
-                pos: 66.666,
-                red: 100,
-                green: 100,
-                blue: 0
-            }, {
-                pos: 83.333,
-                red: 100,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 100,
-                green: 0,
-                blue: 100
-            }]
-        }, {
+            colors: [
+                {
+                    pos: 0,
+                    red: 100,
+                    green: 100,
+                    blue: 100
+                },
+                {
+                    pos: 16.666,
+                    red: 0,
+                    green: 0,
+                    blue: 100
+                },
+                {
+                    pos: 33.333,
+                    red: 0,
+                    green: 100,
+                    blue: 100
+                },
+                {
+                    pos: 50,
+                    red: 0,
+                    green: 100,
+                    blue: 0
+                },
+                {
+                    pos: 66.666,
+                    red: 100,
+                    green: 100,
+                    blue: 0
+                },
+                {
+                    pos: 83.333,
+                    red: 100,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 100,
+                    green: 0,
+                    blue: 100
+                }
+            ]
+        },
+        {
             name: "HotDesat",
-            colors: [{
-                pos: 0,
-                red: 27.84,
-                green: 27.84,
-                blue: 85.88
-            }, {
-                pos: 14.2857,
-                red: 0,
-                green: 0,
-                blue: 35.69
-            }, {
-                pos: 28.571,
-                red: 0,
-                green: 100,
-                blue: 100
-            }, {
-                pos: 42.857,
-                red: 0,
-                green: 49.8,
-                blue: 0
-            }, {
-                pos: 57.14286,
-                red: 100,
-                green: 100,
-                blue: 0
-            }, {
-                pos: 71.42857,
-                red: 100,
-                green: 37.65,
-                blue: 0
-            }, {
-                pos: 85.7143,
-                red: 41.96,
-                green: 0,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 87.84,
-                green: 29.8,
-                blue: 29.8
-            }]
-        }, {
+            colors: [
+                {
+                    pos: 0,
+                    red: 27.84,
+                    green: 27.84,
+                    blue: 85.88
+                },
+                {
+                    pos: 14.2857,
+                    red: 0,
+                    green: 0,
+                    blue: 35.69
+                },
+                {
+                    pos: 28.571,
+                    red: 0,
+                    green: 100,
+                    blue: 100
+                },
+                {
+                    pos: 42.857,
+                    red: 0,
+                    green: 49.8,
+                    blue: 0
+                },
+                {
+                    pos: 57.14286,
+                    red: 100,
+                    green: 100,
+                    blue: 0
+                },
+                {
+                    pos: 71.42857,
+                    red: 100,
+                    green: 37.65,
+                    blue: 0
+                },
+                {
+                    pos: 85.7143,
+                    red: 41.96,
+                    green: 0,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 87.84,
+                    green: 29.8,
+                    blue: 29.8
+                }
+            ]
+        },
+        {
             name: "Sunset",
-            colors: [{
-                pos: 0,
-                red: 10,
-                green: 0,
-                blue: 23
-            }, {
-                pos: 18,
-                red: 34,
-                green: 0,
-                blue: 60
-            }, {
-                pos: 36,
-                red: 58,
-                green: 20,
-                blue: 47
-            }, {
-                pos: 55,
-                red: 74,
-                green: 20,
-                blue: 28
-            }, {
-                pos: 72,
-                red: 90,
-                green: 43,
-                blue: 0
-            }, {
-                pos: 87,
-                red: 100,
-                green: 72,
-                blue: 0
-            }, {
-                pos: 100,
-                red: 100,
-                green: 100,
-                blue: 76
-            }]
+            colors: [
+                {
+                    pos: 0,
+                    red: 10,
+                    green: 0,
+                    blue: 23
+                },
+                {
+                    pos: 18,
+                    red: 34,
+                    green: 0,
+                    blue: 60
+                },
+                {
+                    pos: 36,
+                    red: 58,
+                    green: 20,
+                    blue: 47
+                },
+                {
+                    pos: 55,
+                    red: 74,
+                    green: 20,
+                    blue: 28
+                },
+                {
+                    pos: 72,
+                    red: 90,
+                    green: 43,
+                    blue: 0
+                },
+                {
+                    pos: 87,
+                    red: 100,
+                    green: 72,
+                    blue: 0
+                },
+                {
+                    pos: 100,
+                    red: 100,
+                    green: 100,
+                    blue: 76
+                }
+            ]
         },
         {
             name: "Hot",
-            colors: ["#000000", "#7f0000", "#b30000", "#d7301f", "#ef6548", "#fc8d59", "#fdbb84", "#fdd49e", "#fee8c8", "#fff7ec", "#ffffff"]
-        }, {
+            colors: [
+                "#000000",
+                "#7f0000",
+                "#b30000",
+                "#d7301f",
+                "#ef6548",
+                "#fc8d59",
+                "#fdbb84",
+                "#fdd49e",
+                "#fee8c8",
+                "#fff7ec",
+                "#ffffff"
+            ]
+        },
+        {
             name: "Cold",
-            colors: ["#000000", "#023858", "#045a8d", "#0570b0", "#3690c0", "#74a9cf", "#a6bddb", "#d0d1e6", "#ece7f2", "#fff7fb", "#ffffff"]
+            colors: [
+                "#000000",
+                "#023858",
+                "#045a8d",
+                "#0570b0",
+                "#3690c0",
+                "#74a9cf",
+                "#a6bddb",
+                "#d0d1e6",
+                "#ece7f2",
+                "#fff7fb",
+                "#ffffff"
+            ]
         },
         {
             name: "Purple",
-            colors: ["#230022", "#4d004b", "#810f7c", "#88419d", "#8c6bb1", "#8c96c6", "#9ebcda", "#bfd3e6", "#e0ecf4", "#f7fcfd"]
-        }, {
+            colors: [
+                "#230022",
+                "#4d004b",
+                "#810f7c",
+                "#88419d",
+                "#8c6bb1",
+                "#8c96c6",
+                "#9ebcda",
+                "#bfd3e6",
+                "#e0ecf4",
+                "#f7fcfd"
+            ]
+        },
+        {
             name: "BuGn",
-            colors: ['#f7fcfd', '#e5f5f9', '#ccece6', '#99d8c9', '#66c2a4', '#41ae76', '#238b45', '#006d2c', '#00441b']
-        }, {
+            colors: ["#f7fcfd", "#e5f5f9", "#ccece6", "#99d8c9", "#66c2a4", "#41ae76", "#238b45", "#006d2c", "#00441b"]
+        },
+        {
             name: "YlOrBr",
-            colors: ['#ffffe5', '#fff7bc', '#fee391', '#fec44f', '#fe9929', '#ec7014', '#cc4c02', '#993404', '#662506']
-        }, {
+            colors: ["#ffffe5", "#fff7bc", "#fee391", "#fec44f", "#fe9929", "#ec7014", "#cc4c02", "#993404", "#662506"]
+        },
+        {
             name: "YlGnBu",
-            colors: ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58']
-        }, {
+            colors: ["#ffffd9", "#edf8b1", "#c7e9b4", "#7fcdbb", "#41b6c4", "#1d91c0", "#225ea8", "#253494", "#081d58"]
+        },
+        {
             name: "YlOrRd",
-            colors: ["#000000", "#662506", "#993404", "#cc4c02", "#ec7014", "#fe9929", "#fec44f", "#fee391", "#fff7bc", "#ffffe5", "#ffffff"]
-        }, {
+            colors: [
+                "#000000",
+                "#662506",
+                "#993404",
+                "#cc4c02",
+                "#ec7014",
+                "#fe9929",
+                "#fec44f",
+                "#fee391",
+                "#fff7bc",
+                "#ffffe5",
+                "#ffffff"
+            ]
+        },
+        {
             name: "GreyNRed",
-            colors: ['#67001f', '#b2182b', '#d6604d', '#f4a582', '#fddbc7', '#ffffff', '#e0e0e0', '#bababa', '#878787', '#4d4d4d', '#1a1a1a'].reverse()
+            colors: [
+                "#67001f",
+                "#b2182b",
+                "#d6604d",
+                "#f4a582",
+                "#fddbc7",
+                "#ffffff",
+                "#e0e0e0",
+                "#bababa",
+                "#878787",
+                "#4d4d4d",
+                "#1a1a1a"
+            ].reverse()
         }
     ]
 };
@@ -447,7 +573,7 @@ m.PIPESIZE = 1024 * 1024;
 /**
  * Converts unit strings to number code
  */
-m.unit_lookup = function(unitInput: string | number): number | string {
+m.unit_lookup = function (unitInput: string | number): number | string {
     for (var i = 0; i < 64; i++) {
         var u: UnitEntry;
         if (UNITS[i] === undefined) {
@@ -467,7 +593,7 @@ m.unit_lookup = function(unitInput: string | number): number | string {
             if (u[3]) {
                 return i;
             }
-        } else if ((unitInput === comparer1) || (unitInput === comparer2)) {
+        } else if (unitInput === comparer1 || unitInput === comparer2) {
             return i;
         }
     }
@@ -478,13 +604,17 @@ m.unit_lookup = function(unitInput: string | number): number | string {
  * Creates new file with header initialized to type-1000 defaults
  * and data appended.
  */
-m.initialize = function(data: ArrayBuffer | NumericArray, overrides?: Record<string, any>, cleanup?: () => void): BlueHeader {
+m.initialize = function (
+    data: ArrayBuffer | NumericArray,
+    overrides?: Record<string, any>,
+    cleanup?: () => void
+): BlueHeader {
     var hcb: BlueHeader = new bluefile.BlueHeader(null);
 
-    hcb.version = 'BLUE';
+    hcb.version = "BLUE";
     hcb.size = 0;
     hcb.type = 1000;
-    hcb.format! = 'SF';
+    hcb.format! = "SF";
     hcb.timecode = 0.0;
     hcb.xstart = 0.0;
     hcb.xdelta = 1.0;
@@ -516,10 +646,9 @@ m.initialize = function(data: ArrayBuffer | NumericArray, overrides?: Record<str
         hcb.size = data.length;
     }
     hcb["class"] = hcb.type / 1000;
-    if ((hcb["class"] === 2) && (hcb["subsize"] === undefined)) {
+    if (hcb["class"] === 2 && hcb["subsize"] === undefined) {
         throw "subsize must be provided with type 2000 files";
     }
-
 
     if (!overrides.pipe) {
         (hcb as any).setData(data);
@@ -540,9 +669,9 @@ m.initialize = function(data: ArrayBuffer | NumericArray, overrides?: Record<str
 /**
  * Convert type-2000 header internals to force GRAB and FILAD routines to treat file as a 1000-type file.
  */
-m.force1000 = function(hcb: BlueHeader): void {
+m.force1000 = function (hcb: BlueHeader): void {
     if (hcb["class"] === 2) {
-        if ((hcb.size) && (!hcb.pipe)) {
+        if (hcb.size && !hcb.pipe) {
             hcb.size = hcb.subsize! * hcb.size;
         } else {
             hcb.size = 0;
@@ -555,19 +684,19 @@ m.force1000 = function(hcb: BlueHeader): void {
 /**
  * Get data from file at specified start location.
  */
-m.grab = function(hcb: BlueHeader, bufview: TypedArray, start: number, nget: number): number {
+m.grab = function (hcb: BlueHeader, bufview: TypedArray, start: number, nget: number): number {
     var dv = getDview(hcb);
     if (!dv) {
         return 0;
     }
 
-    if (hcb.format![0] === 'C') {
+    if (hcb.format![0] === "C") {
         start = start * 2;
     }
 
     nget = hcb.ape * nget;
 
-    var ngot = Math.min(bufview.length, (dv.length - start));
+    var ngot = Math.min(bufview.length, dv.length - start);
     if (bufview.set === undefined) {
         for (var i = 0; i < ngot; i++) {
             bufview[i] = dv[start + i];
@@ -575,7 +704,7 @@ m.grab = function(hcb: BlueHeader, bufview: TypedArray, start: number, nget: num
     } else {
         bufview.set(dv.subarray(start, start + ngot));
     }
-    if (hcb.format![0] === 'C') {
+    if (hcb.format![0] === "C") {
         ngot = ngot / 2;
     }
     return ngot;
@@ -584,13 +713,13 @@ m.grab = function(hcb: BlueHeader, bufview: TypedArray, start: number, nget: num
 /**
  * Append data buffer to file specified in the bluefile header control block.
  */
-m.filad = function(hcb: BlueHeader, data: TypedArray | number[], sync?: boolean): void {
+m.filad = function (hcb: BlueHeader, data: TypedArray | number[], sync?: boolean): void {
     var dv = getDview(hcb)!;
     if (hcb.data_free! < data.length) {
         throw "Pipe full";
     }
     var sidx = hcb.in_byte! / dv.BYTES_PER_ELEMENT;
-    var eidx = (sidx + data.length);
+    var eidx = sidx + data.length;
     if (eidx > dv.length) {
         var head = dv.length - sidx;
         var tail = data.length - head;
@@ -601,7 +730,7 @@ m.filad = function(hcb: BlueHeader, data: TypedArray | number[], sync?: boolean)
             dv.set(data.subarray(0, head), sidx);
             dv.set(data.subarray(head, data.length), 0);
         }
-        hcb.in_byte! = (tail * dv.BYTES_PER_ELEMENT);
+        hcb.in_byte! = tail * dv.BYTES_PER_ELEMENT;
     } else {
         dv.set(data, sidx);
         hcb.in_byte! = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf!.byteLength;
@@ -621,7 +750,7 @@ m.filad = function(hcb: BlueHeader, data: TypedArray | number[], sync?: boolean)
 /**
  * @private
  */
-m.pavail = function(hcb: BlueHeader): number {
+m.pavail = function (hcb: BlueHeader): number {
     return getDview(hcb)!.length - hcb.data_free!;
 };
 
@@ -629,7 +758,7 @@ m.pavail = function(hcb: BlueHeader): number {
  * Get data from file in dataflow fashion.
  */
 // WARNING - nget is number of scalars...which differs from the normal API
-m.grabx = function(hcb: BlueHeader, dview: TypedArray, nget?: number, offset?: number): number {
+m.grabx = function (hcb: BlueHeader, dview: TypedArray, nget?: number, offset?: number): number {
     var dv = getDview(hcb)!;
     var navail = dv.length - hcb.data_free!;
     if (offset === undefined) {
@@ -648,7 +777,7 @@ m.grabx = function(hcb: BlueHeader, dview: TypedArray, nget?: number, offset?: n
     }
 
     var sidx = hcb.out_byte! / dv.BYTES_PER_ELEMENT;
-    var eidx = (sidx + nget);
+    var eidx = sidx + nget;
     if (eidx >= dv.length) {
         var head = dv.length - sidx;
         eidx = eidx - dv.length;
@@ -663,11 +792,10 @@ m.grabx = function(hcb: BlueHeader, dview: TypedArray, nget?: number, offset?: n
     return ngot;
 };
 
-
 /**
  * @private
  */
-m.addPipeWriteListener = function(hcb: BlueHeader, onwrite: () => void): void {
+m.addPipeWriteListener = function (hcb: BlueHeader, onwrite: () => void): void {
     if (!hcb.onwritelisteners) {
         hcb.onwritelisteners = [];
     }
@@ -680,7 +808,7 @@ m.addPipeWriteListener = function(hcb: BlueHeader, onwrite: () => void): void {
  * Returns ASCII description of units code
  */
 // ~= M$UNITS_NAME
-m.units_name = function(units: number): string {
+m.units_name = function (units: number): string {
     var u = UNITS[units];
     return u[0] + " (" + u[1] + ")";
 };
@@ -688,15 +816,15 @@ m.units_name = function(units: number): string {
 /**
  * Extract filename from full path
  */
-m.trim_name = function(pathfilename: string): string {
-    var i = pathfilename.indexOf(']');
+m.trim_name = function (pathfilename: string): string {
+    var i = pathfilename.indexOf("]");
     if (i === -1) {
-        i = pathfilename.indexOf('/');
+        i = pathfilename.indexOf("/");
     }
     if (i === -1) {
-        i = pathfilename.indexOf(':');
+        i = pathfilename.indexOf(":");
     }
-    var j = pathfilename.substr(i + 1, pathfilename.length).indexOf('.');
+    var j = pathfilename.substr(i + 1, pathfilename.length).indexOf(".");
     if (j < 0) {
         j = pathfilename.length - i;
     }
@@ -708,7 +836,7 @@ m.trim_name = function(pathfilename: string): string {
  * Takes an integer code for units and a multiplier and returns the string representation.
  */
 // ~= M$LABEL
-m.label = function(units: number | string | UnitEntry, mult: number): string {
+m.label = function (units: number | string | UnitEntry, mult: number): string {
     var u: [string, string | null] = ["Unknown", "U"];
 
     if (typeof units === "string") {
@@ -736,46 +864,46 @@ m.label = function(units: number | string | UnitEntry, mult: number): string {
 /**
  * Clamp value between bounds
  */
-m.bound = function(a: number, b: number, c: number): number {
-    return a < b ? b : (a > c ? c : a);
+m.bound = function (a: number, b: number, c: number): number {
+    return a < b ? b : a > c ? c : a;
 };
 
-m.touch_distance = function(touchA: TouchLike, touchB: TouchLike): number {
-    var xd = (touchA.pageX - touchB.pageX);
-    var yd = (touchA.pageY - touchB.pageY);
-    return Math.sqrt((xd * xd) + (yd * yd));
+m.touch_distance = function (touchA: TouchLike, touchB: TouchLike): number {
+    var xd = touchA.pageX - touchB.pageX;
+    var yd = touchA.pageY - touchB.pageY;
+    return Math.sqrt(xd * xd + yd * yd);
 };
 
-m.mult_prefix = function(mult: number): string {
+m.mult_prefix = function (mult: number): string {
     var prefix = "?";
 
     /* jshint -W116 */
     if (mult == 1) {
         prefix = "";
     } else if (mult == 10) {
-        prefix = 'da';
+        prefix = "da";
     } else if (mult == 0.1) {
-        prefix = 'd';
+        prefix = "d";
     } else if (mult == 100) {
-        prefix = 'h';
+        prefix = "h";
     } else if (mult == 0.01) {
-        prefix = 'c';
+        prefix = "c";
     } else if (mult == 1.0e3) {
-        prefix = 'K';
+        prefix = "K";
     } else if (mult == 1.0e-3) {
-        prefix = 'm';
+        prefix = "m";
     } else if (mult == 1.0e6) {
-        prefix = 'M';
+        prefix = "M";
     } else if (mult == 1.0e-6) {
-        prefix = 'u';
+        prefix = "u";
     } else if (mult == 1.0e9) {
-        prefix = 'G';
+        prefix = "G";
     } else if (mult == 1.0e-9) {
-        prefix = 'n';
+        prefix = "n";
     } else if (mult == 1.0e12) {
-        prefix = 'T';
+        prefix = "T";
     } else if (mult == 1.0e-12) {
-        prefix = 'p';
+        prefix = "p";
     }
     /* jshint +W116 */
 
@@ -786,34 +914,33 @@ m.mult_prefix = function(mult: number): string {
  * @private
  */
 var VECTOR: VectorConfig = {
-    MV: 'F',
-    MS: 'F',
+    MV: "F",
+    MS: "F",
     nbpt: 4,
     view: undefined
 };
-
 
 /**
  * Sets data type for all subsequent calls to vector libraries.
  */
 // ~= VSTYPE
-m.vstype = function(ctype: string): void {
+m.vstype = function (ctype: string): void {
     VECTOR.MS = ctype;
     VECTOR.MV = ctype;
-    if (VECTOR.MV === 'D') {
+    if (VECTOR.MV === "D") {
         VECTOR.nbpt = 8;
-    } else if ((VECTOR.MV === 'L') || (VECTOR.MV === 'F')) {
+    } else if (VECTOR.MV === "L" || VECTOR.MV === "F") {
         VECTOR.nbpt = 4;
-    } else if (VECTOR.MV === 'I') {
+    } else if (VECTOR.MV === "I") {
         VECTOR.nbpt = 2;
-    } else if (VECTOR.MV === 'B') {
+    } else if (VECTOR.MV === "B") {
         VECTOR.nbpt = 1;
     } else {
         alert("Unsupported vector type");
     }
 };
 
-m.log10 = function(v: number, lo_thresh?: number): number {
+m.log10 = function (v: number, lo_thresh?: number): number {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -825,7 +952,7 @@ m.log10 = function(v: number, lo_thresh?: number): number {
  * returns the log(base10) of that value in dst
  */
 // ~= M$VLOG10
-m.vlog10 = function(src: NumericArray, lo_thresh?: number, dst?: NumericArray): void {
+m.vlog10 = function (src: NumericArray, lo_thresh?: number, dst?: NumericArray): void {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -844,7 +971,7 @@ m.vlog10 = function(src: NumericArray, lo_thresh?: number, dst?: NumericArray): 
  * Same as vlog10 but multiply each output value by a scale factor dbscale.
  * @private
  */
-m.vlogscale = function(src: NumericArray, lo_thresh?: number, dbscale?: number, dst?: NumericArray): void {
+m.vlogscale = function (src: NumericArray, lo_thresh?: number, dbscale?: number, dst?: NumericArray): void {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -868,7 +995,7 @@ m.vlogscale = function(src: NumericArray, lo_thresh?: number, dbscale?: number, 
  * (src is interleaved: [r0, i0, r1, i1, ...]).
  * @private
  */
-m.cvmag2logscale = function(src: NumericArray, lo_thresh?: number, dbscale?: number, dst?: NumericArray): void {
+m.cvmag2logscale = function (src: NumericArray, lo_thresh?: number, dbscale?: number, dst?: NumericArray): void {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -884,7 +1011,7 @@ m.cvmag2logscale = function(src: NumericArray, lo_thresh?: number, dbscale?: num
         if (j >= src.length) {
             break;
         }
-        dst[i] = (src[j - 1] * src[j - 1]) + (src[j] * src[j]);
+        dst[i] = src[j - 1] * src[j - 1] + src[j] * src[j];
         dst[i] = Math.log(Math.abs(Math.max(dst[i], lo_thresh))) / Math.log(10);
         dst[i] = dst[i] * dbscale;
     }
@@ -894,7 +1021,7 @@ m.cvmag2logscale = function(src: NumericArray, lo_thresh?: number, dbscale?: num
  * Multiply count elements of src by mul, store results in dst
  */
 // ~= M$VSMUL
-m.vsmul = function(src: NumericArray, mul: number, dst?: NumericArray, count?: number): void {
+m.vsmul = function (src: NumericArray, mul: number, dst?: NumericArray, count?: number): void {
     if (dst === undefined) {
         dst = src;
     }
@@ -916,7 +1043,7 @@ m.vsmul = function(src: NumericArray, mul: number, dst?: NumericArray, count?: n
  * Finds max and min values in vector vec and returns values.
  */
 // ~= M$VMXMN
-m.vmxmn = function(vec: NumericArray, size: number): MinMaxResult {
+m.vmxmn = function (vec: NumericArray, size: number): MinMaxResult {
     var smax = vec[0];
     var smin = vec[0];
     var imax = 0;
@@ -943,7 +1070,7 @@ m.vmxmn = function(vec: NumericArray, size: number): MinMaxResult {
 /**
  * Move count elements from src to dest with strides.
  */
-m.vmov = function(src: NumericArray, sstride: number, dest: NumericArray, dstride: number, count?: number): void {
+m.vmov = function (src: NumericArray, sstride: number, dest: NumericArray, dstride: number, count?: number): void {
     if (count === undefined) {
         count = src.length;
     }
@@ -965,7 +1092,16 @@ m.vmov = function(src: NumericArray, sstride: number, dest: NumericArray, dstrid
 /**
  * Move count elements from src to dest keeping the maximum value (with decay).
  */
-m.vmovmax = function(src: NumericArray, sstart: number, sstride: number, dest: NumericArray, dstart: number, dstride: number, count?: number, decay?: number): void {
+m.vmovmax = function (
+    src: NumericArray,
+    sstart: number,
+    sstride: number,
+    dest: NumericArray,
+    dstart: number,
+    dstride: number,
+    count?: number,
+    decay?: number
+): void {
     if (count === undefined) {
         count = src.length;
     }
@@ -991,7 +1127,7 @@ m.vmovmax = function(src: NumericArray, sstart: number, sstride: number, dest: N
  * Initialize count consecutive elements of input vector vec with value inpval.
  */
 // ~= M$VFILL
-m.vfill = function(vec: NumericArray, inpval: number, count?: number): void {
+m.vfill = function (vec: NumericArray, inpval: number, count?: number): void {
     if (count === undefined) {
         count = vec.length;
     }
@@ -1004,7 +1140,7 @@ m.vfill = function(vec: NumericArray, inpval: number, count?: number): void {
 /**
  * Compute the absolute value of count elements in vec and write to output vector dest
  */
-m.vabs = function(vec: NumericArray, dest?: NumericArray, count?: number): void {
+m.vabs = function (vec: NumericArray, dest?: NumericArray, count?: number): void {
     if (count === undefined) {
         count = vec.length;
     }
@@ -1016,13 +1152,12 @@ m.vabs = function(vec: NumericArray, dest?: NumericArray, count?: number): void 
     }
 };
 
-
 /**
  * Computes the magnitude of count complex vector cxvec elements
  * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVMAG
-m.cvmag = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
+m.cvmag = function (cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
@@ -1033,7 +1168,7 @@ m.cvmag = function(cxvec: NumericArray, dest: NumericArray, count?: number): voi
         if (j >= cxvec.length) {
             break;
         }
-        dest[i] = Math.sqrt((cxvec[j - 1] * cxvec[j - 1]) + (cxvec[j] * cxvec[j]));
+        dest[i] = Math.sqrt(cxvec[j - 1] * cxvec[j - 1] + cxvec[j] * cxvec[j]);
     }
 };
 
@@ -1042,7 +1177,7 @@ m.cvmag = function(cxvec: NumericArray, dest: NumericArray, count?: number): voi
  * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVMAG2
-m.cvmag2 = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
+m.cvmag2 = function (cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
@@ -1054,7 +1189,7 @@ m.cvmag2 = function(cxvec: NumericArray, dest: NumericArray, count?: number): vo
         if (j >= cxvec.length) {
             break;
         }
-        dest[i] = (cxvec[j - 1] * cxvec[j - 1]) + (cxvec[j] * cxvec[j]);
+        dest[i] = cxvec[j - 1] * cxvec[j - 1] + cxvec[j] * cxvec[j];
     }
 };
 
@@ -1063,7 +1198,7 @@ m.cvmag2 = function(cxvec: NumericArray, dest: NumericArray, count?: number): vo
  * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVPHA
-m.cvpha = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
+m.cvpha = function (cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
@@ -1079,7 +1214,7 @@ m.cvpha = function(cxvec: NumericArray, dest: NumericArray, count?: number): voi
         }
         re = cxvec[j - 1];
         im = cxvec[j];
-        if ((re === 0.0) && (im === 0.0)) {
+        if (re === 0.0 && im === 0.0) {
             re = 1.0;
         }
         dest[i] = Math.atan2(im, re);
@@ -1091,7 +1226,7 @@ m.cvpha = function(cxvec: NumericArray, dest: NumericArray, count?: number): voi
  * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVPHAD
-m.cvphad = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
+m.cvphad = function (cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
@@ -1107,7 +1242,7 @@ m.cvphad = function(cxvec: NumericArray, dest: NumericArray, count?: number): vo
         }
         re = cxvec[j - 1];
         im = cxvec[j];
-        if ((re === 0.0) && (im === 0.0)) {
+        if (re === 0.0 && im === 0.0) {
             re = 1.0;
         }
         dest[i] = Math.atan2(im, re) * (180.0 / Math.PI);
@@ -1119,15 +1254,15 @@ m.cvphad = function(cxvec: NumericArray, dest: NumericArray, count?: number): vo
  * @private
  */
 // ~= INT(), DINT
-m.trunc = function(n: number): number {
-    return n - n % 1;
+m.trunc = function (n: number): number {
+    return n - (n % 1);
 };
 
 /**
  * Transfer of sign function from Fortran.
  * @private
  */
-m.sign = function(a1: number, a2: number): number {
+m.sign = function (a1: number, a2: number): number {
     if (a2 >= 0) {
         return Math.abs(a1);
     } else {
@@ -1140,14 +1275,14 @@ m.sign = function(a1: number, a2: number): number {
  */
 
 function pad2(number: number): string {
-    return (number < 10 ? '0' : '') + number;
+    return (number < 10 ? "0" : "") + number;
 }
 
 /**
  * Convert J1950 time or seconds-since-Epoch (midnight Dec-31-1949) to time-of-day.
  * Fractional seconds accurate to milliseconds.
  */
-m.sec2tod = function(sec: number, trim_trailing_zeros?: boolean): string {
+m.sec2tod = function (sec: number, trim_trailing_zeros?: boolean): string {
     var tod = "";
     var j1950 = Date.UTC(1950, 0, 1); //From 1950 to 1970
     var j1950Date = new Date(j1950); //debug var
@@ -1160,7 +1295,7 @@ m.sec2tod = function(sec: number, trim_trailing_zeros?: boolean): string {
     if (sec >= 0) {
         if (sec < diffDaySecs) {
             // hh:mm:ss
-            var millisecs = midnightToday.getTime() + (sec * 1000);
+            var millisecs = midnightToday.getTime() + sec * 1000;
             var d = new Date(millisecs);
             tod = pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
         } else if (sec === 86400) {
@@ -1181,14 +1316,24 @@ m.sec2tod = function(sec: number, trim_trailing_zeros?: boolean): string {
             // convert to j1950
             var secMilli = Math.floor(sec * 1000) + j1950;
             d = new Date(secMilli);
-            tod = d.getUTCFullYear() + ":" + pad2(d.getUTCMonth() + 1) + ":" + pad2(d.getUTCDate()) + "::" +
-                pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes()) + ":" + pad2(d.getUTCSeconds());
+            tod =
+                d.getUTCFullYear() +
+                ":" +
+                pad2(d.getUTCMonth() + 1) +
+                ":" +
+                pad2(d.getUTCDate()) +
+                "::" +
+                pad2(d.getUTCHours()) +
+                ":" +
+                pad2(d.getUTCMinutes()) +
+                ":" +
+                pad2(d.getUTCSeconds());
         }
     } else {
         if (sec > negDiffYearSecs) {
             // -ddd:hh:mm:ss
             var days: any = sec / diffDaySecs;
-            days = (days <= 0) ? Math.ceil(days) : Math.floor(days);
+            days = days <= 0 ? Math.ceil(days) : Math.floor(days);
 
             // Break down integral seconds in the day into hours, minutes and seconds.
             var seconds = Math.floor(Math.abs(sec) % diffDaySecs);
@@ -1206,17 +1351,31 @@ m.sec2tod = function(sec: number, trim_trailing_zeros?: boolean): string {
             // convert to j1950
             var secMilli = Math.floor(sec * 1000) + j1950;
             d = new Date(secMilli);
-            tod = d.getUTCFullYear() + ":" + pad2(d.getUTCMonth() + 1) + ":" + pad2(d.getUTCDate()) + "::" +
-                pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes()) + ":" + pad2(d.getUTCSeconds());
+            tod =
+                d.getUTCFullYear() +
+                ":" +
+                pad2(d.getUTCMonth() + 1) +
+                ":" +
+                pad2(d.getUTCDate()) +
+                "::" +
+                pad2(d.getUTCHours()) +
+                ":" +
+                pad2(d.getUTCMinutes()) +
+                ":" +
+                pad2(d.getUTCSeconds());
         }
     }
 
     // violate legacy behavior, include full precision always
-    var fractional = (sec % 1);
+    var fractional = sec % 1;
     if (fractional === 0.0) {
         tod += ".000000";
     } else {
-        tod += "." + Math.abs(sec % 1).toPrecision(6).slice(2, 8);
+        tod +=
+            "." +
+            Math.abs(sec % 1)
+                .toPrecision(6)
+                .slice(2, 8);
     }
 
     if (trim_trailing_zeros) {
@@ -1230,7 +1389,6 @@ m.sec2tod = function(sec: number, trim_trailing_zeros?: boolean): string {
         }
     }
     return tod;
-
 };
 
 /**
@@ -1245,7 +1403,7 @@ var j1950offset = (20.0 * 365.0 + 5.0) * (24 * 3600);
  * 0.0 - 86400 == m.sec2tod
  * >86400 then modulo 86400
  */
-m.sec2tspec = function(sec: number, mode?: string, trim_trailing_zeros?: boolean): string {
+m.sec2tspec = function (sec: number, mode?: string, trim_trailing_zeros?: boolean): string {
     mode = mode || "";
     if (sec >= 0 && sec <= 86400) {
         return m.sec2tod(sec, trim_trailing_zeros);
@@ -1264,15 +1422,14 @@ m.sec2tspec = function(sec: number, mode?: string, trim_trailing_zeros?: boolean
 /**
  * Convert seconds to time-of-day (j1970 epoch).
  */
-m.sec2tod_j1970 = function(sec: number): string {
+m.sec2tod_j1970 = function (sec: number): string {
     var tod = "";
     var d: Date;
-    if ((sec >= 0) && (sec < 86400)) {
+    if (sec >= 0 && sec < 86400) {
         // hh:mm:ss
         d = new Date(sec * 1000);
         tod = pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
-
-    } else if ((sec < 0) && (sec > -31536000)) {
+    } else if (sec < 0 && sec > -31536000) {
         // -ddd:hh:mm:ss
         var days = -1 * (sec / (24 * 60 * 60));
         d = new Date(sec * 1000);
@@ -1280,25 +1437,35 @@ m.sec2tod_j1970 = function(sec: number): string {
     } else {
         // convert to j1950
         d = new Date((sec - j1950offset) * 1000);
-        tod = d.getFullYear() + ":" + pad2(d.getMonth()) + ":" + pad2(d.getDate()) + "::" +
-            pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+        tod =
+            d.getFullYear() +
+            ":" +
+            pad2(d.getMonth()) +
+            ":" +
+            pad2(d.getDate()) +
+            "::" +
+            pad2(d.getHours()) +
+            ":" +
+            pad2(d.getMinutes()) +
+            ":" +
+            pad2(d.getSeconds());
     }
-    if ((sec % 1) !== 0) {
+    if (sec % 1 !== 0) {
         tod += "." + (sec % 1).toPrecision(6).slice(2, 8);
     }
     return tod;
 };
 
-m.j1970toj1950 = function(t: number | Date): number {
+m.j1970toj1950 = function (t: number | Date): number {
     if ((t as Date).getTime !== undefined) {
-        return (((t as Date).getTime() / 1000) + j1950offset);
+        return (t as Date).getTime() / 1000 + j1950offset;
     } else {
-        return ((t as number) + j1950offset);
+        return (t as number) + j1950offset;
     }
 };
 
-m.j1950toj1970 = function(t: number): number {
-    return (t - j1950offset);
+m.j1950toj1970 = function (t: number): number {
+    return t - j1950offset;
 };
 
 /**
@@ -1306,23 +1473,23 @@ m.j1950toj1970 = function(t: number): number {
  * is not invoked any more often than "delay" milliseconds.
  * @private
  */
-m.throttle = function(delay: number, callback: (...args: any[]) => void): () => void {
+m.throttle = function (delay: number, callback: (...args: any[]) => void): () => void {
     var previousCall = new Date().getTime();
-    return function() {
+    return function () {
         var time = new Date().getTime();
 
-        if ((time - previousCall) >= delay) {
+        if (time - previousCall >= delay) {
             previousCall = time;
             callback.apply(null, arguments as any);
         }
     };
 };
 
-m.pad = function(value: number, padamt?: number | string): number {
+m.pad = function (value: number, padamt?: number | string): number {
     if (!padamt) {
         return 0;
     }
-    if (typeof padamt === 'string') {
+    if (typeof padamt === "string") {
         if (padamt.endsWith("%")) {
             padamt = value * (parseFloat(padamt) / 100.0);
         } else {

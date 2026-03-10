@@ -1,5 +1,3 @@
-
-
 /**
  * @license
  * File: sigplot.accordion.ts
@@ -32,7 +30,7 @@ import type { CanvasStyle } from "./types.js";
 
 interface PlotMouseEvent extends Event {
     xpos: number;
-    ypos: number; 
+    ypos: number;
     x: number;
     y: number;
     which: number;
@@ -205,23 +203,27 @@ class AccordionPlugin extends plugin.Plugin {
         this.addListener("mdown", (evt) => {
             this._onMouseDown(evt);
         });
-        document.addEventListener("mouseup", () => {
-            this._onDocMouseUp();
-        }, false);
+        document.addEventListener(
+            "mouseup",
+            () => {
+                this._onDocMouseUp();
+            },
+            false
+        );
     }
 
     pluginDispose(): void {}
 
     pluginRefresh(): void {
-        if ((this.properties.center === undefined) || (this.properties.width === undefined)) {
+        if (this.properties.center === undefined || this.properties.width === undefined) {
             return;
         }
         const Mx = this.Mx;
         if (!Mx) return;
-        
+
         const ctx = this.Context;
         if (!ctx) return;
-        
+
         ctx.clearRect(0, 0, this.canvas!.width, this.canvas!.height);
 
         let center_pxl;
@@ -239,18 +241,26 @@ class AccordionPlugin extends plugin.Plugin {
 
         let pxl_1, pxl_2;
         if (this.properties.mode === "absolute") {
-            pxl_1 = mx.real_to_pixel(Mx, this.properties.center - (this.properties.width / 2), this.properties.center - (this.properties.width / 2));
-            pxl_2 = mx.real_to_pixel(Mx, this.properties.center + (this.properties.width / 2), this.properties.center + (this.properties.width / 2));
-        } else if (this.properties.mode === 'relative') {
+            pxl_1 = mx.real_to_pixel(
+                Mx,
+                this.properties.center - this.properties.width / 2,
+                this.properties.center - this.properties.width / 2
+            );
+            pxl_2 = mx.real_to_pixel(
+                Mx,
+                this.properties.center + this.properties.width / 2,
+                this.properties.center + this.properties.width / 2
+            );
+        } else if (this.properties.mode === "relative") {
             let w = Mx.stk[0].x2 - Mx.stk[0].x1;
             let h = Mx.stk[0].y2 - Mx.stk[0].y1;
             pxl_1 = {
-                x: center_pxl.x - (this.properties.width * w / 2),
-                y: center_pxl.y - (this.properties.width * h / 2)
+                x: center_pxl.x - (this.properties.width * w) / 2,
+                y: center_pxl.y - (this.properties.width * h) / 2
             };
             pxl_2 = {
-                x: center_pxl.x + (this.properties.width * w / 2),
-                y: center_pxl.y + (this.properties.width * h / 2)
+                x: center_pxl.x + (this.properties.width * w) / 2,
+                y: center_pxl.y + (this.properties.width * h) / 2
             };
         }
         if (this.properties.direction === "vertical") {
@@ -263,10 +273,12 @@ class AccordionPlugin extends plugin.Plugin {
             this.properties.loc_2 = Math.min(Mx.b, pxl_1.y);
         }
 
-        if (this.properties.shade_area && (Math.abs(this.properties.loc_2 - this.properties.loc_1) > 0)) {
+        if (this.properties.shade_area && Math.abs(this.properties.loc_2 - this.properties.loc_1) > 0) {
             let oldAlpha = ctx.globalAlpha;
-            ctx.globalAlpha = (this.properties.fill_style.opacity !== undefined) ? this.properties.fill_style.opacity : 0.4;
-            ctx.fillStyle = (this.properties.fill_style.fillStyle !== undefined) ? this.properties.fill_style.fillStyle : Mx.hi;
+            ctx.globalAlpha =
+                this.properties.fill_style.opacity !== undefined ? this.properties.fill_style.opacity : 0.4;
+            ctx.fillStyle =
+                this.properties.fill_style.fillStyle !== undefined ? this.properties.fill_style.fillStyle : Mx.hi;
             if (this.properties.direction === "vertical") {
                 ctx.fillRect(this.properties.loc_1, Mx.t, this.properties.loc_2 - this.properties.loc_1, Mx.b - Mx.t);
             } else if (this.properties.direction === "horizontal") {
@@ -276,9 +288,16 @@ class AccordionPlugin extends plugin.Plugin {
         }
 
         if (this.properties.draw_edge_lines || this.properties.edge_highlight || this.edge_dragging) {
-            ctx.lineWidth = (this.properties.edge_line_style.lineWidth !== undefined) ? this.properties.edge_line_style.lineWidth : 1;
-            ctx.lineCap = (this.properties.edge_line_style.lineCap !== undefined) ? this.properties.edge_line_style.lineCap : "square";
-            ctx.strokeStyle = (this.properties.edge_line_style.strokeStyle !== undefined) ? this.properties.edge_line_style.strokeStyle : Mx.fg;
+            ctx.lineWidth =
+                this.properties.edge_line_style.lineWidth !== undefined ? this.properties.edge_line_style.lineWidth : 1;
+            ctx.lineCap =
+                this.properties.edge_line_style.lineCap !== undefined
+                    ? this.properties.edge_line_style.lineCap
+                    : "square";
+            ctx.strokeStyle =
+                this.properties.edge_line_style.strokeStyle !== undefined
+                    ? this.properties.edge_line_style.strokeStyle
+                    : Mx.fg;
             if (this.edge_dragging || this.properties.edge_highlight) {
                 ctx.lineWidth = Math.ceil(ctx.lineWidth * 1.2);
             }
@@ -304,9 +323,18 @@ class AccordionPlugin extends plugin.Plugin {
         }
 
         if (this.properties.draw_center_line) {
-            ctx.lineWidth = (this.properties.center_line_style.lineWidth !== undefined) ? this.properties.center_line_style.lineWidth : 1;
-            ctx.lineCap = (this.properties.center_line_style.lineCap !== undefined) ? this.properties.center_line_style.lineCap : "square";
-            ctx.strokeStyle = (this.properties.center_line_style.strokeStyle !== undefined) ? this.properties.center_line_style.strokeStyle : Mx.fg;
+            ctx.lineWidth =
+                this.properties.center_line_style.lineWidth !== undefined
+                    ? this.properties.center_line_style.lineWidth
+                    : 1;
+            ctx.lineCap =
+                this.properties.center_line_style.lineCap !== undefined
+                    ? this.properties.center_line_style.lineCap
+                    : "square";
+            ctx.strokeStyle =
+                this.properties.center_line_style.strokeStyle !== undefined
+                    ? this.properties.center_line_style.strokeStyle
+                    : Mx.fg;
             if (this.dragging || this.properties.highlight) {
                 ctx.lineWidth = Math.ceil(ctx.lineWidth * 1.2);
             }
@@ -405,31 +433,36 @@ class AccordionPlugin extends plugin.Plugin {
             return;
         }
         // Ignore if the mouse is outside of the plot area
-        if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+        if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
             this.properties.highlight = false;
             return;
         }
-        if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+        if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
             this.properties.highlight = false;
             return;
         }
         // If the mouse is close, "highlight" the line
-        let lineWidth = (this.properties.center_line_style.lineWidth !== undefined) ? this.properties.center_line_style.lineWidth : 1;
-        let elineWidth = (this.properties.edge_line_style.lineWidth !== undefined) ? this.properties.edge_line_style.lineWidth : 1;
+        let lineWidth =
+            this.properties.center_line_style.lineWidth !== undefined ? this.properties.center_line_style.lineWidth : 1;
+        let elineWidth =
+            this.properties.edge_line_style.lineWidth !== undefined ? this.properties.edge_line_style.lineWidth : 1;
         if (!this.dragging && !this.edge_dragging) {
             if (Mx.warpbox) {
                 return;
             } // Don't highlight if a warpbox is being drawn
             if (this.properties.direction === "vertical") {
                 if (!this.properties.prevent_move) {
-                    if (Math.abs(this.properties.center_location - evt.xpos) < (lineWidth + 5)) {
+                    if (Math.abs(this.properties.center_location - evt.xpos) < lineWidth + 5) {
                         this.properties.highlight = true;
                     } else {
                         this.properties.highlight = false;
                     }
                 }
                 if (!this.properties.prevent_resize) {
-                    if ((Math.abs(this.properties.loc_1 - evt.xpos) < (elineWidth + 5)) || (Math.abs(this.properties.loc_2 - evt.xpos) < (elineWidth + 5))) {
+                    if (
+                        Math.abs(this.properties.loc_1 - evt.xpos) < elineWidth + 5 ||
+                        Math.abs(this.properties.loc_2 - evt.xpos) < elineWidth + 5
+                    ) {
                         this.properties.edge_highlight = true;
                     } else {
                         this.properties.edge_highlight = false;
@@ -437,14 +470,17 @@ class AccordionPlugin extends plugin.Plugin {
                 }
             } else if (this.properties.direction === "horizontal") {
                 if (!this.properties.prevent_move) {
-                    if (Math.abs(this.properties.center_location - evt.ypos) < (lineWidth + 5)) {
+                    if (Math.abs(this.properties.center_location - evt.ypos) < lineWidth + 5) {
                         this.properties.highlight = true;
                     } else {
                         this.properties.highlight = false;
                     }
                 }
                 if (!this.properties.prevent_resize) {
-                    if ((Math.abs(this.properties.loc_1 - evt.ypos) < (elineWidth + 5)) || (Math.abs(this.properties.loc_2 - evt.ypos) < (elineWidth + 5))) {
+                    if (
+                        Math.abs(this.properties.loc_1 - evt.ypos) < elineWidth + 5 ||
+                        Math.abs(this.properties.loc_2 - evt.ypos) < elineWidth + 5
+                    ) {
                         this.properties.edge_highlight = true;
                     } else {
                         this.properties.edge_highlight = false;
@@ -458,16 +494,16 @@ class AccordionPlugin extends plugin.Plugin {
             var pos = mx.pixel_to_real(Mx, evt.xpos, evt.ypos);
             if (this.properties.direction === "vertical") {
                 this.properties.center_location = evt.xpos;
-                if (this.properties.mode === 'absolute') {
+                if (this.properties.mode === "absolute") {
                     this.properties.center = pos.x;
-                } else if (this.properties.mode === 'relative') {
+                } else if (this.properties.mode === "relative") {
                     this.properties.center = (evt.xpos - Mx.l) / (Mx.r - Mx.l);
                 }
             } else if (this.properties.direction === "horizontal") {
                 this.properties.center_location = evt.ypos;
-                if (this.properties.mode === 'absolute') {
+                if (this.properties.mode === "absolute") {
                     this.properties.center = pos.y;
-                } else if (this.properties.mode === 'relative') {
+                } else if (this.properties.mode === "relative") {
                     this.properties.center = (evt.ypos - Mx.t) / (Mx.b - Mx.t);
                 }
             }
@@ -476,15 +512,15 @@ class AccordionPlugin extends plugin.Plugin {
             // If we are dragging, update the slider location
             var pos = mx.pixel_to_real(Mx, evt.xpos, evt.ypos);
             if (this.properties.direction === "vertical") {
-                if (this.properties.mode === 'absolute') {
+                if (this.properties.mode === "absolute") {
                     this.properties.width = 2 * Math.abs(this.properties.center - pos.x);
-                } else if (this.properties.mode === 'relative') {
+                } else if (this.properties.mode === "relative") {
                     this.properties.width = (2 * Math.abs(this.properties.center_location - evt.xpos)) / (Mx.r - Mx.l);
                 }
             } else if (this.properties.direction === "horizontal") {
-                if (this.properties.mode === 'absolute') {
+                if (this.properties.mode === "absolute") {
                     this.properties.width = 2 * Math.abs(this.properties.center - pos.y);
-                } else if (this.properties.mode === 'relative') {
+                } else if (this.properties.mode === "relative") {
                     this.properties.width = (2 * Math.abs(this.properties.center_location - evt.ypos)) / (Mx.b - Mx.t);
                 }
             }
@@ -526,31 +562,39 @@ class AccordionPlugin extends plugin.Plugin {
         if (this.properties.center_location === undefined) {
             return;
         }
-        if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+        if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
             return;
         }
-        if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+        if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
             return;
         }
         if (this.properties.prevent_drag) {
             return;
         }
-        let lineWidth = (this.properties.center_line_style.lineWidth !== undefined) ? this.properties.center_line_style.lineWidth : 1;
-        let elineWidth = (this.properties.edge_line_style.lineWidth !== undefined) ? this.properties.edge_line_style.lineWidth : 1;
+        let lineWidth =
+            this.properties.center_line_style.lineWidth !== undefined ? this.properties.center_line_style.lineWidth : 1;
+        let elineWidth =
+            this.properties.edge_line_style.lineWidth !== undefined ? this.properties.edge_line_style.lineWidth : 1;
         if (this.properties.direction === "vertical") {
             // prefer edge drag over center drag
-            if ((Math.abs(this.properties.loc_1 - evt.xpos) < (elineWidth + 5)) || (Math.abs(this.properties.loc_2 - evt.xpos) < (elineWidth + 5))) {
+            if (
+                Math.abs(this.properties.loc_1 - evt.xpos) < elineWidth + 5 ||
+                Math.abs(this.properties.loc_2 - evt.xpos) < elineWidth + 5
+            ) {
                 this.edge_dragging = !this.properties.prevent_resize;
                 evt.preventDefault();
-            } else if (Math.abs(this.properties.center_location - evt.xpos) < (lineWidth + 5)) {
+            } else if (Math.abs(this.properties.center_location - evt.xpos) < lineWidth + 5) {
                 this.dragging = !this.properties.prevent_move;
                 evt.preventDefault();
             }
         } else if (this.properties.direction === "horizontal") {
-            if ((Math.abs(this.properties.loc_1 - evt.ypos) < (elineWidth + 5)) || (Math.abs(this.properties.loc_2 - evt.ypos) < (elineWidth + 5))) {
+            if (
+                Math.abs(this.properties.loc_1 - evt.ypos) < elineWidth + 5 ||
+                Math.abs(this.properties.loc_2 - evt.ypos) < elineWidth + 5
+            ) {
                 this.edge_dragging = !this.properties.prevent_resize;
                 evt.preventDefault();
-            } else if (Math.abs(this.properties.center_location - evt.ypos) < (lineWidth + 5)) {
+            } else if (Math.abs(this.properties.center_location - evt.ypos) < lineWidth + 5) {
                 this.dragging = !this.properties.prevent_move;
                 evt.preventDefault();
             }
@@ -570,12 +614,12 @@ class AccordionPlugin extends plugin.Plugin {
         this.edge_dragging = false;
 
         // Issue a slider tag event
-        let evt = document.createEvent('Event') as any;
-        evt.initEvent('accordiontag', true, true);
+        let evt = document.createEvent("Event") as any;
+        evt.initEvent("accordiontag", true, true);
         evt.center = this.properties.center;
         evt.width = this.properties.width;
         mx.dispatchEvent(Mx, evt);
-        this.emit('change', {
+        this.emit("change", {
             center: this.properties.center,
             width: this.properties.width
         });
@@ -585,9 +629,9 @@ class AccordionPlugin extends plugin.Plugin {
         if (this.plot) {
             var Mx = this.Mx;
             // Issue a slider tag event
-            var evt = document.createEvent('Event') as any;
-            evt.initEvent('accordiontag', true, true);
-            this.emit('change', {
+            var evt = document.createEvent("Event") as any;
+            evt.initEvent("accordiontag", true, true);
+            this.emit("change", {
                 center: this.properties.center,
                 width: this.properties.width
             });
@@ -602,9 +646,9 @@ class AccordionPlugin extends plugin.Plugin {
         if (this.plot) {
             var Mx = this.Mx;
             // Issue a slider tag event
-            var evt = document.createEvent('Event') as any;
-            evt.initEvent('accordiontag', true, true);
-            this.emit('change', {
+            var evt = document.createEvent("Event") as any;
+            evt.initEvent("accordiontag", true, true);
+            this.emit("change", {
                 center: this.properties.center,
                 width: this.properties.width
             });
@@ -660,14 +704,16 @@ class AccordionPlugin extends plugin.Plugin {
     /**
      * @deprecated use .center()
      */
-    get_center(): any { // In real units
+    get_center(): any {
+        // In real units
         return this.properties.center();
     }
 
     /**
      * @deprecated use .width()
      */
-    get_width(): any { // Pixels
+    get_width(): any {
+        // Pixels
         return this.properties.width();
     }
 }

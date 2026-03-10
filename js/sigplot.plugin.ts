@@ -205,7 +205,7 @@ class Plugin {
         this.definedproperties[PropertyName] = def;
 
         // Fluentize the API
-        this[PropertyName] = function(this: Plugin) {
+        this[PropertyName] = function (this: Plugin) {
             if (!arguments.length) {
                 return this.properties[PropertyName];
             }

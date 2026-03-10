@@ -145,6 +145,10 @@ export default [
                 "warn",
                 { args: "none", varsIgnorePattern: "^_" },
             ],
+            // TypeScript handles undefined variable checking — disable ESLint's
+            "no-undef": "off",
+            // TypeScript allows re-declarations in certain patterns (overloads, etc.)
+            "no-redeclare": "off",
         },
     },
 

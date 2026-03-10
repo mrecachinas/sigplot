@@ -91,7 +91,7 @@ class SliderPlugin {
                 lineCap: "square" as CanvasLineCap
             },
             direction: "vertical",
-            name: "Slider", 
+            name: "Slider",
             prevent_drag: false,
             add_box: false,
             persistent_style: false,
@@ -107,7 +107,8 @@ class SliderPlugin {
         this.highlight = false;
     }
 
-    init(plot: any): void { // TODO: Type plot parameter
+    init(plot: any): void {
+        // TODO: Type plot parameter
         this.plot = plot;
         const Mx = plot._Mx;
 
@@ -136,11 +137,11 @@ class SliderPlugin {
         const Mx = this.plot._Mx;
 
         // Ignore if the mouse is outside of the plot area
-        if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+        if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
             this.set_highlight(false);
             return;
         }
-        if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+        if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
             this.set_highlight(false);
             return;
         }
@@ -154,21 +155,23 @@ class SliderPlugin {
                 return;
             } // Don't highlight if a warpbox is being drawn
             if (this.options.direction === "vertical") {
-                if (Math.abs((this.location as number) - evt.xpos) < (lineWidth + 5)) {
+                if (Math.abs((this.location as number) - evt.xpos) < lineWidth + 5) {
                     this.set_highlight(true);
                 } else {
                     this.set_highlight(false);
                 }
             } else if (this.options.direction === "horizontal") {
-                if (Math.abs((this.location as number) - evt.ypos) < (lineWidth + 5)) {
+                if (Math.abs((this.location as number) - evt.ypos) < lineWidth + 5) {
                     this.set_highlight(true);
                 } else {
                     this.set_highlight(false);
                 }
             } else if (this.options.direction === "both") {
                 const location = this.location as SliderPosition;
-                if ((Math.abs(location.x! - evt.xpos) < (lineWidth + 5)) &&
-                    (Math.abs(location.y! - evt.ypos) < (lineWidth + 5))) {
+                if (
+                    Math.abs(location.x! - evt.xpos) < lineWidth + 5 &&
+                    Math.abs(location.y! - evt.ypos) < lineWidth + 5
+                ) {
                     this.set_highlight(true);
                 } else {
                     this.set_highlight(false);
@@ -186,8 +189,8 @@ class SliderPlugin {
             this.position = mx.pixel_to_real(Mx, 0, evt.ypos).y;
         } else if (this.options.direction === "both") {
             const rp = mx.pixel_to_real(Mx, evt.xpos, evt.ypos);
-            this.location = {x: evt.xpos, y: evt.ypos};
-            this.position = {x: rp.x, y: rp.y};
+            this.location = { x: evt.xpos, y: evt.ypos };
+            this.position = { x: rp.x, y: rp.y };
         }
 
         // Refresh the plugin
@@ -208,10 +211,10 @@ class SliderPlugin {
 
         const Mx = this.plot._Mx;
 
-        if ((evt.xpos < Mx.l) || (evt.xpos > Mx.r)) {
+        if (evt.xpos < Mx.l || evt.xpos > Mx.r) {
             return;
         }
-        if ((evt.ypos > Mx.b) || (evt.ypos < Mx.t)) {
+        if (evt.ypos > Mx.b || evt.ypos < Mx.t) {
             return;
         }
 
@@ -221,21 +224,20 @@ class SliderPlugin {
 
         const lineWidth = this.options.style.lineWidth;
         if (this.options.direction === "vertical") {
-            if (Math.abs((this.location as number) - evt.xpos) < (lineWidth + 5)) {
+            if (Math.abs((this.location as number) - evt.xpos) < lineWidth + 5) {
                 this.dragging = true;
                 evt.slider_drag = true;
                 evt.preventDefault();
             }
         } else if (this.options.direction === "horizontal") {
-            if (Math.abs((this.location as number) - evt.ypos) < (lineWidth + 5)) {
+            if (Math.abs((this.location as number) - evt.ypos) < lineWidth + 5) {
                 this.dragging = true;
                 evt.slider_drag = true;
                 evt.preventDefault();
             }
         } else if (this.options.direction === "both") {
             const location = this.location as SliderPosition;
-            if ((Math.abs(location.x! - evt.xpos) < (lineWidth + 5)) &&
-                (Math.abs(location.y! - evt.ypos) < (lineWidth + 5))) {
+            if (Math.abs(location.x! - evt.xpos) < lineWidth + 5 && Math.abs(location.y! - evt.ypos) < lineWidth + 5) {
                 this.dragging = true;
                 evt.slider_drag = true;
                 evt.preventDefault();
@@ -249,34 +251,37 @@ class SliderPlugin {
             this.dragging = false;
 
             // Dispatch slidertag event
-            const slidertag_evt = document.createEvent('Event') as any;
+            const slidertag_evt = document.createEvent("Event") as any;
             slidertag_evt.source = this;
             slidertag_evt.location = this.location;
             slidertag_evt.position = this.position;
-            slidertag_evt.initEvent('slidertag', true, true);
+            slidertag_evt.initEvent("slidertag", true, true);
             mx.dispatchEvent(this.plot._Mx, slidertag_evt);
 
-            // Dispatch sliderdrag event 
-            const sliderdrag_evt = document.createEvent('Event') as any;
+            // Dispatch sliderdrag event
+            const sliderdrag_evt = document.createEvent("Event") as any;
             sliderdrag_evt.source = this;
             sliderdrag_evt.location = this.location;
             sliderdrag_evt.position = this.position;
-            sliderdrag_evt.initEvent('sliderdrag', true, true);
+            sliderdrag_evt.initEvent("sliderdrag", true, true);
             mx.dispatchEvent(this.plot._Mx, sliderdrag_evt);
         }
     }
 
-    menu(): any { // TODO: Type return value
+    menu(): any {
+        // TODO: Type return value
         return {
             text: "Slider...",
             menu: {
                 title: "Slider",
-                items: [{
-                    text: "Remove",
-                    handler: () => {
-                        this.plot.remove_plugin(this);
+                items: [
+                    {
+                        text: "Remove",
+                        handler: () => {
+                            this.plot.remove_plugin(this);
+                        }
                     }
-                }]
+                ]
             }
         };
     }
@@ -315,18 +320,18 @@ class SliderPlugin {
             } else if (this.options.direction === "both") {
                 const pos = this.position as SliderPosition;
                 const pp = mx.real_to_pixel(Mx, pos.x || 0, pos.y || 0);
-                this.location = {x: pp.x, y: pp.y};
+                this.location = { x: pp.x, y: pp.y };
             }
         } else {
             this.location = undefined;
         }
 
         // Emit slidertag event
-        const slidertag_evt = document.createEvent('Event') as any;
+        const slidertag_evt = document.createEvent("Event") as any;
         slidertag_evt.source = this;
         slidertag_evt.location = this.location;
         slidertag_evt.position = this.position;
-        slidertag_evt.initEvent('slidertag', true, true);
+        slidertag_evt.initEvent("slidertag", true, true);
         mx.dispatchEvent(this.plot._Mx, slidertag_evt);
     }
 
@@ -345,18 +350,18 @@ class SliderPlugin {
             } else if (this.options.direction === "both") {
                 const loc = this.location as SliderPosition;
                 const rp = mx.pixel_to_real(Mx, loc.x || 0, loc.y || 0);
-                this.position = {x: rp.x, y: rp.y};
+                this.position = { x: rp.x, y: rp.y };
             }
         } else {
             this.position = undefined;
         }
 
         // Emit slidertag event
-        const slidertag_evt = document.createEvent('Event') as any;
+        const slidertag_evt = document.createEvent("Event") as any;
         slidertag_evt.source = this;
         slidertag_evt.location = this.location;
         slidertag_evt.position = this.position;
-        slidertag_evt.initEvent('slidertag', true, true);
+        slidertag_evt.initEvent("slidertag", true, true);
         mx.dispatchEvent(this.plot._Mx, slidertag_evt);
     }
 
@@ -413,7 +418,7 @@ class SliderPlugin {
         }
 
         // Draw position text and optional bounding box
-        if ((this.position !== undefined) && (this.highlight || this.dragging || this.options.persistent_style)) {
+        if (this.position !== undefined && (this.highlight || this.dragging || this.options.persistent_style)) {
             ctx.font = Mx.text_h + "px monospace";
             ctx.textBaseline = "alphabetic";
             ctx.fillStyle = this.options.style.textStyle || Mx.fg;
@@ -421,8 +426,7 @@ class SliderPlugin {
             let text: string;
             if (this.options.direction === "both") {
                 const pos = this.position as SliderPosition;
-                text = "(" + mx.format_g(pos.x || 0, 6, 3, true) + "," + 
-                       mx.format_g(pos.y || 0, 6, 3, true) + ")";
+                text = "(" + mx.format_g(pos.x || 0, 6, 3, true) + "," + mx.format_g(pos.y || 0, 6, 3, true) + ")";
             } else {
                 text = mx.format_g(this.position as number, 6, 3, true);
             }
@@ -435,23 +439,23 @@ class SliderPlugin {
             if (this.options.direction === "vertical") {
                 const x = this.location as number;
                 textX = x + 5;
-                textY = Mx.t + textHeight + (this.options.slider_ID * textHeight);
-                
+                textY = Mx.t + textHeight + this.options.slider_ID * textHeight;
+
                 if (textX + textWidth > Mx.r) {
                     textX = x - textWidth - 5;
                 }
             } else if (this.options.direction === "horizontal") {
                 const y = this.location as number;
                 textX = Mx.l + 5;
-                textY = y - 5 - (this.options.slider_ID * textHeight);
-                
+                textY = y - 5 - this.options.slider_ID * textHeight;
+
                 if (textY < Mx.t) {
                     textY = y + textHeight + 5;
                 }
             } else if (this.options.direction === "both") {
                 const location = this.location as SliderPosition;
                 textX = location.x! + 5;
-                textY = location.y! - 5 - (this.options.slider_ID * textHeight);
+                textY = location.y! - 5 - this.options.slider_ID * textHeight;
             }
 
             // Draw bounding box if requested
@@ -470,32 +474,35 @@ class SliderPlugin {
         if (this.paired_slider && this.paired_slider.location !== undefined) {
             ctx.setLineDash([5, 5]);
             ctx.strokeStyle = this.options.style.strokeStyle || Mx.fg;
-            
+
             if (this.options.direction === "vertical" && this.paired_slider.options.direction === "vertical") {
                 const x1 = this.location as number;
                 const x2 = this.paired_slider.location as number;
                 const y = (Mx.t + Mx.b) / 2;
-                
+
                 ctx.beginPath();
                 ctx.moveTo(x1, y);
                 ctx.lineTo(x2, y);
                 ctx.stroke();
-                
+
                 // Draw delta text
                 const delta = Math.abs((this.position as number) - (this.paired_slider.position as number));
                 const deltaText = "Δ=" + mx.format_g(delta, 6, 3, true);
                 const deltaX = (x1 + x2) / 2;
                 ctx.fillText(deltaText, deltaX, y - 5);
-            } else if (this.options.direction === "horizontal" && this.paired_slider.options.direction === "horizontal") {
+            } else if (
+                this.options.direction === "horizontal" &&
+                this.paired_slider.options.direction === "horizontal"
+            ) {
                 const y1 = this.location as number;
                 const y2 = this.paired_slider.location as number;
                 const x = (Mx.l + Mx.r) / 2;
-                
+
                 ctx.beginPath();
                 ctx.moveTo(x, y1);
                 ctx.lineTo(x, y2);
                 ctx.stroke();
-                
+
                 // Draw delta text
                 const delta = Math.abs((this.position as number) - (this.paired_slider.position as number));
                 const deltaText = "Δ=" + mx.format_g(delta, 6, 3, true);
@@ -506,19 +513,20 @@ class SliderPlugin {
                 const loc2 = this.paired_slider.location as SliderPosition;
                 const pos1 = this.position as SliderPosition;
                 const pos2 = this.paired_slider.position as SliderPosition;
-                
+
                 const x_center = (loc1.x! + loc2.x!) / 2;
                 const y_center = (loc1.y! + loc2.y!) / 2;
-                
+
                 ctx.beginPath();
                 ctx.moveTo(loc1.x!, loc1.y!);
                 ctx.lineTo(loc2.x!, loc2.y!);
                 ctx.stroke();
-                
+
                 // Draw delta text
                 const delta_x = Math.abs(pos1.x! - pos2.x!);
                 const delta_y = Math.abs(pos1.y! - pos2.y!);
-                const deltaText = "Δ(" + mx.format_g(delta_x, 6, 3, true) + "," + mx.format_g(delta_y, 6, 3, true) + ")";
+                const deltaText =
+                    "Δ(" + mx.format_g(delta_x, 6, 3, true) + "," + mx.format_g(delta_y, 6, 3, true) + ")";
                 ctx.fillText(deltaText, x_center + 5, y_center - 5);
             }
         }

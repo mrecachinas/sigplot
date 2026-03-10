@@ -142,41 +142,41 @@ class CanvasInput {
 
         // setup the defaults
         self._canvas = o.canvas || null;
-        self._ctx = self._canvas ? self._canvas.getContext('2d') : null;
+        self._ctx = self._canvas ? self._canvas.getContext("2d") : null;
         self._x = o.x || 0;
         self._y = o.y || 0;
         self._extraX = o.extraX || 0;
         self._extraY = o.extraY || 0;
         self._fontSize = o.fontSize || 14;
-        self._fontFamily = o.fontFamily || 'Arial';
-        self._fontColor = o.fontColor || '#000';
-        self._placeHolderColor = o.placeHolderColor || '#bfbebd';
-        self._fontWeight = o.fontWeight || 'normal';
-        self._fontStyle = o.fontStyle || 'normal';
+        self._fontFamily = o.fontFamily || "Arial";
+        self._fontColor = o.fontColor || "#000";
+        self._placeHolderColor = o.placeHolderColor || "#bfbebd";
+        self._fontWeight = o.fontWeight || "normal";
+        self._fontStyle = o.fontStyle || "normal";
         self._readonly = o.readonly || false;
         self._maxlength = o.maxlength || null;
         self._width = o.width || 150;
         self._height = o.height || self._fontSize;
         self._padding = o.padding !== undefined && o.padding >= 0 ? o.padding : 5;
         self._borderWidth = o.borderWidth !== undefined && o.borderWidth >= 0 ? o.borderWidth : 1;
-        self._borderColor = o.borderColor || '#959595';
+        self._borderColor = o.borderColor || "#959595";
         self._borderRadius = o.borderRadius !== undefined && o.borderRadius >= 0 ? o.borderRadius : 3;
-        self._backgroundImage = o.backgroundImage || '';
-        self._innerShadow = o.innerShadow || '0px 0px 4px rgba(0, 0, 0, 0.4)';
-        self._selectionColor = o.selectionColor || 'rgba(179, 212, 253, 0.8)';
-        self._placeHolder = o.placeHolder || '';
+        self._backgroundImage = o.backgroundImage || "";
+        self._innerShadow = o.innerShadow || "0px 0px 4px rgba(0, 0, 0, 0.4)";
+        self._selectionColor = o.selectionColor || "rgba(179, 212, 253, 0.8)";
+        self._placeHolder = o.placeHolder || "";
         self._value = o.value || self._placeHolder;
-        self._onsubmit = o.onsubmit || function() {};
-        self._onkeydown = o.onkeydown || function() {};
-        self._onkeyup = o.onkeyup || function() {};
-        self._onfocus = o.onfocus || function() {};
-        self._onblur = o.onblur || function() {};
+        self._onsubmit = o.onsubmit || function () {};
+        self._onkeydown = o.onkeydown || function () {};
+        self._onkeyup = o.onkeyup || function () {};
+        self._onfocus = o.onfocus || function () {};
+        self._onblur = o.onblur || function () {};
         self._cursor = false;
         self._cursorPos = 0;
         self._hasFocus = false;
         self._selection = [0, 0];
         self._wasOver = false;
-        self._renderOnReturn = (o.renderOnReturn !== undefined ? o.renderOnReturn : true);
+        self._renderOnReturn = o.renderOnReturn !== undefined ? o.renderOnReturn : true;
         self._disableBlur = o.disableBlur || false;
         self._tabToClear = o.tabToClear || false;
         self._mouseDown = false;
@@ -192,91 +192,86 @@ class CanvasInput {
         self.outerH = 0;
 
         // Initialize _boxShadow before calling boxShadow()
-        self._boxShadow = { x: 0, y: 0, blur: 0, color: '' };
+        self._boxShadow = { x: 0, y: 0, blur: 0, color: "" };
 
         // parse box shadow
-        self.boxShadow(o.boxShadow || '1px 1px 0px rgba(255, 255, 255, 1)', true);
+        self.boxShadow(o.boxShadow || "1px 1px 0px rgba(255, 255, 255, 1)", true);
 
         // calculate the full width and height with padding, borders and shadows
         self._calcWH();
 
         // setup the off-DOM canvas
-        self._renderCanvas = document.createElement('canvas');
-        self._renderCanvas.setAttribute('width', String(self.outerW));
-        self._renderCanvas.setAttribute('height', String(self.outerH));
-        self._renderCtx = self._renderCanvas.getContext('2d')!;
+        self._renderCanvas = document.createElement("canvas");
+        self._renderCanvas.setAttribute("width", String(self.outerW));
+        self._renderCanvas.setAttribute("height", String(self.outerH));
+        self._renderCtx = self._renderCanvas.getContext("2d")!;
 
         // setup another off-DOM canvas for inner-shadows
-        self._shadowCanvas = document.createElement('canvas');
-        self._shadowCanvas.setAttribute('width', String(self._width + self._padding * 2));
-        self._shadowCanvas.setAttribute('height', String(self._height + self._padding * 2));
-        self._shadowCtx = self._shadowCanvas.getContext('2d')!;
+        self._shadowCanvas = document.createElement("canvas");
+        self._shadowCanvas.setAttribute("width", String(self._width + self._padding * 2));
+        self._shadowCanvas.setAttribute("height", String(self._height + self._padding * 2));
+        self._shadowCtx = self._shadowCanvas.getContext("2d")!;
 
         // setup the background color
-        if (typeof o.backgroundGradient !== 'undefined') {
-            self._backgroundColor = self._renderCtx.createLinearGradient(
-                0,
-                0,
-                0,
-                self.outerH
-            );
+        if (typeof o.backgroundGradient !== "undefined") {
+            self._backgroundColor = self._renderCtx.createLinearGradient(0, 0, 0, self.outerH);
             (self._backgroundColor as CanvasGradient).addColorStop(0, o.backgroundGradient[0]);
             (self._backgroundColor as CanvasGradient).addColorStop(1, o.backgroundGradient[1]);
         } else {
-            self._backgroundColor = o.backgroundColor || '#fff';
+            self._backgroundColor = o.backgroundColor || "#fff";
         }
 
         // setup main canvas events
-        self.mousemoveCanvasListener = function(e: MouseEvent) {
-            e = e || window.event as MouseEvent;
+        self.mousemoveCanvasListener = function (e: MouseEvent) {
+            e = e || (window.event as MouseEvent);
             self.mousemove(e, self);
         };
-        self.mousedownCanvasListener = function(e: MouseEvent) {
-            e = e || window.event as MouseEvent;
+        self.mousedownCanvasListener = function (e: MouseEvent) {
+            e = e || (window.event as MouseEvent);
             self.mousedown(e, self);
         };
-        self.mouseupCanvasListener = function(e: MouseEvent) {
-            e = e || window.event as MouseEvent;
+        self.mouseupCanvasListener = function (e: MouseEvent) {
+            e = e || (window.event as MouseEvent);
             self.mouseup(e, self);
         };
 
         if (self._canvas) {
-            self._canvas.addEventListener('mousemove', self.mousemoveCanvasListener, false);
-            self._canvas.addEventListener('mousedown', self.mousedownCanvasListener, false);
-            self._canvas.addEventListener('mouseup', self.mouseupCanvasListener, false);
+            self._canvas.addEventListener("mousemove", self.mousemoveCanvasListener, false);
+            self._canvas.addEventListener("mousedown", self.mousedownCanvasListener, false);
+            self._canvas.addEventListener("mouseup", self.mouseupCanvasListener, false);
         }
 
         // setup a global mouseup to blur the input outside of the canvas
-        self.mouseupWindowListener = function(e: MouseEvent) {
-            e = e || window.event as MouseEvent;
+        self.mouseupWindowListener = function (e: MouseEvent) {
+            e = e || (window.event as MouseEvent);
             if (self._hasFocus && !self._mouseDown) {
                 self.blur();
             }
         };
-        window.addEventListener('mouseup', self.mouseupWindowListener, true);
+        window.addEventListener("mouseup", self.mouseupWindowListener, true);
 
         // setup the keydown listener
-        self.keydownWindowListener = function(e: KeyboardEvent) {
-            e = e || window.event as KeyboardEvent;
+        self.keydownWindowListener = function (e: KeyboardEvent) {
+            e = e || (window.event as KeyboardEvent);
             if (self._hasFocus) {
                 self.keydown(e, self);
             }
         };
-        window.addEventListener('keydown', self.keydownWindowListener, false);
+        window.addEventListener("keydown", self.keydownWindowListener, false);
 
         // setup the keyup listener
-        self.keyupWindowListener = function(e: KeyboardEvent) {
-            e = e || window.event as KeyboardEvent;
+        self.keyupWindowListener = function (e: KeyboardEvent) {
+            e = e || (window.event as KeyboardEvent);
             if (self._hasFocus) {
                 self._onkeyup(e, self);
             }
         };
-        window.addEventListener('keyup', self.keyupWindowListener, false);
+        window.addEventListener("keyup", self.keyupWindowListener, false);
 
         // setup the 'paste' listener
-        self.pasteWindowListener = function(e: ClipboardEvent) {
+        self.pasteWindowListener = function (e: ClipboardEvent) {
             if (self._hasFocus) {
-                var text = e.clipboardData!.getData('text/plain'),
+                var text = e.clipboardData!.getData("text/plain"),
                     startText = self._value.substr(0, self._cursorPos),
                     endText = self._value.substr(self._cursorPos);
                 self._value = startText + text + endText;
@@ -285,7 +280,7 @@ class CanvasInput {
                 self.render();
             }
         };
-        window.addEventListener('paste', self.pasteWindowListener as EventListener, false);
+        window.addEventListener("paste", self.pasteWindowListener as EventListener, false);
 
         // add this to the buffer
         inputs.push(self);
@@ -303,9 +298,9 @@ class CanvasInput {
     canvas(data?: HTMLCanvasElement): CanvasInput | HTMLCanvasElement | null {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._canvas = data;
-            self._ctx = self._canvas.getContext('2d');
+            self._ctx = self._canvas.getContext("2d");
 
             return self.render();
         } else {
@@ -321,7 +316,7 @@ class CanvasInput {
     x(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._x = data;
 
             return self.render();
@@ -338,7 +333,7 @@ class CanvasInput {
     y(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._y = data;
 
             return self.render();
@@ -355,7 +350,7 @@ class CanvasInput {
     extraX(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._extraX = data;
 
             return self.render();
@@ -372,7 +367,7 @@ class CanvasInput {
     extraY(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._extraY = data;
 
             return self.render();
@@ -389,7 +384,7 @@ class CanvasInput {
     fontSize(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._fontSize = data;
 
             return self.render();
@@ -406,7 +401,7 @@ class CanvasInput {
     fontFamily(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._fontFamily = data;
 
             return self.render();
@@ -423,7 +418,7 @@ class CanvasInput {
     fontColor(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._fontColor = data;
 
             return self.render();
@@ -440,7 +435,7 @@ class CanvasInput {
     placeHolderColor(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._placeHolderColor = data;
 
             return self.render();
@@ -457,7 +452,7 @@ class CanvasInput {
     fontWeight(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._fontWeight = data;
 
             return self.render();
@@ -474,7 +469,7 @@ class CanvasInput {
     fontStyle(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._fontStyle = data;
 
             return self.render();
@@ -491,7 +486,7 @@ class CanvasInput {
     width(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._width = data;
             self._calcWH();
             self._updateCanvasWH();
@@ -510,7 +505,7 @@ class CanvasInput {
     height(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._height = data;
             self._calcWH();
             self._updateCanvasWH();
@@ -529,7 +524,7 @@ class CanvasInput {
     padding(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._padding = data;
             self._calcWH();
             self._updateCanvasWH();
@@ -548,7 +543,7 @@ class CanvasInput {
     borderWidth(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._borderWidth = data;
             self._calcWH();
             self._updateCanvasWH();
@@ -567,7 +562,7 @@ class CanvasInput {
     borderColor(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._borderColor = data;
 
             return self.render();
@@ -584,7 +579,7 @@ class CanvasInput {
     borderRadius(data?: number): CanvasInput | number {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._borderRadius = data;
 
             return self.render();
@@ -601,7 +596,7 @@ class CanvasInput {
     backgroundColor(data?: string): CanvasInput | string | CanvasGradient {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._backgroundColor = data;
 
             return self.render();
@@ -618,13 +613,8 @@ class CanvasInput {
     backgroundGradient(data?: [string, string]): CanvasInput | string | CanvasGradient {
         var self = this;
 
-        if (typeof data !== 'undefined') {
-            self._backgroundColor = self._renderCtx.createLinearGradient(
-                0,
-                0,
-                0,
-                self.outerH
-            );
+        if (typeof data !== "undefined") {
+            self._backgroundColor = self._renderCtx.createLinearGradient(0, 0, 0, self.outerH);
             (self._backgroundColor as CanvasGradient).addColorStop(0, data[0]);
             (self._backgroundColor as CanvasGradient).addColorStop(1, data[1]);
 
@@ -643,14 +633,14 @@ class CanvasInput {
     boxShadow(data?: string, doReturn?: boolean): CanvasInput | BoxShadowParsed | undefined {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             // parse box shadow
-            var boxShadow = data.split('px ');
+            var boxShadow = data.split("px ");
             self._boxShadow = {
-                x: data === 'none' ? 0 : parseInt(boxShadow[0], 10),
-                y: data === 'none' ? 0 : parseInt(boxShadow[1], 10),
-                blur: data === 'none' ? 0 : parseInt(boxShadow[2], 10),
-                color: data === 'none' ? '' : boxShadow[3]
+                x: data === "none" ? 0 : parseInt(boxShadow[0], 10),
+                y: data === "none" ? 0 : parseInt(boxShadow[1], 10),
+                blur: data === "none" ? 0 : parseInt(boxShadow[2], 10),
+                color: data === "none" ? "" : boxShadow[3]
             };
 
             // take into account the shadow and its direction
@@ -692,7 +682,7 @@ class CanvasInput {
     innerShadow(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._innerShadow = data;
 
             return self.render();
@@ -709,7 +699,7 @@ class CanvasInput {
     selectionColor(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._selectionColor = data;
 
             return self.render();
@@ -726,7 +716,7 @@ class CanvasInput {
     placeHolder(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._placeHolder = data;
 
             return self.render();
@@ -743,7 +733,7 @@ class CanvasInput {
     value(data?: string): CanvasInput | string {
         var self = this;
 
-        if (typeof data !== 'undefined') {
+        if (typeof data !== "undefined") {
             self._value = data;
 
             return self.focus();
@@ -759,7 +749,7 @@ class CanvasInput {
     onsubmit(fn?: (e?: any, self?: CanvasInput) => void): CanvasInput | void {
         var self = this;
 
-        if (typeof fn !== 'undefined') {
+        if (typeof fn !== "undefined") {
             self._onsubmit = fn;
 
             return self;
@@ -775,7 +765,7 @@ class CanvasInput {
     onkeydown(fn?: (e?: any, self?: CanvasInput) => void): CanvasInput | void {
         var self = this;
 
-        if (typeof fn !== 'undefined') {
+        if (typeof fn !== "undefined") {
             self._onkeydown = fn;
 
             return self;
@@ -791,7 +781,7 @@ class CanvasInput {
     onkeyup(fn?: (e?: any, self?: CanvasInput) => void): CanvasInput | void {
         var self = this;
 
-        if (typeof fn !== 'undefined') {
+        if (typeof fn !== "undefined") {
             self._onkeyup = fn;
 
             return self;
@@ -828,11 +818,11 @@ class CanvasInput {
         }
 
         // update the cursor position
-        self._cursorPos = (typeof pos === 'number') ? pos : self._clipText().length;
+        self._cursorPos = typeof pos === "number" ? pos : self._clipText().length;
 
         // clear the place holder
         if (self._placeHolder === self._value) {
-            self._value = '';
+            self._value = "";
         }
 
         self._hasFocus = true;
@@ -842,32 +832,42 @@ class CanvasInput {
         if (self._cursorInterval) {
             clearInterval(self._cursorInterval);
         }
-        self._cursorInterval = setInterval(function() {
+        self._cursorInterval = setInterval(function () {
             self._cursor = !self._cursor;
             self.render();
         }, 500);
 
         // check if this is Chrome for Android (there is a bug with returning incorrect character key codes)
         var nav = navigator.userAgent.toLowerCase(),
-            isChromeMobile = (nav.indexOf('chrome') >= 0 && nav.indexOf('mobile') >= 0 && nav.indexOf('android') >= 0);
+            isChromeMobile = nav.indexOf("chrome") >= 0 && nav.indexOf("mobile") >= 0 && nav.indexOf("android") >= 0;
 
         // add support for mobile
-        var isMobile = (typeof (window as any).orientation !== 'undefined');
-        if (isMobile && !isChromeMobile && document && document.createElement && (input = document.createElement('input'))) {
-            input.type = 'text';
-            input.style.opacity = '0';
-            input.style.position = 'absolute';
-            input.style.left = (self._x + self._extraX + (self._canvas ? self._canvas.offsetLeft : 0)) + 'px';
-            input.style.top = (self._y + self._extraY + (self._canvas ? self._canvas.offsetTop : 0)) + 'px';
+        var isMobile = typeof (window as any).orientation !== "undefined";
+        if (
+            isMobile &&
+            !isChromeMobile &&
+            document &&
+            document.createElement &&
+            (input = document.createElement("input"))
+        ) {
+            input.type = "text";
+            input.style.opacity = "0";
+            input.style.position = "absolute";
+            input.style.left = self._x + self._extraX + (self._canvas ? self._canvas.offsetLeft : 0) + "px";
+            input.style.top = self._y + self._extraY + (self._canvas ? self._canvas.offsetTop : 0) + "px";
             input.style.width = String(self._width);
-            input.style.height = '0';
+            input.style.height = "0";
             document.body.appendChild(input);
             input.focus();
-            input.addEventListener('blur', function() {
-                self.blur(self);
-            }, false);
+            input.addEventListener(
+                "blur",
+                function () {
+                    self.blur(self);
+                },
+                false
+            );
         } else if (isMobile) {
-            self.value(prompt(self._placeHolder) || '');
+            self.value(prompt(self._placeHolder) || "");
         }
 
         return self.render();
@@ -892,7 +892,7 @@ class CanvasInput {
             self._selection = [0, 0];
 
             // fill the place holder
-            if (self._value === '') {
+            if (self._value === "") {
                 self._value = self._placeHolder;
             }
         }
@@ -928,7 +928,8 @@ class CanvasInput {
         var keyCode = e.which,
             isShift = e.shiftKey,
             key: string | undefined = undefined,
-            startText: string, endText: string;
+            startText: string,
+            endText: string;
 
         // make sure the correct text field is being updated
         if (!self._hasFocus) {
@@ -953,7 +954,8 @@ class CanvasInput {
         // prevent the default action
         e.preventDefault();
 
-        if (keyCode === 8) { // backspace
+        if (keyCode === 8) {
+            // backspace
             if (!self._clearSelection()) {
                 if (self._cursorPos > 0) {
                     startText = self._value.substr(0, self._cursorPos - 1);
@@ -962,29 +964,33 @@ class CanvasInput {
                     self._cursorPos--;
                 }
             }
-        } else if (keyCode === 37) { // left arrow key
+        } else if (keyCode === 37) {
+            // left arrow key
             if (self._cursorPos > 0) {
                 self._cursorPos--;
                 self._cursor = true;
                 self._selection = [0, 0];
             }
-        } else if (keyCode === 39) { // right arrow key
+        } else if (keyCode === 39) {
+            // right arrow key
             if (self._cursorPos < self._value.length) {
                 self._cursorPos++;
                 self._cursor = true;
                 self._selection = [0, 0];
             }
-        } else if (keyCode === 13) { // enter key
+        } else if (keyCode === 13) {
+            // enter key
             self._onsubmit(e, self);
-        } else if (keyCode === 9) { // tab key
+        } else if (keyCode === 9) {
+            // tab key
             if (self._tabToClear) {
                 self._value = "";
                 self._cursorPos = 0;
             } else {
-                var next = (inputs[self._inputsIndex + 1]) ? self._inputsIndex + 1 : 0;
+                var next = inputs[self._inputsIndex + 1] ? self._inputsIndex + 1 : 0;
                 if (next !== self._inputsIndex) {
                     self.blur();
-                    setTimeout(function() {
+                    setTimeout(function () {
                         inputs[next].focus();
                     }, 10);
                 }
@@ -997,8 +1003,8 @@ class CanvasInput {
                 return;
             }
 
-            startText = (self._value) ? self._value.substr(0, self._cursorPos) : '';
-            endText = (self._value) ? self._value.substr(self._cursorPos) : '';
+            startText = self._value ? self._value.substr(0, self._cursorPos) : "";
+            endText = self._value ? self._value.substr(self._cursorPos) : "";
             self._value = startText + key + endText;
             self._cursorPos++;
         }
@@ -1006,7 +1012,7 @@ class CanvasInput {
         if ((keyCode == 13 && self._renderOnReturn) || keyCode !== 13) {
             return self.render();
         } else {
-            return function() {};
+            return function () {};
         }
     }
 
@@ -1028,7 +1034,7 @@ class CanvasInput {
             return;
         }
 
-        if (self._canvas && self._overInput(x, y) || !self._canvas) {
+        if ((self._canvas && self._overInput(x, y)) || !self._canvas) {
             if (self._mouseDown) {
                 self._mouseDown = false;
                 self.click(e, self);
@@ -1052,10 +1058,10 @@ class CanvasInput {
             isOver = self._overInput(x, y);
 
         if (isOver && self._canvas) {
-            self._canvas.style.cursor = 'text';
+            self._canvas.style.cursor = "text";
             self._wasOver = true;
         } else if (self._wasOver && self._canvas) {
-            self._canvas.style.cursor = 'default';
+            self._canvas.style.cursor = "default";
             self._wasOver = false;
         }
 
@@ -1111,7 +1117,13 @@ class CanvasInput {
 
         // update selection if a drag has happened
         var isSelection = self._clickPos(x, y) !== self._selectionStart;
-        if (self._hasFocus && self._selectionStart !== undefined && self._selectionStart >= 0 && self._overInput(x, y) && isSelection) {
+        if (
+            self._hasFocus &&
+            self._selectionStart !== undefined &&
+            self._selectionStart >= 0 &&
+            self._overInput(x, y) &&
+            isSelection
+        ) {
             self._selectionUpdated = true;
             delete self._selectionStart;
             self.render();
@@ -1144,8 +1156,8 @@ class CanvasInput {
         window.removeEventListener("paste", this.pasteWindowListener as EventListener, false);
         clearInterval(this._cursorInterval);
 
-        this._canvas!.style.cursor = 'default';
-        for (var i = (inputs.length- 1); i >= 0 ; i--) {
+        this._canvas!.style.cursor = "default";
+        for (var i = inputs.length - 1; i >= 0; i--) {
             if (inputs[i] === this) {
                 inputs.splice(i, 1);
             }
@@ -1188,7 +1200,7 @@ class CanvasInput {
         }
 
         // draw the text box background
-        self._drawTextBox(function() {
+        self._drawTextBox(function () {
             // make sure all shadows are reset
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
@@ -1208,7 +1220,8 @@ class CanvasInput {
             }
 
             // draw the cursor
-            ctx.fillStyle = (self._placeHolder === self._value && self._value !== '') ? self._placeHolderColor : self._fontColor;
+            ctx.fillStyle =
+                self._placeHolder === self._value && self._value !== "" ? self._placeHolderColor : self._fontColor;
             if (self._cursor) {
                 var cursorOffset = self._textWidth(text.substring(0, self._cursorPos));
 
@@ -1219,17 +1232,17 @@ class CanvasInput {
             var textX = self._padding + self._borderWidth + self.shadowL,
                 textY = Math.round(paddingBorder + self._height / 2);
 
-            ctx.font = self._fontStyle + ' ' + self._fontWeight + ' ' + self._fontSize + 'px ' + self._fontFamily;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
+            ctx.font = self._fontStyle + " " + self._fontWeight + " " + self._fontSize + "px " + self._fontFamily;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
             ctx.fillText(text, textX, textY);
 
             // parse inner shadow
-            var innerShadow = self._innerShadow.split('px '),
-                isOffsetX = self._innerShadow === 'none' ? 0 : parseInt(innerShadow[0], 10),
-                isOffsetY = self._innerShadow === 'none' ? 0 : parseInt(innerShadow[1], 10),
-                isBlur = self._innerShadow === 'none' ? 0 : parseInt(innerShadow[2], 10),
-                isColor = self._innerShadow === 'none' ? '' : innerShadow[3];
+            var innerShadow = self._innerShadow.split("px "),
+                isOffsetX = self._innerShadow === "none" ? 0 : parseInt(innerShadow[0], 10),
+                isOffsetY = self._innerShadow === "none" ? 0 : parseInt(innerShadow[1], 10),
+                isBlur = self._innerShadow === "none" ? 0 : parseInt(innerShadow[2], 10),
+                isColor = self._innerShadow === "none" ? "" : innerShadow[3];
 
             // draw the inner-shadow (damn you canvas, this should be easier than this...)
             if (isBlur > 0) {
@@ -1276,7 +1289,6 @@ class CanvasInput {
             }
 
             return self;
-
         });
 
         return self;
@@ -1297,7 +1309,7 @@ class CanvasInput {
             sh = self.shadowH;
 
         // only draw the background shape if no image is being used
-        if (self._backgroundImage === '') {
+        if (self._backgroundImage === "") {
             ctx.fillStyle = self._backgroundColor;
             self._roundedRect(ctx, bw + self.shadowL, bw + self.shadowT, w - bw * 2 - sw, h - bw * 2 - sh, br);
             ctx.fill();
@@ -1306,7 +1318,7 @@ class CanvasInput {
         } else {
             var img = new Image();
             img.src = self._backgroundImage;
-            img.onload = function() {
+            img.onload = function () {
                 ctx.drawImage(img, 0, 0, img.width, img.height, bw + self.shadowL, bw + self.shadowT, w, h);
 
                 fn();
@@ -1328,7 +1340,7 @@ class CanvasInput {
 
             self._value = self._value.substr(0, start) + self._value.substr(end);
             self._cursorPos = start;
-            self._cursorPos = (self._cursorPos < 0) ? 0 : self._cursorPos;
+            self._cursorPos = self._cursorPos < 0 ? 0 : self._cursorPos;
             self._selection = [0, 0];
 
             return true;
@@ -1344,13 +1356,13 @@ class CanvasInput {
      */
     _clipText(value?: string): string {
         var self = this;
-        value = (typeof value === 'undefined') ? self._value : value;
+        value = typeof value === "undefined" ? self._value : value;
 
         var textWidth = self._textWidth(value),
             fillPer = textWidth / (self._width - self._padding),
             text = fillPer > 1 ? value.substr(-1 * Math.floor(value.length / fillPer)) : value;
 
-        return text + '';
+        return text + "";
     }
 
     /**
@@ -1362,8 +1374,8 @@ class CanvasInput {
         var self = this,
             ctx = self._renderCtx;
 
-        ctx.font = self._fontStyle + ' ' + self._fontWeight + ' ' + self._fontSize + 'px ' + self._fontFamily;
-        ctx.textAlign = 'left';
+        ctx.font = self._fontStyle + " " + self._fontWeight + " " + self._fontSize + "px " + self._fontFamily;
+        ctx.textAlign = "left";
 
         return ctx.measureText(text).width;
     }
@@ -1388,10 +1400,10 @@ class CanvasInput {
             oldH = self._renderCanvas.height;
 
         // update off-DOM canvas
-        self._renderCanvas.setAttribute('width', String(self.outerW));
-        self._renderCanvas.setAttribute('height', String(self.outerH));
-        self._shadowCanvas.setAttribute('width', String(self._width + self._padding * 2));
-        self._shadowCanvas.setAttribute('height', String(self._height + self._padding * 2));
+        self._renderCanvas.setAttribute("width", String(self.outerW));
+        self._renderCanvas.setAttribute("height", String(self.outerH));
+        self._shadowCanvas.setAttribute("width", String(self._width + self._padding * 2));
+        self._shadowCanvas.setAttribute("height", String(self._height + self._padding * 2));
 
         // clear the main canvas
         if (self._ctx) {
@@ -1457,7 +1469,7 @@ class CanvasInput {
 
         // don't count placeholder text in this
         if (self._value === self._placeHolder) {
-            value = '';
+            value = "";
         }
 
         // determine where the click was made along the string
@@ -1487,17 +1499,17 @@ class CanvasInput {
     _mousePos(e: MouseEvent): { x: number; y: number } {
         var elm = e.target as HTMLElement,
             style = document.defaultView!.getComputedStyle(elm, undefined),
-            paddingLeft = parseInt(style['paddingLeft'], 10) || 0,
-            paddingTop = parseInt(style['paddingLeft'], 10) || 0,
-            borderLeft = parseInt(style['borderLeftWidth'], 10) || 0,
-            borderTop = parseInt(style['borderLeftWidth'], 10) || 0,
+            paddingLeft = parseInt(style["paddingLeft"], 10) || 0,
+            paddingTop = parseInt(style["paddingLeft"], 10) || 0,
+            borderLeft = parseInt(style["borderLeftWidth"], 10) || 0,
+            borderTop = parseInt(style["borderLeftWidth"], 10) || 0,
             htmlTop = (document.body.parentNode as HTMLElement).offsetTop || 0,
             htmlLeft = (document.body.parentNode as HTMLElement).offsetLeft || 0,
             offsetX = 0,
             offsetY = 0;
 
         // calculate the total offset
-        if (typeof elm.offsetParent !== 'undefined') {
+        if (typeof elm.offsetParent !== "undefined") {
             do {
                 offsetX += (elm as HTMLElement).offsetLeft;
                 offsetY += (elm as HTMLElement).offsetTop;
@@ -1522,7 +1534,7 @@ class CanvasInput {
      */
     _mapCodeToKey(isShift: boolean, keyCode: number): string | undefined {
         var blockedKeys = [8, 9, 13, 16, 17, 18, 20, 27, 91, 92],
-            key = '';
+            key = "";
 
         // block keys that we don't want to type
         for (var i = 0; i < blockedKeys.length; i++) {
@@ -1532,92 +1544,92 @@ class CanvasInput {
         }
 
         // make sure we are getting the correct input
-        if (typeof isShift !== 'boolean' || typeof keyCode !== 'number') {
+        if (typeof isShift !== "boolean" || typeof keyCode !== "number") {
             return;
         }
 
         var charMap: Record<number, string> = {
-            32: ' ',
-            48: ')',
-            49: '!',
-            50: '@',
-            51: '#',
-            52: '$',
-            53: '%',
-            54: '^',
-            55: '&',
-            56: '*',
-            57: '(',
-            59: ':',
-            107: '+',
-            173: '_', // firefox uses 173 instead of 189
-            189: '_',
-            186: ':',
-            187: '+',
-            188: '<',
-            190: '>',
-            191: '?',
-            192: '~',
-            219: '{',
-            220: '|',
-            221: '}',
+            32: " ",
+            48: ")",
+            49: "!",
+            50: "@",
+            51: "#",
+            52: "$",
+            53: "%",
+            54: "^",
+            55: "&",
+            56: "*",
+            57: "(",
+            59: ":",
+            107: "+",
+            173: "_", // firefox uses 173 instead of 189
+            189: "_",
+            186: ":",
+            187: "+",
+            188: "<",
+            190: ">",
+            191: "?",
+            192: "~",
+            219: "{",
+            220: "|",
+            221: "}",
             222: '"'
         };
 
         // convert the code to a character
         if (isShift) {
-            key = (keyCode >= 65 && keyCode <= 90) ? String.fromCharCode(keyCode) : charMap[keyCode];
+            key = keyCode >= 65 && keyCode <= 90 ? String.fromCharCode(keyCode) : charMap[keyCode];
         } else {
             if (keyCode >= 65 && keyCode <= 90) {
                 key = String.fromCharCode(keyCode).toLowerCase();
             } else {
                 if (keyCode === 96) {
-                    key = '0';
+                    key = "0";
                 } else if (keyCode === 97) {
-                    key = '1';
+                    key = "1";
                 } else if (keyCode === 98) {
-                    key = '2';
+                    key = "2";
                 } else if (keyCode === 99) {
-                    key = '3';
+                    key = "3";
                 } else if (keyCode === 100) {
-                    key = '4';
+                    key = "4";
                 } else if (keyCode === 101) {
-                    key = '5';
+                    key = "5";
                 } else if (keyCode === 102) {
-                    key = '6';
+                    key = "6";
                 } else if (keyCode === 103) {
-                    key = '7';
+                    key = "7";
                 } else if (keyCode === 104) {
-                    key = '8';
+                    key = "8";
                 } else if (keyCode === 105) {
-                    key = '9';
+                    key = "9";
                 } else if (keyCode === 188) {
-                    key = ',';
+                    key = ",";
                 } else if (keyCode === 190) {
-                    key = '.';
+                    key = ".";
                 } else if (keyCode === 191) {
-                    key = '/';
+                    key = "/";
                 } else if (keyCode === 192) {
-                    key = '`';
+                    key = "`";
                 } else if (keyCode === 220) {
-                    key = '\\';
+                    key = "\\";
                 } else if (keyCode === 187) {
-                    key = '=';
-                } else if ((keyCode === 189)  || (keyCode === 173)) {
+                    key = "=";
+                } else if (keyCode === 189 || keyCode === 173) {
                     // firefox maps the minus key to 173, rather
                     // then trying to use browser detection we
                     // simply accept 173 as well...which means that
                     // for Chrome using the mute button would
                     // cause minus sign to appear
-                    key = '-';
+                    key = "-";
                 } else if (keyCode === 222) {
-                    key = '\'';
+                    key = "'";
                 } else if (keyCode === 186) {
-                    key = ';';
+                    key = ";";
                 } else if (keyCode === 219) {
-                    key = '[';
+                    key = "[";
                 } else if (keyCode === 221) {
-                    key = ']';
+                    key = "]";
                 } else {
                     key = String.fromCharCode(keyCode);
                 }
