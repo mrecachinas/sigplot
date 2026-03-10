@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigplot.accordion.js
+ * File: sigplot.accordion.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -26,14 +26,61 @@
 import m from "./m.js";
 import mx from "./mx.js";
 import plugin from "./sigplot.plugin.js";
+import type { CanvasStyle } from "./types.js";
 
-/**
- * @constructor
- * @param options
- * @returns {AccordionPlugin}
- */
+interface PlotMouseEvent extends Event {
+    xpos: number;
+    ypos: number; 
+    x: number;
+    y: number;
+    which: number;
+    preventDefault(): void;
+    slider_drag?: boolean;
+}
+
+export interface AccordionPluginOptions {
+    center?: number;
+    width?: number;
+    direction?: "vertical" | "horizontal";
+    mode?: "absolute" | "relative";
+    center_line_style?: {
+        lineWidth?: number;
+        strokeStyle?: CanvasStyle;
+    };
+    edge_line_style?: {
+        lineWidth?: number;
+        lineCap?: CanvasLineCap;
+        strokeStyle?: CanvasStyle;
+    };
+    fill_style?: {
+        fillStyle?: CanvasStyle;
+        opacity?: number;
+    };
+    draw_center_line?: boolean;
+    draw_edge_lines?: boolean;
+    shade_area?: boolean;
+    highlight?: boolean;
+    edge_highlight?: boolean;
+    prevent_drag?: boolean;
+    prevent_move?: boolean;
+    prevent_resize?: boolean;
+    min_width?: number;
+    max_width?: number;
+    discrete_widths?: number[];
+    text?: string | null;
+    textFont?: string | null;
+    textStokeStyle?: CanvasStyle;
+    textPosition?: {
+        horizontal: string;
+        vertical: string;
+    };
+}
+
 class AccordionPlugin extends plugin.Plugin {
-    pluginSetup() {
+    dragging: boolean;
+    edge_dragging: boolean;
+
+    pluginSetup(): void {
         this.defineProperty("center_line_style", {
             defaultValue: {},
             refreshOnChange: true
@@ -149,7 +196,7 @@ class AccordionPlugin extends plugin.Plugin {
         });
     }
 
-    pluginInit() {
+    pluginInit(): void {
         this.addListener("mmove", (evt) => {
             this._onMouseMove(evt);
         });
@@ -161,9 +208,9 @@ class AccordionPlugin extends plugin.Plugin {
         }, false);
     }
 
-    pluginDispose() {}
+    pluginDispose(): void {}
 
-    pluginRefresh() {
+    pluginRefresh(): void {
         if ((this.properties.center === undefined) || (this.properties.width === undefined)) {
             return;
         }
@@ -329,7 +376,7 @@ class AccordionPlugin extends plugin.Plugin {
         }
     }
 
-    mimic(acc) {
+    mimic(acc: AccordionPlugin): void {
         if (acc instanceof AccordionPlugin) {
             acc.on("change", (evt) => {
                 this.properties.width = evt.width;
@@ -339,7 +386,7 @@ class AccordionPlugin extends plugin.Plugin {
         }
     }
 
-    _onMouseMove(evt) {
+    _onMouseMove(evt: PlotMouseEvent): void {
         const Mx = this.Mx;
 
         // Ignore if the slider isn't even visible
@@ -465,7 +512,7 @@ class AccordionPlugin extends plugin.Plugin {
         evt.preventDefault();
     }
 
-    _onMouseDown(evt) {
+    _onMouseDown(evt: PlotMouseEvent): void {
         const Mx = this.Mx;
 
         if (this.properties.center_location === undefined) {
@@ -502,7 +549,7 @@ class AccordionPlugin extends plugin.Plugin {
         }
     }
 
-    _onDocMouseUp() {
+    _onDocMouseUp(): void {
         const Mx = this.Mx;
 
         // only emit an event if we are actually dragging
@@ -515,7 +562,7 @@ class AccordionPlugin extends plugin.Plugin {
         this.edge_dragging = false;
 
         // Issue a slider tag event
-        let evt = document.createEvent('Event');
+        let evt = document.createEvent('Event') as any;
         evt.initEvent('accordiontag', true, true);
         evt.center = this.properties.center;
         evt.width = this.properties.width;
@@ -526,11 +573,11 @@ class AccordionPlugin extends plugin.Plugin {
         });
     }
 
-    _onCenterChange(center) {
+    _onCenterChange(center: any): void {
         if (this.plot) {
             var Mx = this.Mx;
             // Issue a slider tag event
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('accordiontag', true, true);
             this.emit('change', {
                 center: this.properties.center,
@@ -543,11 +590,11 @@ class AccordionPlugin extends plugin.Plugin {
         }
     }
 
-    _onWidthChange(width) {
+    _onWidthChange(width: any): void {
         if (this.plot) {
             var Mx = this.Mx;
             // Issue a slider tag event
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('accordiontag', true, true);
             this.emit('change', {
                 center: this.properties.center,
@@ -563,56 +610,56 @@ class AccordionPlugin extends plugin.Plugin {
     /**
      * @deprecated use .center(value)
      */
-    set_center(width) {
+    set_center(width: any): void {
         this.center(width);
     }
 
     /**
      * @deprecated use .width(value)
      */
-    set_width(width) {
+    set_width(width: any): void {
         this.width(width);
     }
 
     /**
      * @deprecated use .highlight(value) instead
      */
-    set_highlight(ishighlight) {
+    set_highlight(ishighlight: any): void {
         this.highlight(ishighlight);
     }
 
     /**
      * @deprecated use .edge_highlight(value) instead
      */
-    set_edge_highlight(ishighlight) {
+    set_edge_highlight(ishighlight: any): void {
         this.edge_highlight(ishighlight);
     }
 
     /**
      * @deprecated use .display(value)
      */
-    set_visible(isVisible) {
+    set_visible(isVisible: any): void {
         this.display(false);
     }
 
     /**
      * @deprecated use .mode(value)
      */
-    set_mode(mode) {
+    set_mode(mode: any): void {
         this.mode(mode);
     }
 
     /**
      * @deprecated use .center()
      */
-    get_center() { // In real units
+    get_center(): any { // In real units
         return this.properties.center();
     }
 
     /**
      * @deprecated use .width()
      */
-    get_width() { // Pixels
+    get_width(): any { // Pixels
         return this.properties.width();
     }
 }

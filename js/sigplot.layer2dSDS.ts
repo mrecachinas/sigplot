@@ -27,9 +27,10 @@ import m from "./m.js";
 import mx from "./mx.js";
 import common from "./common.js";
 import LRU from "./lru.js";
+import type { BlueHeader, MxContext, GxContext, LayerOptions, Layer, TraceOptions } from "./types.js";
 
 
-const decimationModeLookup = {
+const decimationModeLookup: Record<number, number> = {
     1: 1,
     2: 2,
     4: 3,
@@ -42,13 +43,66 @@ const decimationModeLookup = {
     512: 10,
 };
 
-const decimationPossibilities = [512, 256, 128, 64, 32, 16, 8, 4, 2, 1];
+const decimationPossibilities: number[] = [512, 256, 128, 64, 32, 16, 8, 4, 2, 1];
 
 /**
  * @constructor
  * @param plot
  */
-const LayerSDS = function (plot) {
+
+interface LayerSDS extends Layer {
+    plot: any; // TODO: type this properly when plot is typed
+    offset: number;
+    xstart: number;
+    xdelta: number;
+    ystart: number;
+    ydelta: number;
+    imin: number;
+    xmin: number;
+    xmax: number;
+    name: string;
+    cx: boolean;
+    hcb?: BlueHeader; // index in Gx.HCB
+    display: boolean;
+    color: number;
+    line: number; // 0=none, 1-vertical, 2-horizontal, 3-connecting
+    thick: number; // negative for dashed
+    symbol: number;
+    radius: number;
+    skip: number; // number of elements between ord values
+    xsub: number;
+    ysub: number;
+    xdata: boolean; // true if X data is data from file
+    modified: boolean;
+    preferred_origin: number; // TODO Raster is normally 4
+    opacity: number;
+    xcompression: number; // default is Gx.xcompression
+    lpb?: number;
+    yc: number; // y-compression factor...not yet used
+    options: LayerOptions;
+    pendingURLs: Record<string, any>; // TODO: type this properly
+    lps?: number;
+    cache?: LRU<string, any>; // TODO: type the cache value properly
+    debounceSend?: (oReq: XMLHttpRequest) => void;
+    xframe?: number;
+    yframe?: number;
+    xlab?: number;
+    ylab?: number;
+    drawdirection?: string;
+    size?: number;
+    ymin?: number;
+    ymax?: number;
+    cut_stash?: any; // TODO: type this properly
+    xcut_layer?: any; // TODO: type this properly
+    ycut_layer?: any; // TODO: type this properly
+    old_drawmode?: any; // TODO: type this properly
+    old_autol?: any; // TODO: type this properly
+    debug?: number;
+    sendTileRequest?: (oReq: XMLHttpRequest) => void;
+    [key: string]: any;
+}
+
+const LayerSDS = function (plot: any): any {
     this.plot = plot;
 
     this.offset = 0.0;
@@ -90,7 +144,7 @@ const LayerSDS = function (plot) {
 
     this.options = {};
     this.pendingURLs = {};
-};
+} as any;
 
 LayerSDS.prototype = {
     /**
@@ -104,10 +158,10 @@ LayerSDS.prototype = {
      * @memberOf LayerSDS
      * @private
      */
-    init: function (hcb) {
+    init: function (this: LayerSDS, hcb: BlueHeader): void {
         //De-Bounce this function
         this.debounceSend = common.debounce(
-            function (oReq) {
+            function (oReq: XMLHttpRequest) {
                 oReq.send(null);
             },
             100,
@@ -131,8 +185,8 @@ LayerSDS.prototype = {
         this.init_axes();
     },
 
-    init_axes: function () {
-        const Gx = this.plot._Gx;
+    init_axes: function (this: LayerSDS): void {
+        const Gx: GxContext = this.plot._Gx;
 
         if (Gx.index) {
             this.xstart = 1.0;
@@ -209,7 +263,7 @@ LayerSDS.prototype = {
         }
     },
 
-    get_data: function () {},
+    get_data: function (this: LayerSDS): void {},
 
     /**
      * Provisional API
@@ -218,10 +272,10 @@ LayerSDS.prototype = {
      * @param x
      * @param y
      */
-    get_z: function (x, y) {},
+    get_z: function (this: LayerSDS, x: number, y: number): any {}, // TODO: return type
 
-    change_settings: function (settings) {
-        const Gx = this.plot._Gx;
+    change_settings: function (this: LayerSDS, settings: any): void { // TODO: type settings properly
+        const Gx: GxContext = this.plot._Gx;
         if (settings.subsize) {
             this.hcb.subsize = settings.subsize;
             this.hcb.ape = settings.subsize;
@@ -294,19 +348,19 @@ LayerSDS.prototype = {
         }
     },
 
-    reload: function (data, hdrmod) {},
+    reload: function (this: LayerSDS, data: any, hdrmod: any): void {}, // TODO: type parameters
 
-    prep: function (xmin, xmax) {
+    prep: function (this: LayerSDS, xmin: number, xmax: number): any {
         return this.lps;
     },
 
-    get_pan_bounds: function (view) {
-        let xmin, xmax, ymin, ymax;
-        if (this.xmin < this.xmax) {
+    get_pan_bounds: function (this: LayerSDS, view: any): { xmin?: number; xmax?: number; ymin?: number; ymax?: number } { // TODO: type view
+        let xmin: number | undefined, xmax: number | undefined, ymin: number | undefined, ymax: number | undefined;
+        if (this.xmin! < this.xmax!) {
             xmin = this.xmin;
             xmax = this.xmax;
         }
-        if (this.ymin < this.ymax) {
+        if (this.ymin! < this.ymax!) {
             ymin = this.ymin;
             ymax = this.ymax;
         }
@@ -319,7 +373,7 @@ LayerSDS.prototype = {
         };
     },
 
-    load_tile: function (url, oReq, oEvent) {
+    load_tile: function (this: LayerSDS, url: string, oReq: XMLHttpRequest, oEvent: ProgressEvent<XMLHttpRequestEventTarget>): void {
         if (oReq.readyState === 4) {
             if (oReq.status === 200 || oReq.status === 0) {
                 // status = 0 is necessary for file URL
@@ -358,15 +412,15 @@ LayerSDS.prototype = {
      * @param {number} tileY
      * @returns {string}
      */
-    make_tile_request_url: function (
-        tileXsize,
-        tileYsize,
-        decx,
-        decy,
-        tileX,
-        tileY
-    ) {
-        const Gx = this.plot._Gx;
+    make_tile_request_url: function (this: LayerSDS,
+        tileXsize: number,
+        tileYsize: number,
+        decx: number,
+        decy: number,
+        tileX: number,
+        tileY: number
+    ): string {
+        const Gx: GxContext = this.plot._Gx;
         const cxm = ["Ma", "Ph", "Re", "Im", "IR", "Lo", "L2"];
         const xcmp = ["first", "mean", "min", "max", "first", "absmax"];
 
@@ -416,15 +470,15 @@ LayerSDS.prototype = {
      *
      * @param url
      */
-    sendTileRequest: function (url) {
-        var Mx = this.plot._Mx;
+    sendTileRequest: function (this: LayerSDS, url: string): void {
+        var Mx: MxContext = this.plot._Mx;
         // If this URL is already pending, don't request it again
         if (this.pendingURLs[url]) {
             return;
         }
 
         if (Object.keys(this.pendingURLs).length === 0) {
-            var evt = new Event("sds_tiles_loading");
+            var evt: any = new Event("sds_tiles_loading"); // TODO: create proper event type
             evt.layer = this;
             var executeDefault = mx.dispatchEvent(Mx, evt);
             if (executeDefault) {
@@ -440,21 +494,21 @@ LayerSDS.prototype = {
         oReq.overrideMimeType("text/plain; charset=x-user-defined");
 
         const that = this;
-        oReq.onload = function (oEvent) {
+        oReq.onload = function (oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
             // `this` will be oReq within this context
             delete that.pendingURLs[url]; // Remove this url as pending
-            that.load_tile(url, this, oEvent);
+            that.load_tile(url, this as XMLHttpRequest, oEvent);
             if (Object.keys(that.pendingURLs).length === 0) {
-                var evt = new Event("sds_tiles_loaded");
+                var evt: any = new Event("sds_tiles_loaded"); // TODO: create proper event type
                 evt.layer = this;
                 mx.dispatchEvent(Mx, evt);
                 that.plot.hide_spinner();
             }
         };
-        oReq.onerror = function (oEvent) {
+        oReq.onerror = function (oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
             delete that.pendingURLs[url];
             if (Object.keys(that.pendingURLs).length === 0) {
-                var evt = new Event("sds_tiles_loaded");
+                var evt: any = new Event("sds_tiles_loaded"); // TODO: create proper event type
                 evt.layer = this;
                 mx.dispatchEvent(Mx, evt);
                 that.plot.hide_spinner();
@@ -464,9 +518,9 @@ LayerSDS.prototype = {
         // this.debounceSend(oReq);
     },
 
-    draw: function () {
-        const Mx = this.plot._Mx;
-        const Gx = this.plot._Gx;
+    draw: function (this: LayerSDS): any {
+        const Mx: MxContext = this.plot._Mx;
+        const Gx: GxContext = this.plot._Gx;
         const HCB = this.hcb;
 
         let horizontal_min, horizontal_max, vertical_min, vertical_max;
@@ -709,8 +763,8 @@ LayerSDS.prototype = {
                     if (oReq.readyState === 4) {
                         if (oReq.status === 200 || oReq.status === 0) {
                             // status = 0 is necessary for file URL
-                            const zmin = oReq.getResponseHeader("Zmin");
-                            const zmax = oReq.getResponseHeader("Zmax");
+                            const zmin = Number(oReq.getResponseHeader("Zmin"));
+                            const zmax = Number(oReq.getResponseHeader("Zmax"));
 
                             if (Mx.level === 0 && Gx.zmin === undefined) {
                                 if ((Gx.autoz & 1) !== 0) {
@@ -781,9 +835,9 @@ LayerSDS.prototype = {
      * @param {number?} ypos  the y-position to extract the x-cut, leave undefined to
      *                       leave xCut
      */
-    xCut: function (ypos) {
-        const Mx = this.plot._Mx;
-        const Gx = this.plot._Gx;
+    xCut: function (this: LayerSDS, ypos?: number): any { // TODO: return type
+        const Mx: MxContext = this.plot._Mx;
+        const Gx: GxContext = this.plot._Gx;
 
         // display the x-cut of the raster
         if (ypos !== undefined) {
@@ -914,9 +968,9 @@ LayerSDS.prototype = {
      * @param {number?} xpos  the x-position to extract the y-cut, leave undefined to
      *                        leave yCut
      */
-    yCut: function (xpos) {
-        const Mx = this.plot._Mx;
-        const Gx = this.plot._Gx;
+    yCut: function (this: LayerSDS, xpos?: number): any { // TODO: return type
+        const Mx: MxContext = this.plot._Mx;
+        const Gx: GxContext = this.plot._Gx;
 
         //display the y-cut of the raster
         if (xpos !== undefined) {
@@ -1055,8 +1109,8 @@ LayerSDS.prototype = {
  *
  * @private
  */
-LayerSDS.overlay = function (plot, hcb, layerOptions) {
-    const Gx = plot._Gx;
+LayerSDS.overlay = function (plot: any, hcb: BlueHeader, layerOptions: LayerOptions): LayerSDS[] { // TODO: type plot properly
+    const Gx: GxContext = plot._Gx;
     hcb.buf_type = "D";
 
     const layer = new LayerSDS(plot);
@@ -1072,11 +1126,11 @@ LayerSDS.overlay = function (plot, hcb, layerOptions) {
 
     for (var layerOption in layerOptions) {
         if (layer[layerOption] !== undefined) {
-            layer[layerOption] = layerOptions[layerOption];
+            (layer as any)[layerOption] = (layerOptions as any)[layerOption];
         }
     }
 
-    const layers = [];
+    const layers: LayerSDS[] = [];
     if (plot.add_layer(layer)) {
         layers.push(layer);
     }

@@ -14,168 +14,293 @@
  *  MIT License
  */
 
+interface BoxShadowParsed {
+    x: number;
+    y: number;
+    blur: number;
+    color: string;
+}
+
+interface CanvasInputOptions {
+    canvas?: HTMLCanvasElement | null;
+    x?: number;
+    y?: number;
+    extraX?: number;
+    extraY?: number;
+    fontSize?: number;
+    fontFamily?: string;
+    fontColor?: string;
+    placeHolderColor?: string;
+    fontWeight?: string;
+    fontStyle?: string;
+    readonly?: boolean;
+    maxlength?: number | null;
+    width?: number;
+    height?: number;
+    padding?: number;
+    borderWidth?: number;
+    borderColor?: string;
+    borderRadius?: number;
+    backgroundImage?: string;
+    boxShadow?: string;
+    innerShadow?: string;
+    selectionColor?: string;
+    placeHolder?: string;
+    value?: string;
+    onsubmit?: (e?: Event, self?: CanvasInput) => void;
+    onkeydown?: (e?: Event, self?: CanvasInput) => void;
+    onkeyup?: (e?: Event, self?: CanvasInput) => void;
+    onfocus?: (self?: CanvasInput) => void;
+    onblur?: (self?: CanvasInput) => void;
+    renderOnReturn?: boolean;
+    disableBlur?: boolean;
+    tabToClear?: boolean;
+    backgroundColor?: string;
+    backgroundGradient?: [string, string];
+}
+
 // create a buffer that stores all inputs so that tabbing
 // between them is made possible.
-var inputs = [];
+var inputs: CanvasInput[] = [];
 
 // initialize the Canvas Input
-var CanvasInput = window.CanvasInput = function(o) {
-    var self = this;
+class CanvasInput {
+    _canvas: HTMLCanvasElement | null;
+    _ctx: CanvasRenderingContext2D | null;
+    _x: number;
+    _y: number;
+    _extraX: number;
+    _extraY: number;
+    _fontSize: number;
+    _fontFamily: string;
+    _fontColor: string;
+    _placeHolderColor: string;
+    _fontWeight: string;
+    _fontStyle: string;
+    _readonly: boolean;
+    _maxlength: number | null;
+    _width: number;
+    _height: number;
+    _padding: number;
+    _borderWidth: number;
+    _borderColor: string;
+    _borderRadius: number;
+    _backgroundImage: string;
+    _boxShadow: BoxShadowParsed;
+    _innerShadow: string;
+    _selectionColor: string;
+    _placeHolder: string;
+    _value: string;
+    _onsubmit: (e?: any, self?: CanvasInput) => void;
+    _onkeydown: (e?: any, self?: CanvasInput) => void;
+    _onkeyup: (e?: any, self?: CanvasInput) => void;
+    _onfocus: (self?: CanvasInput) => void;
+    _onblur: (self?: CanvasInput) => void;
+    _cursor: boolean;
+    _cursorPos: number;
+    _hasFocus: boolean;
+    _selection: [number, number];
+    _wasOver: boolean;
+    _renderOnReturn: boolean;
+    _disableBlur: boolean;
+    _tabToClear: boolean;
+    _backgroundColor: string | CanvasGradient;
 
-    o = o ? o : {};
+    _renderCanvas: HTMLCanvasElement;
+    _renderCtx: CanvasRenderingContext2D;
+    _shadowCanvas: HTMLCanvasElement;
+    _shadowCtx: CanvasRenderingContext2D;
 
-    // setup the defaults
-    self._canvas = o.canvas || null;
-    self._ctx = self._canvas ? self._canvas.getContext('2d') : null;
-    self._x = o.x || 0;
-    self._y = o.y || 0;
-    self._extraX = o.extraX || 0;
-    self._extraY = o.extraY || 0;
-    self._fontSize = o.fontSize || 14;
-    self._fontFamily = o.fontFamily || 'Arial';
-    self._fontColor = o.fontColor || '#000';
-    self._placeHolderColor = o.placeHolderColor || '#bfbebd';
-    self._fontWeight = o.fontWeight || 'normal';
-    self._fontStyle = o.fontStyle || 'normal';
-    self._readonly = o.readonly || false;
-    self._maxlength = o.maxlength || null;
-    self._width = o.width || 150;
-    self._height = o.height || self._fontSize;
-    self._padding = o.padding >= 0 ? o.padding : 5;
-    self._borderWidth = o.borderWidth >= 0 ? o.borderWidth : 1;
-    self._borderColor = o.borderColor || '#959595';
-    self._borderRadius = o.borderRadius >= 0 ? o.borderRadius : 3;
-    self._backgroundImage = o.backgroundImage || '';
-    self._boxShadow = o.boxShadow || '1px 1px 0px rgba(255, 255, 255, 1)';
-    self._innerShadow = o.innerShadow || '0px 0px 4px rgba(0, 0, 0, 0.4)';
-    self._selectionColor = o.selectionColor || 'rgba(179, 212, 253, 0.8)';
-    self._placeHolder = o.placeHolder || '';
-    self._value = o.value || self._placeHolder;
-    self._onsubmit = o.onsubmit || function() {};
-    self._onkeydown = o.onkeydown || function() {};
-    self._onkeyup = o.onkeyup || function() {};
-    self._onfocus = o.onfocus || function() {};
-    self._onblur = o.onblur || function() {};
-    self._cursor = false;
-    self._cursorPos = 0;
-    self._hasFocus = false;
-    self._selection = [0, 0];
-    self._wasOver = false;
-    self._renderOnReturn = (o.renderOnReturn !== undefined ? o.renderOnReturn : true);
-    self._disableBlur = o.disableBlur || false;
-    self._tabToClear = o.tabToClear || false;
+    outerW: number;
+    outerH: number;
+    shadowL: number;
+    shadowR: number;
+    shadowT: number;
+    shadowB: number;
+    shadowW: number;
+    shadowH: number;
 
-    // parse box shadow
-    self.boxShadow(self._boxShadow, true);
+    _inputsIndex: number;
+    _cursorInterval: ReturnType<typeof setInterval> | undefined;
+    _mouseDown: boolean;
+    _selectionStart: number | undefined;
+    _selectionUpdated: boolean | undefined;
+    _endSelection: boolean | undefined;
 
-    // calculate the full width and height with padding, borders and shadows
-    self._calcWH();
+    mousemoveCanvasListener: (e: MouseEvent) => void;
+    mousedownCanvasListener: (e: MouseEvent) => void;
+    mouseupCanvasListener: (e: MouseEvent) => void;
+    mouseupWindowListener: (e: MouseEvent) => void;
+    keydownWindowListener: (e: KeyboardEvent) => void;
+    keyupWindowListener: (e: KeyboardEvent) => void;
+    pasteWindowListener: (e: ClipboardEvent) => void;
 
-    // setup the off-DOM canvas
-    self._renderCanvas = document.createElement('canvas');
-    self._renderCanvas.setAttribute('width', self.outerW);
-    self._renderCanvas.setAttribute('height', self.outerH);
-    self._renderCtx = self._renderCanvas.getContext('2d');
+    constructor(o?: CanvasInputOptions) {
+        var self = this;
 
-    // setup another off-DOM canvas for inner-shadows
-    self._shadowCanvas = document.createElement('canvas');
-    self._shadowCanvas.setAttribute('width', self._width + self._padding * 2);
-    self._shadowCanvas.setAttribute('height', self._height + self._padding * 2);
-    self._shadowCtx = self._shadowCanvas.getContext('2d');
+        o = o ? o : {};
 
-    // setup the background color
-    if (typeof o.backgroundGradient !== 'undefined') {
-        self._backgroundColor = self._renderCtx.createLinearGradient(
-            0,
-            0,
-            0,
-            self.outerH
-        );
-        self._backgroundColor.addColorStop(0, o.backgroundGradient[0]);
-        self._backgroundColor.addColorStop(1, o.backgroundGradient[1]);
-    } else {
-        self._backgroundColor = o.backgroundColor || '#fff';
-    }
+        // setup the defaults
+        self._canvas = o.canvas || null;
+        self._ctx = self._canvas ? self._canvas.getContext('2d') : null;
+        self._x = o.x || 0;
+        self._y = o.y || 0;
+        self._extraX = o.extraX || 0;
+        self._extraY = o.extraY || 0;
+        self._fontSize = o.fontSize || 14;
+        self._fontFamily = o.fontFamily || 'Arial';
+        self._fontColor = o.fontColor || '#000';
+        self._placeHolderColor = o.placeHolderColor || '#bfbebd';
+        self._fontWeight = o.fontWeight || 'normal';
+        self._fontStyle = o.fontStyle || 'normal';
+        self._readonly = o.readonly || false;
+        self._maxlength = o.maxlength || null;
+        self._width = o.width || 150;
+        self._height = o.height || self._fontSize;
+        self._padding = o.padding !== undefined && o.padding >= 0 ? o.padding : 5;
+        self._borderWidth = o.borderWidth !== undefined && o.borderWidth >= 0 ? o.borderWidth : 1;
+        self._borderColor = o.borderColor || '#959595';
+        self._borderRadius = o.borderRadius !== undefined && o.borderRadius >= 0 ? o.borderRadius : 3;
+        self._backgroundImage = o.backgroundImage || '';
+        self._innerShadow = o.innerShadow || '0px 0px 4px rgba(0, 0, 0, 0.4)';
+        self._selectionColor = o.selectionColor || 'rgba(179, 212, 253, 0.8)';
+        self._placeHolder = o.placeHolder || '';
+        self._value = o.value || self._placeHolder;
+        self._onsubmit = o.onsubmit || function() {};
+        self._onkeydown = o.onkeydown || function() {};
+        self._onkeyup = o.onkeyup || function() {};
+        self._onfocus = o.onfocus || function() {};
+        self._onblur = o.onblur || function() {};
+        self._cursor = false;
+        self._cursorPos = 0;
+        self._hasFocus = false;
+        self._selection = [0, 0];
+        self._wasOver = false;
+        self._renderOnReturn = (o.renderOnReturn !== undefined ? o.renderOnReturn : true);
+        self._disableBlur = o.disableBlur || false;
+        self._tabToClear = o.tabToClear || false;
+        self._mouseDown = false;
 
-    // setup main canvas events
-    if (self._canvas) {
-        self.mousemoveCanvasListener = function(e) {
-            e = e || window.event;
+        // initialize shadow values before boxShadow parse
+        self.shadowL = 0;
+        self.shadowR = 0;
+        self.shadowT = 0;
+        self.shadowB = 0;
+        self.shadowW = 0;
+        self.shadowH = 0;
+        self.outerW = 0;
+        self.outerH = 0;
+
+        // Initialize _boxShadow before calling boxShadow()
+        self._boxShadow = { x: 0, y: 0, blur: 0, color: '' };
+
+        // parse box shadow
+        self.boxShadow(o.boxShadow || '1px 1px 0px rgba(255, 255, 255, 1)', true);
+
+        // calculate the full width and height with padding, borders and shadows
+        self._calcWH();
+
+        // setup the off-DOM canvas
+        self._renderCanvas = document.createElement('canvas');
+        self._renderCanvas.setAttribute('width', String(self.outerW));
+        self._renderCanvas.setAttribute('height', String(self.outerH));
+        self._renderCtx = self._renderCanvas.getContext('2d')!;
+
+        // setup another off-DOM canvas for inner-shadows
+        self._shadowCanvas = document.createElement('canvas');
+        self._shadowCanvas.setAttribute('width', String(self._width + self._padding * 2));
+        self._shadowCanvas.setAttribute('height', String(self._height + self._padding * 2));
+        self._shadowCtx = self._shadowCanvas.getContext('2d')!;
+
+        // setup the background color
+        if (typeof o.backgroundGradient !== 'undefined') {
+            self._backgroundColor = self._renderCtx.createLinearGradient(
+                0,
+                0,
+                0,
+                self.outerH
+            );
+            (self._backgroundColor as CanvasGradient).addColorStop(0, o.backgroundGradient[0]);
+            (self._backgroundColor as CanvasGradient).addColorStop(1, o.backgroundGradient[1]);
+        } else {
+            self._backgroundColor = o.backgroundColor || '#fff';
+        }
+
+        // setup main canvas events
+        self.mousemoveCanvasListener = function(e: MouseEvent) {
+            e = e || window.event as MouseEvent;
             self.mousemove(e, self);
         };
-        self._canvas.addEventListener('mousemove', self.mousemoveCanvasListener, false);
-
-        self.mousedownCanvasListener = function(e) {
-            e = e || window.event;
+        self.mousedownCanvasListener = function(e: MouseEvent) {
+            e = e || window.event as MouseEvent;
             self.mousedown(e, self);
         };
-        self._canvas.addEventListener('mousedown', self.mousedownCanvasListener, false);
-
-        self.mouseupCanvasListener = function(e) {
-            e = e || window.event;
+        self.mouseupCanvasListener = function(e: MouseEvent) {
+            e = e || window.event as MouseEvent;
             self.mouseup(e, self);
         };
-        self._canvas.addEventListener('mouseup', self.mouseupCanvasListener, false);
+
+        if (self._canvas) {
+            self._canvas.addEventListener('mousemove', self.mousemoveCanvasListener, false);
+            self._canvas.addEventListener('mousedown', self.mousedownCanvasListener, false);
+            self._canvas.addEventListener('mouseup', self.mouseupCanvasListener, false);
+        }
+
+        // setup a global mouseup to blur the input outside of the canvas
+        self.mouseupWindowListener = function(e: MouseEvent) {
+            e = e || window.event as MouseEvent;
+            if (self._hasFocus && !self._mouseDown) {
+                self.blur();
+            }
+        };
+        window.addEventListener('mouseup', self.mouseupWindowListener, true);
+
+        // setup the keydown listener
+        self.keydownWindowListener = function(e: KeyboardEvent) {
+            e = e || window.event as KeyboardEvent;
+            if (self._hasFocus) {
+                self.keydown(e, self);
+            }
+        };
+        window.addEventListener('keydown', self.keydownWindowListener, false);
+
+        // setup the keyup listener
+        self.keyupWindowListener = function(e: KeyboardEvent) {
+            e = e || window.event as KeyboardEvent;
+            if (self._hasFocus) {
+                self._onkeyup(e, self);
+            }
+        };
+        window.addEventListener('keyup', self.keyupWindowListener, false);
+
+        // setup the 'paste' listener
+        self.pasteWindowListener = function(e: ClipboardEvent) {
+            if (self._hasFocus) {
+                var text = e.clipboardData!.getData('text/plain'),
+                    startText = self._value.substr(0, self._cursorPos),
+                    endText = self._value.substr(self._cursorPos);
+                self._value = startText + text + endText;
+                self._cursorPos += text.length;
+
+                self.render();
+            }
+        };
+        window.addEventListener('paste', self.pasteWindowListener as EventListener, false);
+
+        // add this to the buffer
+        inputs.push(self);
+        self._inputsIndex = inputs.length - 1;
+
+        // draw the text box
+        self.render();
     }
 
-    // setup a global mouseup to blur the input outside of the canvas
-    self.mouseupWindowListener = function(e) {
-        e = e || window.event;
-        if (self._hasFocus && !self._mouseDown) {
-            self.blur();
-        }
-    };
-    window.addEventListener('mouseup', self.mouseupWindowListener, true);
-
-    // setup the keydown listener
-    self.keydownWindowListener = function(e) {
-        e = e || window.event;
-        if (self._hasFocus) {
-            self.keydown(e, self);
-        }
-    };
-    window.addEventListener('keydown', self.keydownWindowListener, false);
-
-    // setup the keyup listener
-    self.keyupWindowListener = function(e) {
-        e = e || window.event;
-        if (self._hasFocus) {
-            self._onkeyup(e, self);
-        }
-    };
-    window.addEventListener('keyup', self.keyupWindowListener, false);
-
-    // setup the 'paste' listener
-    self.pasteWindowListener = function(e) {
-        e = e || window.event;
-        if (self._hasFocus) {
-            var text = e.clipboardData.getData('text/plain'),
-                startText = self._value.substr(0, self._cursorPos),
-                endText = self._value.substr(self._cursorPos);
-            self._value = startText + text + endText;
-            self._cursorPos += text.length;
-
-            self.render();
-        }
-    };
-    window.addEventListener('paste', self.pasteWindowListener, false);
-
-    // add this to the buffer
-    inputs.push(self);
-    self._inputsIndex = inputs.length - 1;
-
-    // draw the text box
-    self.render();
-};
-
-// setup the prototype
-CanvasInput.prototype = {
     /**
      * Get/set the main canvas.
      * @param  {Object} data Canvas reference.
      * @return {Mixed}      CanvasInput or current canvas.
      */
-    canvas: function(data) {
+    canvas(data?: HTMLCanvasElement): CanvasInput | HTMLCanvasElement | null {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -186,14 +311,14 @@ CanvasInput.prototype = {
         } else {
             return self._canvas;
         }
-    },
+    }
 
     /**
      * Get/set the x-position.
      * @param  {Number} data The pixel position along the x-coordinate.
      * @return {Mixed}      CanvasInput or current x-value.
      */
-    x: function(data) {
+    x(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -203,14 +328,14 @@ CanvasInput.prototype = {
         } else {
             return self._x;
         }
-    },
+    }
 
     /**
      * Get/set the y-position.
      * @param  {Number} data The pixel position along the y-coordinate.
      * @return {Mixed}      CanvasInput or current y-value.
      */
-    y: function(data) {
+    y(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -220,14 +345,14 @@ CanvasInput.prototype = {
         } else {
             return self._y;
         }
-    },
+    }
 
     /**
      * Get/set the extra x-position (generally used when no canvas is specified).
      * @param  {Number} data The pixel position along the x-coordinate.
      * @return {Mixed}      CanvasInput or current x-value.
      */
-    extraX: function(data) {
+    extraX(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -237,14 +362,14 @@ CanvasInput.prototype = {
         } else {
             return self._extraX;
         }
-    },
+    }
 
     /**
      * Get/set the extra y-position (generally used when no canvas is specified).
      * @param  {Number} data The pixel position along the y-coordinate.
      * @return {Mixed}      CanvasInput or current y-value.
      */
-    extraY: function(data) {
+    extraY(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -254,14 +379,14 @@ CanvasInput.prototype = {
         } else {
             return self._extraY;
         }
-    },
+    }
 
     /**
      * Get/set the font size.
      * @param  {Number} data Font size.
      * @return {Mixed}      CanvasInput or current font size.
      */
-    fontSize: function(data) {
+    fontSize(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -271,14 +396,14 @@ CanvasInput.prototype = {
         } else {
             return self._fontSize;
         }
-    },
+    }
 
     /**
      * Get/set the font family.
      * @param  {String} data Font family.
      * @return {Mixed}      CanvasInput or current font family.
      */
-    fontFamily: function(data) {
+    fontFamily(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -288,14 +413,14 @@ CanvasInput.prototype = {
         } else {
             return self._fontFamily;
         }
-    },
+    }
 
     /**
      * Get/set the font color.
      * @param  {String} data Font color.
      * @return {Mixed}      CanvasInput or current font color.
      */
-    fontColor: function(data) {
+    fontColor(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -305,14 +430,14 @@ CanvasInput.prototype = {
         } else {
             return self._fontColor;
         }
-    },
+    }
 
     /**
      * Get/set the place holder font color.
      * @param  {String} data Font color.
      * @return {Mixed}      CanvasInput or current place holder font color.
      */
-    placeHolderColor: function(data) {
+    placeHolderColor(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -322,14 +447,14 @@ CanvasInput.prototype = {
         } else {
             return self._placeHolderColor;
         }
-    },
+    }
 
     /**
      * Get/set the font weight.
      * @param  {String} data Font weight.
      * @return {Mixed}      CanvasInput or current font weight.
      */
-    fontWeight: function(data) {
+    fontWeight(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -339,14 +464,14 @@ CanvasInput.prototype = {
         } else {
             return self._fontWeight;
         }
-    },
+    }
 
     /**
      * Get/set the font style.
      * @param  {String} data Font style.
      * @return {Mixed}      CanvasInput or current font style.
      */
-    fontStyle: function(data) {
+    fontStyle(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -356,14 +481,14 @@ CanvasInput.prototype = {
         } else {
             return self._fontStyle;
         }
-    },
+    }
 
     /**
      * Get/set the width of the text box.
      * @param  {Number} data Width in pixels.
      * @return {Mixed}      CanvasInput or current width.
      */
-    width: function(data) {
+    width(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -375,14 +500,14 @@ CanvasInput.prototype = {
         } else {
             return self._width;
         }
-    },
+    }
 
     /**
      * Get/set the height of the text box.
      * @param  {Number} data Height in pixels.
      * @return {Mixed}      CanvasInput or current height.
      */
-    height: function(data) {
+    height(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -394,14 +519,14 @@ CanvasInput.prototype = {
         } else {
             return self._height;
         }
-    },
+    }
 
     /**
      * Get/set the padding of the text box.
      * @param  {Number} data Padding in pixels.
      * @return {Mixed}      CanvasInput or current padding.
      */
-    padding: function(data) {
+    padding(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -413,14 +538,14 @@ CanvasInput.prototype = {
         } else {
             return self._padding;
         }
-    },
+    }
 
     /**
      * Get/set the border width.
      * @param  {Number} data Border width.
      * @return {Mixed}      CanvasInput or current border width.
      */
-    borderWidth: function(data) {
+    borderWidth(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -432,14 +557,14 @@ CanvasInput.prototype = {
         } else {
             return self._borderWidth;
         }
-    },
+    }
 
     /**
      * Get/set the border color.
      * @param  {String} data Border color.
      * @return {Mixed}      CanvasInput or current border color.
      */
-    borderColor: function(data) {
+    borderColor(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -449,14 +574,14 @@ CanvasInput.prototype = {
         } else {
             return self._borderColor;
         }
-    },
+    }
 
     /**
      * Get/set the border radius.
      * @param  {Number} data Border radius.
      * @return {Mixed}      CanvasInput or current border radius.
      */
-    borderRadius: function(data) {
+    borderRadius(data?: number): CanvasInput | number {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -466,14 +591,14 @@ CanvasInput.prototype = {
         } else {
             return self._borderRadius;
         }
-    },
+    }
 
     /**
      * Get/set the background color.
      * @param  {Number} data Background color.
      * @return {Mixed}      CanvasInput or current background color.
      */
-    backgroundColor: function(data) {
+    backgroundColor(data?: string): CanvasInput | string | CanvasGradient {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -483,14 +608,14 @@ CanvasInput.prototype = {
         } else {
             return self._backgroundColor;
         }
-    },
+    }
 
     /**
      * Get/set the background gradient.
      * @param  {Number} data Background gradient.
      * @return {Mixed}      CanvasInput or current background gradient.
      */
-    backgroundGradient: function(data) {
+    backgroundGradient(data?: [string, string]): CanvasInput | string | CanvasGradient {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -500,14 +625,14 @@ CanvasInput.prototype = {
                 0,
                 self.outerH
             );
-            self._backgroundColor.addColorStop(0, data[0]);
-            self._backgroundColor.addColorStop(1, data[1]);
+            (self._backgroundColor as CanvasGradient).addColorStop(0, data[0]);
+            (self._backgroundColor as CanvasGradient).addColorStop(1, data[1]);
 
             return self.render();
         } else {
             return self._backgroundColor;
         }
-    },
+    }
 
     /**
      * Get/set the box shadow.
@@ -515,17 +640,17 @@ CanvasInput.prototype = {
      * @param  {Boolean} doReturn (optional) True to prevent a premature render.
      * @return {Mixed}          CanvasInput or current box shadow.
      */
-    boxShadow: function(data, doReturn) {
+    boxShadow(data?: string, doReturn?: boolean): CanvasInput | BoxShadowParsed | undefined {
         var self = this;
 
         if (typeof data !== 'undefined') {
             // parse box shadow
             var boxShadow = data.split('px ');
             self._boxShadow = {
-                x: self._boxShadow === 'none' ? 0 : parseInt(boxShadow[0], 10),
-                y: self._boxShadow === 'none' ? 0 : parseInt(boxShadow[1], 10),
-                blur: self._boxShadow === 'none' ? 0 : parseInt(boxShadow[2], 10),
-                color: self._boxShadow === 'none' ? '' : boxShadow[3]
+                x: self._boxShadow.color === '' && self._boxShadow.x === 0 ? 0 : parseInt(boxShadow[0], 10),
+                y: self._boxShadow.color === '' && self._boxShadow.x === 0 ? 0 : parseInt(boxShadow[1], 10),
+                blur: self._boxShadow.color === '' && self._boxShadow.x === 0 ? 0 : parseInt(boxShadow[2], 10),
+                color: self._boxShadow.color === '' && self._boxShadow.x === 0 ? '' : boxShadow[3]
             };
 
             // take into account the shadow and its direction
@@ -557,14 +682,14 @@ CanvasInput.prototype = {
         } else {
             return self._boxShadow;
         }
-    },
+    }
 
     /**
      * Get/set the inner shadow.
      * @param  {String} data In the format of a CSS box shadow (1px 1px 1px rgba(0, 0, 0.5)).
      * @return {Mixed}          CanvasInput or current inner shadow.
      */
-    innerShadow: function(data) {
+    innerShadow(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -574,14 +699,14 @@ CanvasInput.prototype = {
         } else {
             return self._innerShadow;
         }
-    },
+    }
 
     /**
      * Get/set the text selection color.
      * @param  {String} data Color.
      * @return {Mixed}      CanvasInput or current selection color.
      */
-    selectionColor: function(data) {
+    selectionColor(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -591,14 +716,14 @@ CanvasInput.prototype = {
         } else {
             return self._selectionColor;
         }
-    },
+    }
 
     /**
      * Get/set the place holder text.
      * @param  {String} data Place holder text.
      * @return {Mixed}      CanvasInput or current place holder text.
      */
-    placeHolder: function(data) {
+    placeHolder(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -608,14 +733,14 @@ CanvasInput.prototype = {
         } else {
             return self._placeHolder;
         }
-    },
+    }
 
     /**
      * Get/set the current text box value.
      * @param  {String} data Text value.
      * @return {Mixed}      CanvasInput or current text value.
      */
-    value: function(data) {
+    value(data?: string): CanvasInput | string {
         var self = this;
 
         if (typeof data !== 'undefined') {
@@ -625,13 +750,13 @@ CanvasInput.prototype = {
         } else {
             return self._value;
         }
-    },
+    }
 
     /**
      * Set or fire the onsubmit event.
      * @param  {Function} fn Custom callback.
      */
-    onsubmit: function(fn) {
+    onsubmit(fn?: (e?: any, self?: CanvasInput) => void): CanvasInput | void {
         var self = this;
 
         if (typeof fn !== 'undefined') {
@@ -641,13 +766,13 @@ CanvasInput.prototype = {
         } else {
             self._onsubmit();
         }
-    },
+    }
 
     /**
      * Set or fire the onkeydown event.
      * @param  {Function} fn Custom callback.
      */
-    onkeydown: function(fn) {
+    onkeydown(fn?: (e?: any, self?: CanvasInput) => void): CanvasInput | void {
         var self = this;
 
         if (typeof fn !== 'undefined') {
@@ -657,13 +782,13 @@ CanvasInput.prototype = {
         } else {
             self._onkeydown();
         }
-    },
+    }
 
     /**
      * Set or fire the onkeyup event.
      * @param  {Function} fn Custom callback.
      */
-    onkeyup: function(fn) {
+    onkeyup(fn?: (e?: any, self?: CanvasInput) => void): CanvasInput | void {
         var self = this;
 
         if (typeof fn !== 'undefined') {
@@ -673,7 +798,7 @@ CanvasInput.prototype = {
         } else {
             self._onkeyup();
         }
-    },
+    }
 
     /**
      * Place focus on the CanvasInput box, placing the cursor
@@ -681,13 +806,13 @@ CanvasInput.prototype = {
      * @param  {Number} pos (optional) The position to place the cursor.
      * @return {CanvasInput}
      */
-    focus: function(pos) {
+    focus(pos?: number): CanvasInput {
         var self = this,
-            input;
+            input: HTMLInputElement | undefined;
 
         // if this is readonly, don't allow it to get focus
         if (self._readonly) {
-            return;
+            return self;
         }
 
         // only fire the focus event when going from unfocussed
@@ -727,15 +852,15 @@ CanvasInput.prototype = {
             isChromeMobile = (nav.indexOf('chrome') >= 0 && nav.indexOf('mobile') >= 0 && nav.indexOf('android') >= 0);
 
         // add support for mobile
-        var isMobile = (typeof window.orientation !== 'undefined');
+        var isMobile = (typeof (window as any).orientation !== 'undefined');
         if (isMobile && !isChromeMobile && document && document.createElement && (input = document.createElement('input'))) {
             input.type = 'text';
-            input.style.opacity = 0;
+            input.style.opacity = '0';
             input.style.position = 'absolute';
             input.style.left = (self._x + self._extraX + (self._canvas ? self._canvas.offsetLeft : 0)) + 'px';
             input.style.top = (self._y + self._extraY + (self._canvas ? self._canvas.offsetTop : 0)) + 'px';
-            input.style.width = self._width;
-            input.style.height = 0;
+            input.style.width = String(self._width);
+            input.style.height = '0';
             document.body.appendChild(input);
             input.focus();
             input.addEventListener('blur', function() {
@@ -746,14 +871,14 @@ CanvasInput.prototype = {
         }
 
         return self.render();
-    },
+    }
 
     /**
      * Removes focus from the CanvasInput box.
      * @param  {Object} _this Reference to this.
      * @return {CanvasInput}
      */
-    blur: function(_this) {
+    blur(_this?: CanvasInput): CanvasInput {
         var self = _this || this;
 
         if (!self._disableBlur) {
@@ -773,25 +898,25 @@ CanvasInput.prototype = {
         }
 
         return self.render();
-    },
+    }
 
     /**
      * Maintains continual focus on the CanvasInput by disabling blur.
      * @param {Object} _this Reference to this.
      */
-    disableBlur: function(_this) {
+    disableBlur(_this?: CanvasInput): void {
         var self = _this || this;
         self._disableBlur = true;
-    },
+    }
 
     /**
      * Allows the CanvasInput to blur or focus by re-enabling blur.
      * @param {Object} _this Reference to this.
      */
-    enableBlur: function(_this) {
+    enableBlur(_this?: CanvasInput): void {
         var self = _this || this;
         self._disableBlur = false;
-    },
+    }
 
     /**
      * Fired with the keydown event to draw the typed characters.
@@ -799,11 +924,11 @@ CanvasInput.prototype = {
      * @param  {CanvasInput} self
      * @return {CanvasInput}
      */
-    keydown: function(e, self) {
+    keydown(e: KeyboardEvent, self: CanvasInput): CanvasInput | (() => void) | undefined {
         var keyCode = e.which,
             isShift = e.shiftKey,
-            key = null,
-            startText, endText;
+            key: string | undefined = undefined,
+            startText: string, endText: string;
 
         // make sure the correct text field is being updated
         if (!self._hasFocus) {
@@ -864,7 +989,7 @@ CanvasInput.prototype = {
                     }, 10);
                 }
             }
-        } else if (key = self._mapCodeToKey(isShift, keyCode)) {
+        } else if ((key = self._mapCodeToKey(isShift, keyCode))) {
             self._clearSelection();
 
             // enforce the max length
@@ -883,7 +1008,7 @@ CanvasInput.prototype = {
         } else {
             return function() {};
         }
-    },
+    }
 
     /**
      * Fired with the click event on the canvas, and puts focus on/off
@@ -892,7 +1017,7 @@ CanvasInput.prototype = {
      * @param  {CanvasInput} self
      * @return {CanvasInput}
      */
-    click: function(e, self) {
+    click(e: MouseEvent, self: CanvasInput): CanvasInput | void {
         var mouse = self._mousePos(e),
             x = mouse.x,
             y = mouse.y;
@@ -912,7 +1037,7 @@ CanvasInput.prototype = {
         } else {
             return self.blur();
         }
-    },
+    }
 
     /**
      * Fired with the mousemove event to update the default cursor.
@@ -920,7 +1045,7 @@ CanvasInput.prototype = {
      * @param  {CanvasInput} self
      * @return {CanvasInput}
      */
-    mousemove: function(e, self) {
+    mousemove(e: MouseEvent, self: CanvasInput): void {
         var mouse = self._mousePos(e),
             x = mouse.x,
             y = mouse.y,
@@ -934,7 +1059,7 @@ CanvasInput.prototype = {
             self._wasOver = false;
         }
 
-        if (self._hasFocus && self._selectionStart >= 0) {
+        if (self._hasFocus && self._selectionStart !== undefined && self._selectionStart >= 0) {
             var curPos = self._clickPos(x, y),
                 start = Math.min(self._selectionStart, curPos),
                 end = Math.max(self._selectionStart, curPos);
@@ -952,14 +1077,14 @@ CanvasInput.prototype = {
                 self.render();
             }
         }
-    },
+    }
 
     /**
      * Fired with the mousedown event to start a selection drag.
      * @param  {Event} e    The mousedown event.
      * @param  {CanvasInput} self
      */
-    mousedown: function(e, self) {
+    mousedown(e: MouseEvent, self: CanvasInput): void {
         var mouse = self._mousePos(e),
             x = mouse.x,
             y = mouse.y,
@@ -972,21 +1097,21 @@ CanvasInput.prototype = {
         if (self._hasFocus && isOver) {
             self._selectionStart = self._clickPos(x, y);
         }
-    },
+    }
 
     /**
      * Fired with the mouseup event to end a selection drag.
      * @param  {Event} e    The mouseup event.
      * @param  {CanvasInput} self
      */
-    mouseup: function(e, self) {
+    mouseup(e: MouseEvent, self: CanvasInput): void {
         var mouse = self._mousePos(e),
             x = mouse.x,
             y = mouse.y;
 
         // update selection if a drag has happened
         var isSelection = self._clickPos(x, y) !== self._selectionStart;
-        if (self._hasFocus && self._selectionStart >= 0 && self._overInput(x, y) && isSelection) {
+        if (self._hasFocus && self._selectionStart !== undefined && self._selectionStart >= 0 && self._overInput(x, y) && isSelection) {
             self._selectionUpdated = true;
             delete self._selectionStart;
             self.render();
@@ -995,44 +1120,44 @@ CanvasInput.prototype = {
         }
 
         self.click(e, self);
-    },
+    }
 
     /**
      * Helper method to get the off-DOM canvas.
      * @return {Object} Reference to the canvas.
      */
-    renderCanvas: function() {
+    renderCanvas(): HTMLCanvasElement {
         return this._renderCanvas;
-    },
+    }
 
     /**
      * Helper method to remove all event listeners, stop the blinking cursor and
      * reset the cursor style.
      */
-    cleanup: function() {
-        this._canvas.removeEventListener("mouseup", this.mouseupCanvasListener, false);
-        this._canvas.removeEventListener("mousedown", this.mousedownCanvasListener, false);
-        this._canvas.removeEventListener("mousemove", this.mousemoveCanvasListener, false);
+    cleanup(): void {
+        this._canvas!.removeEventListener("mouseup", this.mouseupCanvasListener, false);
+        this._canvas!.removeEventListener("mousedown", this.mousedownCanvasListener, false);
+        this._canvas!.removeEventListener("mousemove", this.mousemoveCanvasListener, false);
         window.removeEventListener("keydown", this.keydownWindowListener, false);
         window.removeEventListener("keyup", this.keyupWindowListener, false);
         window.removeEventListener("mouseup", this.mouseupWindowListener, true);
-        window.removeEventListener("paste", this.pasteWindowListener, false);
+        window.removeEventListener("paste", this.pasteWindowListener as EventListener, false);
         clearInterval(this._cursorInterval);
 
-        this._canvas.style.cursor = 'default';
+        this._canvas!.style.cursor = 'default';
         for (var i = (inputs.length- 1); i >= 0 ; i--) {
             if (inputs[i] === this) {
                 inputs.splice(i, 1);
             }
         }
-    },
+    }
 
     /**
      * Clears and redraws the CanvasInput on an off-DOM canvas,
      * and if a main canvas is provided, draws it all onto that.
      * @return {CanvasInput}
      */
-    render: function() {
+    render(): CanvasInput {
         var self = this,
             ctx = self._renderCtx,
             w = self.outerW,
@@ -1153,13 +1278,15 @@ CanvasInput.prototype = {
             return self;
 
         });
-    },
+
+        return self;
+    }
 
     /**
      * Draw the text box area with either an image or background color.
      * @param  {Function} fn Callback.
      */
-    _drawTextBox: function(fn) {
+    _drawTextBox(fn: () => void): void {
         var self = this,
             ctx = self._renderCtx,
             w = self.outerW,
@@ -1185,13 +1312,13 @@ CanvasInput.prototype = {
                 fn();
             };
         }
-    },
+    }
 
     /**
      * Deletes selected text in selection range and repositions cursor.
      * @return {Boolean} true if text removed.
      */
-    _clearSelection: function() {
+    _clearSelection(): boolean {
         var self = this;
 
         if (self._selection[1] > 0) {
@@ -1208,14 +1335,14 @@ CanvasInput.prototype = {
         }
 
         return false;
-    },
+    }
 
     /**
      * Clip the text string to only return what fits in the visible text box.
      * @param  {String} value The text to clip.
      * @return {String} The clipped text.
      */
-    _clipText: function(value) {
+    _clipText(value?: string): string {
         var self = this;
         value = (typeof value === 'undefined') ? self._value : value;
 
@@ -1224,14 +1351,14 @@ CanvasInput.prototype = {
             text = fillPer > 1 ? value.substr(-1 * Math.floor(value.length / fillPer)) : value;
 
         return text + '';
-    },
+    }
 
     /**
      * Gets the pixel with of passed text.
      * @param  {String} text The text to measure.
      * @return {Number}      The measured width.
      */
-    _textWidth: function(text) {
+    _textWidth(text: string): number {
         var self = this,
             ctx = self._renderCtx;
 
@@ -1239,38 +1366,38 @@ CanvasInput.prototype = {
         ctx.textAlign = 'left';
 
         return ctx.measureText(text).width;
-    },
+    }
 
     /**
      * Recalculate the outer with and height of the text box.
      */
-    _calcWH: function() {
+    _calcWH(): void {
         var self = this;
 
         // calculate the full width and height with padding, borders and shadows
         self.outerW = self._width + self._padding * 2 + self._borderWidth * 2 + self.shadowW;
         self.outerH = self._height + self._padding * 2 + self._borderWidth * 2 + self.shadowH;
-    },
+    }
 
     /**
      * Update the width and height of the off-DOM canvas when attributes are changed.
      */
-    _updateCanvasWH: function() {
+    _updateCanvasWH(): void {
         var self = this,
             oldW = self._renderCanvas.width,
             oldH = self._renderCanvas.height;
 
         // update off-DOM canvas
-        self._renderCanvas.setAttribute('width', self.outerW);
-        self._renderCanvas.setAttribute('height', self.outerH);
-        self._shadowCanvas.setAttribute('width', self._width + self._padding * 2);
-        self._shadowCanvas.setAttribute('height', self._height + self._padding * 2);
+        self._renderCanvas.setAttribute('width', String(self.outerW));
+        self._renderCanvas.setAttribute('height', String(self.outerH));
+        self._shadowCanvas.setAttribute('width', String(self._width + self._padding * 2));
+        self._shadowCanvas.setAttribute('height', String(self._height + self._padding * 2));
 
         // clear the main canvas
         if (self._ctx) {
             self._ctx.clearRect(self._x, self._y, oldW, oldH);
         }
-    },
+    }
 
     /**
      * Creates the path for a rectangle with rounded corners.
@@ -1282,7 +1409,7 @@ CanvasInput.prototype = {
      * @param  {Number} h   Height of rectangle.
      * @param  {Number} r   Border radius.
      */
-    _roundedRect: function(ctx, x, y, w, h, r) {
+    _roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
         if (w < 2 * r) r = w / 2;
         if (h < 2 * r) r = h / 2;
 
@@ -1299,7 +1426,7 @@ CanvasInput.prototype = {
         ctx.quadraticCurveTo(x, y, x + r, y);
 
         ctx.closePath();
-    },
+    }
 
     /**
      * Checks if a coordinate point is over the input box.
@@ -1307,7 +1434,7 @@ CanvasInput.prototype = {
      * @param  {Number} y y-coordinate position.
      * @return {Boolean}   True if it is over the input box.
      */
-    _overInput: function(x, y) {
+    _overInput(x: number, y: number): boolean {
         var self = this,
             xLeft = x >= self._x + self._extraX,
             xRight = x <= self._x + self._extraX + self._width + self._padding * 2,
@@ -1315,7 +1442,7 @@ CanvasInput.prototype = {
             yBottom = y <= self._y + self._extraY + self._height + self._padding * 2;
 
         return xLeft && xRight && yTop && yBottom;
-    },
+    }
 
     /**
      * Use the mouse's x & y coordinates to determine
@@ -1324,7 +1451,7 @@ CanvasInput.prototype = {
      * @param  {Number} y Y-coordinate.
      * @return {Number}   Cursor position.
      */
-    _clickPos: function(x, y) {
+    _clickPos(x: number, y: number): number {
         var self = this,
             value = self._value;
 
@@ -1350,32 +1477,31 @@ CanvasInput.prototype = {
         }
 
         return pos;
-    },
+    }
 
     /**
      * Calculate the mouse position based on the event callback and the elements on the page.
      * @param  {Event} e
      * @return {Object}   x & y values
      */
-    _mousePos: function(e) {
-        var elm = e.target,
-            style = document.defaultView.getComputedStyle(elm, undefined),
+    _mousePos(e: MouseEvent): { x: number; y: number } {
+        var elm = e.target as HTMLElement,
+            style = document.defaultView!.getComputedStyle(elm, undefined),
             paddingLeft = parseInt(style['paddingLeft'], 10) || 0,
             paddingTop = parseInt(style['paddingLeft'], 10) || 0,
             borderLeft = parseInt(style['borderLeftWidth'], 10) || 0,
             borderTop = parseInt(style['borderLeftWidth'], 10) || 0,
-            htmlTop = document.body.parentNode.offsetTop || 0,
-            htmlLeft = document.body.parentNode.offsetLeft || 0,
+            htmlTop = (document.body.parentNode as HTMLElement).offsetTop || 0,
+            htmlLeft = (document.body.parentNode as HTMLElement).offsetLeft || 0,
             offsetX = 0,
-            offsetY = 0,
-            x, y;
+            offsetY = 0;
 
         // calculate the total offset
         if (typeof elm.offsetParent !== 'undefined') {
             do {
-                offsetX += elm.offsetLeft;
-                offsetY += elm.offsetTop;
-            } while ((elm = elm.offsetParent));
+                offsetX += (elm as HTMLElement).offsetLeft;
+                offsetY += (elm as HTMLElement).offsetTop;
+            } while ((elm = (elm as HTMLElement).offsetParent as HTMLElement));
         }
 
         // take into account borders and padding
@@ -1386,7 +1512,7 @@ CanvasInput.prototype = {
             x: e.pageX - offsetX,
             y: e.pageY - offsetY
         };
-    },
+    }
 
     /**
      * Translate a keycode into the correct keyboard character.
@@ -1394,9 +1520,8 @@ CanvasInput.prototype = {
      * @param  {Number}  keyCode The character code.
      * @return {String}          The translated character.
      */
-    _mapCodeToKey: function(isShift, keyCode) {
-        var self = this,
-            blockedKeys = [8, 9, 13, 16, 17, 18, 20, 27, 91, 92],
+    _mapCodeToKey(isShift: boolean, keyCode: number): string | undefined {
+        var blockedKeys = [8, 9, 13, 16, 17, 18, 20, 27, 91, 92],
             key = '';
 
         // block keys that we don't want to type
@@ -1411,7 +1536,7 @@ CanvasInput.prototype = {
             return;
         }
 
-        var charMap = {
+        var charMap: Record<number, string> = {
             32: ' ',
             48: ')',
             49: '!',
@@ -1501,6 +1626,9 @@ CanvasInput.prototype = {
 
         return key;
     }
-};
+}
+
+// Expose on window for backward compatibility
+(window as any).CanvasInput = CanvasInput;
 
 export default CanvasInput;

@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigplot.layer1d.js
+ * File: sigplot.layer1d.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -25,75 +25,210 @@
 
 import m from "./m.js";
 import mx from "./mx.js";
+import type {
+    BlueHeader,
+    GxContext,
+    MxContext,
+    Layer,
+    LayerOptions,
+    TraceHighlight,
+    TraceOptions,
+} from "./types.js";
 
+// TODO: replace with proper Plot type when sigplot.ts exports it
+type Plot = any;
+
+/** Maxhold configuration for decay-based peak hold */
+interface MaxHoldOptions {
+    decay?: number;
+    color?: number | string;
+    line?: number;
+    symbol?: number;
+    rad?: number;
+    traceoptions?: TraceOptions;
+}
+
+/** Return value from prep() */
+interface PrepResult {
+    num: number;
+    start: number;
+    end: number;
+    panxmin?: number;
+    panxmax?: number;
+    panymin?: number;
+    panymax?: number;
+}
+
+/** Return value from draw() and get_pan_bounds() */
+interface BoundsResult {
+    num: number;
+    xmin?: number;
+    xmax?: number;
+    ymin?: number;
+    ymax?: number;
+}
+
+/** View parameter for get_pan_bounds */
+interface PanView {
+    xmin: number;
+    xmax: number;
+}
+
+/** Highlight descriptor */
+interface HighlightEntry {
+    xstart: number;
+    xend: number;
+    color: string;
+    id?: string;
+    fill?: string;
+}
+
+/** Layer1D-specific options stored on this.options */
+interface Layer1DOptions {
+    highlight?: HighlightEntry[];
+    noclip?: boolean;
+    [key: string]: any;
+}
+
+/** Settings accepted by change_settings() */
+interface Layer1DSettings {
+    index?: boolean;
+    drawmode?: string;
+    maxhold?: MaxHoldOptions | null;
+    framesize?: number;
+    color?: number | string;
+    [key: string]: any;
+}
 
 /**
- * @constructor
- * @param plot
+ * Color positions for the various layers.
+ * These magic numbers were conjured up by a wizard somewhere.
  */
+const mixc: number[] = [0, 53, 27, 80, 13, 40, 67, 93, 7, 60, 33, 87, 20, 47, 73, 100];
 
-var Layer1D = function(plot) {
-    this.plot = plot;
+/**
+ * 1D trace layer — renders X/Y line plots, scrolling pipes, etc.
+ */
+class Layer1D implements Layer {
+    plot: Plot;
 
-    this.xbuf = undefined; // raw (ArrayBuffer) of ABSC data
-    this.ybuf = undefined; // raw (ArrayBuffer) of ORD data
+    // Raw data buffers
+    xbuf: ArrayBuffer | undefined;
+    ybuf: ArrayBuffer | undefined;
+    xbufn: number;
+    ybufn: number | undefined;
 
-    this.offset = 0.0;
-    this.xstart = 0.0;
-    this.xdelta = 0.0;
-    this.imin = 0;
-    this.xmin = 0.0;
-    this.xmax = 0.0;
-    this.name = "";
-    this.cx = false;
-    this.hcb = undefined; // index in Gx.HCB
-    // xbufn = xbuf.byteLength
-    // ybufn = ybuf.byteLength
-    this.size = 0;
-    this.mode = "XDELTA"; // xdelta mode, "XY" is other mode
+    // Geometry / axis
+    offset: number;
+    xstart: number;
+    xdelta: number;
+    imin: number;
+    xmin: number;
+    xmax: number;
+    name: string;
+    cx: boolean;
+    hcb: BlueHeader | undefined;
+    size: number;
+    mode: string; // "XDELTA" | "XY"
 
-    this.display = true;
-    this.color = 0;
-    this.line = 3; // 0=none, 1-vertical, 2-horizontal, 3-connecting
-    this.thick = 1; // negative for dashed
-    this.symbol = 0;
-    this.radius = 3;
+    // Display properties
+    display: boolean;
+    color: number;
+    line: number;
+    thick: number;
+    symbol: number;
+    radius: number;
 
-    this.skip = 0; // number of elements between ord values
-    this.xsub = 0;
-    this.ysub = 0;
-    this.xdata = false; // true if X data is data from file
-    this.modified = false;
-    this.opacity = 1.0;
-    this.fillStyle = null;
-    this.preferred_origin = 1;
+    skip: number;
+    xsub: number;
+    ysub: number;
+    xdata: boolean;
+    modified: boolean;
+    opacity: number;
+    fillStyle: string | null;
+    preferred_origin: number;
 
-    this.pointbufsize = 0;
-    this.xptr = null;
-    this.yptr = null;
-    this.mhptr = null;
-    this.xpoint = null; // PointArray backed by memory in xptr
-    this.ypoint = null; // PointArray backed by memory in yptr
-    this.mhpoint = null; // PointArray backed by memory in mhptr
-    this.firstpush = false;
-    this.options = {};
-};
+    // Point buffers for rendering
+    pointbufsize: number;
+    xptr: ArrayBuffer | null;
+    yptr: ArrayBuffer | null;
+    mhptr: ArrayBuffer | null;
+    xpoint: Float64Array | Float32Array | null;
+    ypoint: Float64Array | Float32Array | null;
+    mhpoint: Float64Array | Float32Array | null;
+    firstpush: boolean;
+    options: Layer1DOptions;
 
-Layer1D.prototype = {
+    // Pipe-mode state
+    drawmode?: string;
+    position?: number | null;
+    tle?: number;
+    maxhold?: MaxHoldOptions;
+
+    // Axis labels
+    xlab?: number;
+    ylab?: number;
+
+    // Internal buffer tracking for cache invalidation
+    ybufmin?: number;
+    ybufmax?: number;
+
+    // Pan y-range (computed by prep/draw)
+    ymin?: number | null;
+    ymax?: number | null;
+
+    constructor(plot: Plot) {
+        this.plot = plot;
+
+        this.xbuf = undefined;
+        this.ybuf = undefined;
+        this.xbufn = 0;
+        this.ybufn = 0;
+
+        this.offset = 0.0;
+        this.xstart = 0.0;
+        this.xdelta = 0.0;
+        this.imin = 0;
+        this.xmin = 0.0;
+        this.xmax = 0.0;
+        this.name = "";
+        this.cx = false;
+        this.hcb = undefined;
+        this.size = 0;
+        this.mode = "XDELTA";
+
+        this.display = true;
+        this.color = 0;
+        this.line = 3; // 0=none, 1-vertical, 2-horizontal, 3-connecting
+        this.thick = 1; // negative for dashed
+        this.symbol = 0;
+        this.radius = 3;
+
+        this.skip = 0;
+        this.xsub = 0;
+        this.ysub = 0;
+        this.xdata = false;
+        this.modified = false;
+        this.opacity = 1.0;
+        this.fillStyle = null;
+        this.preferred_origin = 1;
+
+        this.pointbufsize = 0;
+        this.xptr = null;
+        this.yptr = null;
+        this.mhptr = null;
+        this.xpoint = null;
+        this.ypoint = null;
+        this.mhpoint = null;
+        this.firstpush = false;
+        this.options = {};
+    }
 
     /**
      * Initializes the layer to display the provided data.
-     *
-     * @param hcb
-     *            {BlueHeader} an opened BlueHeader file
-     * @param lyrn
-     *          the index of the added layer
-     *
-     * @memberOf Layer1D
-     * @private
      */
-    init: function(hcb, options) {
-        var Gx = this.plot._Gx;
+    init(hcb: BlueHeader, options: LayerOptions): void {
+        const Gx: GxContext = this.plot._Gx;
 
         this.hcb = hcb;
         this.hcb.buf_type = "D";
@@ -127,8 +262,8 @@ Layer1D.prototype = {
 
         if (options.maxhold !== undefined) {
             this.maxhold = options.maxhold;
-            if (this.maxhold.decay === undefined) {
-                this.maxhold.decay = 0;
+            if (this.maxhold!.decay === undefined) {
+                this.maxhold!.decay = 0;
             }
         }
 
@@ -139,10 +274,10 @@ Layer1D.prototype = {
             throw "1D layer could not determine appropriate size for pipe, use framesize option";
         }
 
-        if (hcb["class"] <= 2) {
+        if (hcb["class"]! <= 2) {
             this.xsub = -1;
             this.ysub = 1;
-            this.cx = (hcb.format[0] === 'C');
+            this.cx = (hcb.format![0] === 'C');
         } else {
             // TODO
         }
@@ -152,17 +287,17 @@ Layer1D.prototype = {
             this.skip = 2;
         }
 
-        this.xstart = hcb.xstart;
-        this.xdelta = hcb.xdelta;
+        this.xstart = hcb.xstart!;
+        this.xdelta = hcb.xdelta!;
 
         if ((this.size > 0) && (this.mode === "XDELTA")) {
             // a single data-point is not infintesimally small, so xmin/xmax
             // are defined as the start of the data point, hence we subtract
             // one from the size.  This logic works if xdelta is postive or
             // negagive
-            var d = hcb.xstart + hcb.xdelta * (this.size - 1.0);
-            this.xmin = Math.min(hcb.xstart, d);
-            this.xmax = Math.max(hcb.xstart, d);
+            const d: number = hcb.xstart! + hcb.xdelta! * (this.size - 1.0);
+            this.xmin = Math.min(hcb.xstart!, d);
+            this.xmax = Math.max(hcb.xstart!, d);
         } else {
             this.xmin = 0;
             this.xmax = 0;
@@ -179,25 +314,26 @@ Layer1D.prototype = {
             this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
             this.ybuf = new ArrayBuffer(this.ybufn);
 
-            var self = this;
+            const self = this;
             m.addPipeWriteListener(this.hcb, function() {
                 self._onpipewrite();
             });
         }
-    },
+    }
 
-    _onpipewrite: function() {
-        var ybuf = new m.PointArray(this.ybuf);
+    /** Handle incoming pipe data writes */
+    _onpipewrite(): void {
+        const ybuf: Float64Array | Float32Array = new m.PointArray(this.ybuf);
 
-        var tle = this.tle; // in scalars
+        let tle: number = this.tle as number; // in scalars
         if (tle === undefined) {
             // if the transfer length wasn't set then we read
             // all the elements that are available
-            tle = Math.floor(m.pavail(this.hcb)) / this.hcb.spa;
+            tle = Math.floor(m.pavail(this.hcb)) / this.hcb!.spa;
         }
 
         // Calculate transfer length in scalars
-        var tl = tle * this.hcb.spa;
+        let tl: number = tle * this.hcb!.spa;
         while (m.pavail(this.hcb) >= tl) {
 
             if (this.drawmode === "lefttoright") {
@@ -212,65 +348,69 @@ Layer1D.prototype = {
                 throw "Invalid draw mode";
             }
 
-            // transfer length is adjusted to the remaining size 
+            // transfer length is adjusted to the remaining size
             // before wrapping
-            var ngot = m.grabx(
+            const ngot: number = m.grabx(
                 this.hcb, ybuf,
-                Math.min(tle, this.size - this.position) * this.hcb.spa,
-                this.position * this.hcb.spa
+                Math.min(tle, this.size - this.position!) * this.hcb!.spa,
+                this.position! * this.hcb!.spa
             );
             if (ngot === 0) {
                 break;
             }
 
             // update the position
-            this.position = (this.position + tle);
+            this.position = (this.position! + tle);
             // after we get one full buffer of data we can initialize maxhold and
             // no longer rescale on first push
-            if ((this.position >= this.size) && (this.firstpush === false)) {
+            if ((this.position! >= this.size) && (this.firstpush === false)) {
                 this.firstpush = true;
                 if (this.mhpoint) {
                     this.mhpoint.fill(-Infinity);
                 }
             }
-            this.position = this.position % this.size;
+            this.position = this.position! % this.size;
 
             if (this.tle === undefined) {
-                tle = Math.floor(m.pavail(this.hcb)) / this.hcb.spa;
+                tle = Math.floor(m.pavail(this.hcb)) / this.hcb!.spa;
             }
-            tl = tle * this.hcb.spa;
+            tl = tle * this.hcb!.spa;
         }
-    },
+    }
 
-    get_data: function(xmin, xmax) {
-        var Gx = this.plot._Gx;
-        var HCB = this.hcb;
+    /**
+     * Load data for the given x-range from HCB into internal buffers.
+     * Returns the number of points loaded.
+     */
+    get_data(xmin: number, xmax: number): number {
+        const Gx: GxContext = this.plot._Gx;
+        const HCB: BlueHeader = this.hcb!;
 
-        var skip = this.skip;
+        let skip: number = this.skip;
 
-        var size = this.size;
+        const size: number = this.size;
 
-        var imin = 0;
-        var imax = 0;
+        let imin: number = 0;
+        let imax: number = 0;
         if (Gx.index) {
             imin = Math.floor(xmin);
             imax = Math.floor(xmax + 0.5);
         } else if (this.mode === "XY") {
             imin = 0;
             imax = size - 1;
-        } else if (HCB.xdelta >= 0.0) {
-            imin = Math.floor((xmin - HCB.xstart) / HCB.xdelta) - 1;
-            imax = Math.floor((xmax - HCB.xstart) / HCB.xdelta + 0.5);
+        } else if (HCB.xdelta! >= 0.0) {
+            imin = Math.floor((xmin - HCB.xstart!) / HCB.xdelta!) - 1;
+            imax = Math.floor((xmax - HCB.xstart!) / HCB.xdelta! + 0.5);
         } else {
 
-            imin = Math.floor((xmax - HCB.xstart) / HCB.xdelta) - 1;
-            imax = Math.floor((xmin - HCB.xstart) / HCB.xdelta + 0.5);
+            imin = Math.floor((xmax - HCB.xstart!) / HCB.xdelta!) - 1;
+            imax = Math.floor((xmin - HCB.xstart!) / HCB.xdelta! + 0.5);
         }
         imin = Math.max(0.0, imin);
         imax = Math.min(size - 1, imax);
 
-        var npts = Math.max(0.0, Math.min(imax - imin + 1, Gx.bufmax));
-        if (HCB.xdelta < 0) {
+        const npts: number = Math.max(0.0, Math.min(imax - imin + 1, Gx.bufmax));
+        if (HCB.xdelta! < 0) {
             imin = imax - npts + 1;
         }
 
@@ -280,21 +420,19 @@ Layer1D.prototype = {
         } else if (this.modified) {
             // modified data not yet saved off (this code branch seems vestigal)
             return 0;
-        } else if (HCB["class"] <= 2) {
+        } else if (HCB["class"]! <= 2) {
             // load new data
-            var start = this.offset + imin;
-            var skip = this.skip;
+            const start: number = this.offset + imin;
+            skip = this.skip;
             this.ybufn = npts * Math.max(skip * m.PointArray.BYTES_PER_ELEMENT,
                 m.PointArray.BYTES_PER_ELEMENT);
             if ((this.ybuf === undefined) || (this.ybuf.byteLength < this.ybufn)) {
                 this.ybuf = new ArrayBuffer(this.ybufn);
             }
-            var ybuf = new m.PointArray(this.ybuf);
-            var ngot = m.grab(HCB, ybuf, start, npts);
+            const ybuf: Float64Array | Float32Array = new m.PointArray(this.ybuf);
+            const ngot: number = m.grab(HCB, ybuf, start, npts);
             this.ybufmin = imin;
             this.ybufmax = imin + ngot;
-            //this.imin = imin;
-            //this.xstart = HCB.xstart + (imin) * this.xdelta;
             return ngot;
         } else {
             // type 3000, 4000, 5000
@@ -302,9 +440,10 @@ Layer1D.prototype = {
             return 0;
         }
 
-    },
+    }
 
-    change_settings: function(settings) {
+    /** Update layer display properties */
+    change_settings(settings: Layer1DSettings): void {
         if (settings.index !== undefined) {
             if (settings.index) {
                 this.xstart = 1.0;
@@ -312,11 +451,11 @@ Layer1D.prototype = {
                 this.xmin = 1.0;
                 this.xmax = this.size;
             } else {
-                this.xstart = this.hcb.xstart + (this.imin) * this.xdelta;
-                this.xdelta = this.hcb.xdelta;
-                var d = this.hcb.xstart + this.hcb.xdelta * (this.size - 1.0);
-                this.xmin = Math.min(this.hcb.xstart, d);
-                this.xmax = Math.max(this.hcb.xstart, d);
+                this.xstart = this.hcb!.xstart! + (this.imin) * this.xdelta;
+                this.xdelta = this.hcb!.xdelta!;
+                const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.size - 1.0);
+                this.xmin = Math.min(this.hcb!.xstart!, d);
+                this.xmax = Math.max(this.hcb!.xstart!, d);
             }
         }
 
@@ -329,9 +468,9 @@ Layer1D.prototype = {
         }
 
         if (settings.maxhold !== undefined) {
-            this.maxhold = settings.maxhold;
-            if (this.maxhold.decay === undefined) {
-                this.maxhold.decay = 0;
+            this.maxhold = settings.maxhold!;
+            if (this.maxhold!.decay === undefined) {
+                this.maxhold!.decay = 0;
             }
             if (this.mhpoint) {
                 // clear the maxhold buffer by setting to negative Infinity
@@ -343,16 +482,16 @@ Layer1D.prototype = {
             }
         } else if (settings.maxhold === null) {
             this.maxhold = undefined;
-            this.mhpoint = undefined;
+            this.mhpoint = undefined as any;
         }
 
         if (settings.framesize !== undefined) {
             this.size = settings.framesize;
-            this.xstart = this.hcb.xstart + (this.imin) * this.xdelta;
-            this.xdelta = this.hcb.xdelta;
-            var d = this.hcb.xstart + this.hcb.xdelta * (this.size - 1.0);
-            this.xmin = Math.min(this.hcb.xstart, d);
-            this.xmax = Math.max(this.hcb.xstart, d);
+            this.xstart = this.hcb!.xstart! + (this.imin) * this.xdelta;
+            this.xdelta = this.hcb!.xdelta!;
+            const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.size - 1.0);
+            this.xmin = Math.min(this.hcb!.xstart!, d);
+            this.xmax = Math.max(this.hcb!.xstart!, d);
             this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
             this.ybuf = new ArrayBuffer(this.ybufn);
             if (this.maxhold) {
@@ -363,25 +502,26 @@ Layer1D.prototype = {
         }
 
         if (settings.color !== undefined) {
-            this.color = settings.color;
+            this.color = settings.color as number;
         }
 
-    },
+    }
 
-    reload: function(data, hdrmod) {
-        if (this.hcb.pipe) {
+    /** Replace all layer data (non-pipe mode) */
+    reload(data: any, hdrmod?: Record<string, any>): { xmin: number | undefined; xmax: number | undefined } {
+        if (this.hcb!.pipe) {
             throw "reload cannot be used with pipe, use push instead";
         }
-        var axis_change = (this.hcb.dview.length !== data.length) || hdrmod;
+        let axis_change: boolean = ((this.hcb!.dview as any).length !== data.length) || !!hdrmod;
         if (hdrmod) {
-            for (var k in hdrmod) {
-                this.hcb[k] = hdrmod[k];
+            for (const k in hdrmod) {
+                this.hcb![k] = hdrmod[k];
                 if (k === "xstart" || k === "xdelta") {
                     axis_change = true;
                 }
             }
         }
-        this.hcb.setData(data);
+        this.hcb!.setData!(data);
 
         // Setting ybufn to undefined causes refresh() to refetch via get_data
         this.ybufn = undefined;
@@ -389,22 +529,22 @@ Layer1D.prototype = {
         this.ybufmax = undefined;
         this.imin = -1;
 
-        if (this.hcb["class"] === 2) {
+        if (this.hcb!["class"] === 2) {
             m.force1000(this.hcb);
-            this.size = this.hcb.subsize;
+            this.size = this.hcb!.subsize!;
         } else {
-            this.size = this.hcb.size;
+            this.size = this.hcb!.size!;
         }
 
-        var xmin = this.xmin;
-        var xmax = this.xmax;
+        let xmin: number | undefined = this.xmin;
+        let xmax: number | undefined = this.xmax;
 
         if (axis_change) {
-            var d = this.hcb.xstart + this.hcb.xdelta * (this.hcb.size - 1.0);
-            this.xmin = Math.min(this.hcb.xstart, d);
-            this.xmax = Math.max(this.hcb.xstart, d);
-            this.xdelta = this.hcb.xdelta;
-            this.xstart = this.hcb.xstart;
+            const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.hcb!.size! - 1.0);
+            this.xmin = Math.min(this.hcb!.xstart!, d);
+            this.xmax = Math.max(this.hcb!.xstart!, d);
+            this.xdelta = this.hcb!.xdelta!;
+            this.xstart = this.hcb!.xstart!;
             xmin = undefined;
             xmax = undefined;
         }
@@ -413,21 +553,22 @@ Layer1D.prototype = {
             xmin: xmin,
             xmax: xmax
         };
-    },
+    }
 
-    push: function(data, hdrmod, sync) {
+    /** Append data to pipe-mode layer */
+    push(data: any, hdrmod?: Record<string, any>, sync?: boolean): boolean {
         if (hdrmod) {
-            for (var k in hdrmod) {
-                this.hcb[k] = hdrmod[k];
+            for (const k in hdrmod) {
+                this.hcb![k] = hdrmod[k];
                 if (k === "type") {
-                    this.hcb["class"] = hdrmod[k] / 1000;
+                    this.hcb!["class"] = hdrmod[k] / 1000;
                 }
             }
 
             if (hdrmod.subsize && (hdrmod.subsize !== this.size)) {
-                if (this.hcb["class"] === 2) {
+                if (this.hcb!["class"] === 2) {
                     m.force1000(this.hcb);
-                    this.size = this.hcb.subsize;
+                    this.size = this.hcb!.subsize!;
                     // Reset the buffer
                     this.position = null;
                     this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
@@ -438,12 +579,12 @@ Layer1D.prototype = {
                 this.firstpush = false;
             }
 
-            this.xdelta = this.hcb.xdelta;
-            this.xstart = this.hcb.xstart + (this.imin) * this.xdelta;
+            this.xdelta = this.hcb!.xdelta!;
+            this.xstart = this.hcb!.xstart! + (this.imin) * this.xdelta;
 
-            var d = this.hcb.xstart + this.hcb.xdelta * (this.size - 1.0);
-            this.xmin = Math.min(this.hcb.xstart, d);
-            this.xmax = Math.max(this.hcb.xstart, d);
+            const d: number = this.hcb!.xstart! + this.hcb!.xdelta! * (this.size - 1.0);
+            this.xmin = Math.min(this.hcb!.xstart!, d);
+            this.xmax = Math.max(this.hcb!.xstart!, d);
         }
 
         if (data.length > 0) {
@@ -452,22 +593,26 @@ Layer1D.prototype = {
 
         // if this is the first push of data, request a rescale
         if (this.firstpush === false) {
-            hdrmod = true;
+            hdrmod = true as any;
         }
         return hdrmod ? true : false;
 
-    },
+    }
 
-    prep: function(xmin, xmax) {
-        var Gx = this.plot._Gx;
-        var Mx = this.plot._Mx;
+    /**
+     * Transform raw data to display coordinates (xpoint/ypoint).
+     * Core of the data pipeline: get_data → prep → draw.
+     */
+    prep(xmin: number, xmax: number): PrepResult {
+        const Gx: GxContext = this.plot._Gx;
+        const Mx: MxContext = this.plot._Mx;
 
-        var npts = this.get_data(xmin, xmax);;
+        let npts: number = this.get_data(xmin, xmax);
         if (this.mode === "XY") {
             npts = Math.floor(npts / 2);
         }
 
-        var skip = this.skip;
+        const skip: number = this.skip;
 
         if (npts === 0) {
             return {
@@ -493,11 +638,12 @@ Layer1D.prototype = {
             }
         }
 
-        var dbuf = new m.PointArray(this.ybuf);
-        var qmin = this.xmin;
-        var qmax = this.xmax;
-        var n1, n2;
-        var mxmn;
+        let dbuf: Float64Array | Float32Array = new m.PointArray(this.ybuf);
+        let qmin: number = this.xmin;
+        let qmax: number = this.xmax;
+        let n1: number = 0;
+        let n2: number = 0;
+        let mxmn: { smax: number; smin: number; imax: number; imin: number } | undefined;
         // xsub isn't really used yet, so it can largely be ignored
         if ((Gx.cmode === 5) || (this.xsub > 0) || (this.mode === "XY")) {
             if (npts <= 0) {
@@ -518,8 +664,8 @@ Layer1D.prototype = {
                 // not clear if this is correct or not, but since
                 // it's a degenerate case it is tolerated
                 mxmn = m.vmxmn(dbuf, npts);
-                this.xpoint[0] = mxmn.smax;
-                this.xpoint[1] = mxmn.smin;
+                this.xpoint![0] = mxmn.smax;
+                this.xpoint![1] = mxmn.smin;
                 n1 = 0;
                 n2 = 2;
                 npts = 2;
@@ -534,14 +680,10 @@ Layer1D.prototype = {
                 n1 = 0;
                 n2 = npts;
             }
-            //if ((this.cx) || (this.mode === "XY")) {
-            //    this.xmin = qmin;
-            //    this.xmax = qmax;
-            //}
         } else if (npts > 0) {
-            var xstart = this.xstart;
-            var xdelta = this.xdelta;
-            var d = npts;
+            let xstart: number = this.xstart;
+            const xdelta: number = this.xdelta;
+            const d: number = npts;
 
             // n1 and n2 are the minimal and maximal index bounds based on the
             // passed in xmin/xmax, but get_data may have returned less data
@@ -563,11 +705,11 @@ Layer1D.prototype = {
             }
             dbuf = new m.PointArray(this.ybuf);
             xstart = xstart + xdelta * (n1);
-            for (var i = 0; i < npts; i++) {
+            for (let i = 0; i < npts; i++) {
                 if (Gx.index) {
-                    this.xpoint[i] = this.imin + i + 1;
+                    this.xpoint![i] = this.imin + i + 1;
                 } else {
-                    this.xpoint[i] = xmin + i * xdelta;
+                    this.xpoint![i] = xmin + i * xdelta;
                 }
             }
         }
@@ -605,19 +747,19 @@ Layer1D.prototype = {
             if (Gx.cmode === 5) { // I vs. R
                 m.vfill(this.ypoint, 0, npts);
             } else if ((Gx.cmode === 1) || (Gx.cmode >= 6)) { // Mag, log
-                for (var i = 0; i < npts; i++) {
-                    this.ypoint[i] = Math.abs(dbuf[i]);
+                for (let i = 0; i < npts; i++) {
+                    this.ypoint![i] = Math.abs(dbuf[i]);
                 }
             } else {
-                for (var i = 0; i < npts; i++) {
-                    this.ypoint[i] = dbuf[i];
+                for (let i = 0; i < npts; i++) {
+                    this.ypoint![i] = dbuf[i];
                 }
             }
         }
 
         if (Gx.cmode >= 6) {
             m.vlog10(this.ypoint, Gx.dbmin, this.ypoint);
-            var dbscale = 10.0;
+            let dbscale: number = 10.0;
             if (Gx.cmode === 7) {
                 dbscale = 20.0;
             }
@@ -635,7 +777,7 @@ Layer1D.prototype = {
         qmax = mxmn.smax;
         qmin = mxmn.smin;
 
-        var yran = qmax - qmin;
+        let yran: number = qmax - qmin;
         if (yran < 0.0) {
             qmax = qmin;
             qmin = qmax + yran;
@@ -645,7 +787,7 @@ Layer1D.prototype = {
             qmin = qmin - 1.0;
             qmax = qmax + 1.0;
         } else {
-            // TODO move exansion of qmin/qmax nito
+            // TODO move expansion of qmin/qmax into separate function
             qmin = qmin - 0.02 * yran;
             qmax = qmax + 0.02 * yran;
         }
@@ -659,23 +801,19 @@ Layer1D.prototype = {
             panymin: qmin,
             panymax: qmax
         };
-    },
+    }
 
     /**
      * Get the pan-boundaries for the layer.
-     * 
-     * @param {*} view 
-     *   - a specific view to calculate the bounds against
      */
-    get_pan_bounds: function(view) {
-        var Mx = this.plot._Mx;
-        var Gx = this.plot._Gx;
+    get_pan_bounds(view?: PanView): BoundsResult {
+        const Mx: MxContext = this.plot._Mx;
+        const Gx: GxContext = this.plot._Gx;
 
-        var xmin;
-        // Minic legacy XPLOT behavior; by default the 
-        // pan boundaries are based off the first bufmax of
-        // points.
-        var xmax;
+        let xmin: number;
+        let xmax: number;
+        // Mimic legacy XPLOT behavior; by default the
+        // pan boundaries are based off the first bufmax of points.
         if (this.xdelta >= 0) {
             xmin = this.xmin;
             xmax = Math.min(
@@ -699,15 +837,15 @@ Layer1D.prototype = {
             xmax = this.xmax;
         }
 
-        let panymin;
-        let panymax;
-        let num = 0;
+        let panymin: number | undefined;
+        let panymax: number | undefined;
+        let num: number = 0;
 
         while (xmin < xmax) {
-            let prep = this.prep(xmin, xmax);
+            const prep: PrepResult = this.prep(xmin, xmax);
 
-            panymin = (panymin === undefined) ? prep.panymin : Math.min(panymin, prep.panymin);
-            panymax = (panymax === undefined) ? prep.panymax : Math.max(panymax, prep.panymax);
+            panymin = (panymin === undefined) ? prep.panymin : Math.min(panymin, prep.panymin!);
+            panymax = (panymax === undefined) ? prep.panymax : Math.max(panymax, prep.panymax!);
             num += prep.num;
 
             if (Gx.all) {
@@ -745,18 +883,19 @@ Layer1D.prototype = {
             ymin: this.ymin,
             ymax: this.ymax
         };
-    },
+    }
 
-    draw: function() {
-        var Mx = this.plot._Mx;
-        var Gx = this.plot._Gx;
+    /** Render the 1D trace via mx.trace() */
+    draw(): BoundsResult {
+        const Mx: MxContext = this.plot._Mx;
+        const Gx: GxContext = this.plot._Gx;
 
-        var ic = this.color;
-        var symbol = this.symbol;
-        var rad = this.radius;
-        var mask = 0;
-        var line = 0;
-        var traceoptions = {};
+        const ic: number | string = this.color;
+        const symbol: number = this.symbol;
+        const rad: number = this.radius;
+        const mask: number = 0;
+        let line: number = 0;
+        const traceoptions: TraceOptions = {};
 
         if (this.fillStyle) {
             traceoptions.fillStyle = this.fillStyle;
@@ -790,11 +929,11 @@ Layer1D.prototype = {
             }
         }
 
-        var segment = (Gx.segment) && (Gx.cmode !== 5) && (this.xsub > 0) && (mask === 0);
-        var xdelta = this.xdelta;
+        const segment: boolean = (Gx.segment) && (Gx.cmode !== 5) && (this.xsub > 0) && (mask === 0);
+        const xdelta: number = this.xdelta;
 
-        var xmin;
-        var xmax;
+        let xmin: number;
+        let xmax: number;
         if (this.xdata) {
             xmin = this.xmin;
             xmax = this.xmax;
@@ -814,22 +953,18 @@ Layer1D.prototype = {
             };
         }
 
-        let panymin;
-        let panymax;
-        let num = 0;
+        let panymin: number | undefined;
+        let panymax: number | undefined;
+        let num: number = 0;
 
         while (xmin < xmax) {
-            //if (Gx.all) {
-            // TODO allow interrupt of all by mouse clicks
-            //}
-
             // sigplot_prep fills in this.xptr and this.yptr (both m.PointArray)
             // with the data to be plotted
 
-            var pts = this.prep(xmin, xmax);
+            const pts: PrepResult = this.prep(xmin, xmax);
 
-            panymin = (panymin === undefined) ? pts.panymin : Math.min(panymin, pts.panymin);
-            panymax = (panymax === undefined) ? pts.panymax : Math.max(panymax, pts.panymax);
+            panymin = (panymin === undefined) ? pts.panymin : Math.min(panymin, pts.panymin!);
+            panymax = (panymax === undefined) ? pts.panymax : Math.max(panymax, pts.panymax!);
             num += pts.num;
 
             if (pts.num > 0) {
@@ -852,7 +987,7 @@ Layer1D.prototype = {
                         mx.trace(Mx,
                             this.maxhold.color,
                             new m.PointArray(this.xptr),
-                            this.mhpoint.slice(pts.start, pts.end),
+                            this.mhpoint!.slice(pts.start, pts.end),
                             pts.num,
                             pts.start,
                             1,
@@ -880,7 +1015,7 @@ Layer1D.prototype = {
         }
 
         if ((this.position) && (this.drawmode === "scrolling")) {
-            var pnt = mx.real_to_pixel(Mx, this.position * this.xdelta, 0);
+            const pnt = mx.real_to_pixel(Mx, this.position * this.xdelta, 0);
             if ((pnt.x > Mx.l) && (pnt.x < Mx.r)) {
                 mx.draw_line(Mx, "white", pnt.x, Mx.t, pnt.x, Mx.b);
             }
@@ -893,48 +1028,32 @@ Layer1D.prototype = {
             num: num,
             xmin: this.xmin,
             xmax: this.xmax,
-            ymin: this.ymin,
-            ymax: this.ymax
+            ymin: this.ymin as number | undefined,
+            ymax: this.ymax as number | undefined
         };
-    },
+    }
 
     /**
-     * Add a highlight to a specific layer.
-     *
-     * @param {Number}
-     *            n the layer to add the highlight to
-     * @param highlight
-     *            the highlight to add
-     * @param {Number}
-     *            highlight.xstart x value to start the highlight
-     *            at
-     * @param {Number}
-     *            highlight.xend the maximum x value to end the highlight
-     *            at
-     * @param {String}
-     *            hightlight.color the color to use for the highlight
-     *
-     * @param {String}
-     *            hightlight.id the id for the highlight
+     * Add a highlight to the layer.
      */
-    add_highlight: function(highlight) {
+    add_highlight(highlight: HighlightEntry | HighlightEntry[]): void {
         if (!this.options.highlight) {
             this.options.highlight = [];
         }
-        // Check for nans
 
-        var xmin = highlight.xstart;
-        var xmax = highlight.xend;
-        var min_nan = isNaN(xmin);
-        var max_nan = isNaN(xmax);
+        if (!Array.isArray(highlight)) {
+            // Check for nans on single highlight
+            const xmin: number = highlight.xstart;
+            const xmax: number = highlight.xend;
+            const min_nan: boolean = isNaN(xmin);
+            const max_nan: boolean = isNaN(xmax);
 
-        if ((min_nan === true) || (xmin === null) || (xmin === undefined)) {
-
-            this.options.highlight = [];
-        }
-        if ((max_nan === true) || (xmax === null) || (xmax === undefined)) {
-
-            this.options.highlight = [];
+            if ((min_nan === true) || (xmin === null) || (xmin === undefined)) {
+                this.options.highlight = [];
+            }
+            if ((max_nan === true) || (xmax === null) || (xmax === undefined)) {
+                this.options.highlight = [];
+            }
         }
 
         if (highlight instanceof Array) {
@@ -944,18 +1063,14 @@ Layer1D.prototype = {
             this.options.highlight.push(highlight);
         }
         this.plot.refresh();
-    },
+    }
 
     /**
      * Remove a highlight from the layer.
-     *
-     * @param {String} {Object}
-     *             the id of the highlight to remove
-     *             or the highlight object itself
      */
-    remove_highlight: function(highlight) {
+    remove_highlight(highlight: HighlightEntry | string): void {
         if (this.options.highlight) {
-            var i = this.options.highlight.length;
+            let i: number = this.options.highlight.length;
             while (i--) {
                 if ((highlight === this.options.highlight[i]) || (highlight === this.options.highlight[i].id)) {
                     this.options.highlight.splice(i, 1);
@@ -963,119 +1078,104 @@ Layer1D.prototype = {
             }
             this.plot.refresh();
         }
-    },
+    }
 
-    get_highlights: function() {
+    get_highlights(): HighlightEntry[] {
         if (this.options.highlight) {
             return this.options.highlight.slice(0);
         } else {
             return [];
         }
-    },
+    }
 
-    /**
-     * Clear all highlights from the layer.
-     */
-    clear_highlights: function() {
+    /** Clear all highlights from the layer. */
+    clear_highlights(): void {
         if (this.options.highlight) {
             this.options.highlight = undefined;
             this.plot.refresh();
         }
     }
-};
 
-/**
- * Color positions for the various layers
- *
- * These magic numbers were conjured up by a wizard somewhere.
- *
- * @memberOf sigplot
- * @private
- */
-var mixc = [0, 53, 27, 80, 13, 40, 67, 93, 7, 60, 33, 87, 20, 47, 73, 100];
+    /**
+     * Factory to overlay the given file onto the given plot.
+     */
+    static overlay(plot: Plot, hcb: BlueHeader, layerOptions: LayerOptions): Layer1D[] {
+        const Gx: GxContext = plot._Gx;
+        const Mx: MxContext = plot._Mx;
 
-/**
- * Factory to overlay the given file onto the given plot.
- *
- * @private
- */
-Layer1D.overlay = function(plot, hcb, layerOptions) {
-    var Gx = plot._Gx;
-    var Mx = plot._Mx;
-
-    if (hcb["class"] === 2) {
-        m.force1000(hcb);
-    }
-    hcb.buf_type = "D";
-
-    // If the input is type 2000, each row becomes
-    // it's own layer
-    var n1 = 0;
-    var n2 = 1;
-    if ((hcb["class"] === 2) && (hcb.size > 0)) {
-        var num_rows = hcb.size / hcb.subsize;
-        n2 = Math.min(num_rows, 16 - Gx.lyr.length);
-    }
-
-    // Extract the layer_name before enter the loop
-    var layer_name_override = layerOptions["name"];
-    delete layerOptions["name"];
-
-    var layers = [];
-    for (var i = n1; i < n2; i++) {
-        // This is logic from within sigplot.for LOAD_FILES
-        var layer = new Layer1D(plot);
-        layer.init(hcb, layerOptions);
-
-        // Provide a default color for the layer
-        var n = (Gx.lyr.length) % mixc.length;
-        layer.color = mx.getcolor(Mx, m.Mc.colormap[3].colors, mixc[n]);
-
-        // Provide the layer name
         if (hcb["class"] === 2) {
-            if (layer_name_override !== undefined) {
-                // If you get an array of names, pull the name
-                // from this list...if we run out of names before
-                // we run out of layers fall back
-                if (Array.isArray(layer_name_override)) {
-                    layer.name = layer_name_override[i];
-                } else {
-                    layer.name = layer_name_override;
+            m.force1000(hcb);
+        }
+        hcb.buf_type = "D";
+
+        // If the input is type 2000, each row becomes its own layer
+        const n1: number = 0;
+        let n2: number = 1;
+        if ((hcb["class"] === 2) && (hcb.size! > 0)) {
+            const num_rows: number = hcb.size! / hcb.subsize!;
+            n2 = Math.min(num_rows, 16 - Gx.lyr.length);
+        }
+
+        // Extract the layer_name before entering the loop
+        const layer_name_override: string | string[] | undefined = layerOptions["name"];
+        delete layerOptions["name"];
+
+        const layers: Layer1D[] = [];
+        for (let i = n1; i < n2; i++) {
+            // This is logic from within sigplot.for LOAD_FILES
+            const layer = new Layer1D(plot);
+            layer.init(hcb, layerOptions);
+
+            // Provide a default color for the layer
+            const n: number = (Gx.lyr.length) % mixc.length;
+            layer.color = mx.getcolor(Mx, m.Mc.colormap[3].colors, mixc[n]);
+
+            // Provide the layer name
+            if (hcb["class"] === 2) {
+                if (layer_name_override !== undefined) {
+                    // If you get an array of names, pull the name
+                    // from this list...if we run out of names before
+                    // we run out of layers fall back
+                    if (Array.isArray(layer_name_override)) {
+                        layer.name = layer_name_override[i];
+                    } else {
+                        layer.name = layer_name_override;
+                        layer.name = layer.name + "." + mx.pad((i + 1).toString(), 3, "0");
+                    }
+                }
+                // If a name hasn't been assigned yet
+                if (!layer.name) {
+                    if (hcb.file_name) {
+                        layer.name = m.trim_name(hcb.file_name);
+                    } else {
+                        layer.name = "layer_" + Gx.lyr.length;
+                    }
                     layer.name = layer.name + "." + mx.pad((i + 1).toString(), 3, "0");
                 }
-            }
-            // If a name hasn't been assigned yet
-            if (!layer.name) {
-                if (hcb.file_name) {
+                layer.offset = i * hcb.subsize!;
+            } else {
+                if (layer_name_override !== undefined) {
+                    layer.name = layer_name_override as string;
+                } else if (hcb.file_name) {
                     layer.name = m.trim_name(hcb.file_name);
                 } else {
                     layer.name = "layer_" + Gx.lyr.length;
                 }
-                layer.name = layer.name + "." + mx.pad((i + 1).toString(), 3, "0");
+                layer.offset = 0;
             }
-            layer.offset = i * hcb.subsize;
-        } else {
-            if (layer_name_override !== undefined) {
-                layer.name = layer_name_override;
-            } else if (hcb.file_name) {
-                layer.name = m.trim_name(hcb.file_name);
-            } else {
-                layer.name = "layer_" + Gx.lyr.length;
+
+            for (const layerOption in layerOptions) {
+                if ((layer as any)[layerOption] !== undefined) {
+                    (layer as any)[layerOption] = layerOptions[layerOption];
+                }
             }
-            layer.offset = 0;
+            if (plot.add_layer(layer)) {
+                layers.push(layer);
+            }
         }
 
-        for (var layerOption in layerOptions) {
-            if (layer[layerOption] !== undefined) {
-                layer[layerOption] = layerOptions[layerOption];
-            }
-        }
-        if (plot.add_layer(layer)) {
-            layers.push(layer);
-        }
+        return layers;
     }
-
-    return layers;
-};
+}
 
 export default Layer1D;

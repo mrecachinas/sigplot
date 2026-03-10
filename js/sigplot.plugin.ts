@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigplot.plugin.js
+ * File: sigplot.plugin.ts
  * Copyright (c) 2012-2019, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -23,60 +23,82 @@
  * under the License.
  */
 
-/*jslint nomen: true, browser: true, devel: true */
-
 import mx from "./mx.js";
-import common from "./common.js";
+import type { MxContext, GxContext, MenuItem } from "./types.js";
 
+/** Schema for a plugin property defined via defineProperty. */
+interface PropertyDefinition {
+    defaultValue?: any;
+    refreshOnChange?: boolean;
+    readonly?: boolean;
+    callback?: (value: any) => void;
+    help?: string;
+}
+
+/** Internal event listener entry. */
+interface EventListenerEntry {
+    cb: (...args: any[]) => void;
+    ctx?: any;
+}
 
 class Plugin {
+    initial_properties: Record<string, any> | undefined;
+    properties: Record<string, any>;
+    definedproperties: Record<string, PropertyDefinition>;
+    _plot: any;
+    _canvas: HTMLCanvasElement | undefined;
+    _events: Record<string, EventListenerEntry[]> | undefined;
+
+    // Dynamic property accessor methods added by defineProperty
+    [key: string]: any;
+
+    /**
+     * Plugins implement pluginSetup to define properties (via this.defineProperty)
+     * and any local variables.
+     */
+    pluginSetup(): void {}
+
     /**
      * Plugins implement pluginConstructor to define properties (via this.defineProperty)
      * and any local variables.
      */
-    pluginConstructor() {}
+    pluginConstructor(): void {}
 
     /**
-     * pluginInit is called afer the plugin has been added to
-     * a plot.
-     * 
-     * @param {object} plot
-     *     The plot the plugin was added to.
+     * pluginInit is called after the plugin has been added to a plot.
      */
-    pluginInit() {}
+    pluginInit(): void {}
 
     /**
-     * pluginDispose is called after then plugin has been removed
-     * from a plot.
+     * pluginDispose is called after the plugin has been removed from a plot.
      */
-    pluginDispose() {}
+    pluginDispose(): void {}
 
     /**
-     * pluginRefresh is called whenever the plugin need to redraw.
-     * 
-     * Plugins should render their current state to this.canvas.  The canvas
-     * is entirely under the control of the plugin can can be cleared or
-     * completely filled
+     * pluginRefresh is called whenever the plugin needs to redraw.
+     *
+     * Plugins should render their current state to this.canvas.
      */
-    pluginRefresh() {}
+    pluginRefresh(_canvas?: HTMLCanvasElement): void {}
 
     /**
-     * pluginGetMenu is called to obtain the menu structure for the
-     * plugin.
-     * 
+     * pluginGetMenu is called to obtain the menu structure for the plugin.
+     *
      * If a plugin does not have a menu, it does not need to implement this.
      */
-    pluginGetMenu() {}
+    pluginGetMenu(): MenuItem[] | undefined {
+        return undefined;
+    }
 
     /**
      * Construct the plugin.
-     * 
-     * @param {object} properties
-     *     The properties for this plugin.
+     *
+     * @param properties - The properties for this plugin.
      */
-    constructor(properties) {
+    constructor(properties?: Record<string, any>) {
         this.initial_properties = properties;
         this.properties = {};
+        this.definedproperties = {};
 
         this._plot = undefined;
         this._canvas = undefined;
@@ -95,12 +117,11 @@ class Plugin {
 
     /**
      * Called when the plugin is added to the plot.
-     *  @param plot
-     *      The plot the plugin is attahced to 
-     *  @param canvas
-     *      The canvas the plugin should render to
+     *
+     * @param plot - The plot the plugin is attached to
+     * @param canvas - The canvas the plugin should render to
      */
-    init(plot, canvas) {
+    init(plot: any, canvas: HTMLCanvasElement): void {
         if (this._plot) {
             throw "Plugins can only be added to one plot at a time";
         }
@@ -108,43 +129,37 @@ class Plugin {
         this._canvas = canvas;
         this.properties = {};
 
-        // When a plugin is added to a plot, it's properties are reset
-        // to the initial values provided during construction.  This
-        // avoids confusion when a plugin is constructed, added to a plot
-        // has it's state modified, then removed from a plot, and added
-        // back to a plot
+        // When a plugin is added to a plot, its properties are reset
+        // to the initial values provided during construction.
         this.resetProperties(this.initial_properties);
 
         this.pluginInit();
     }
 
-    /**
-     * Get's the plot
-     */
-    get plot() {
+    get plot(): any {
         return this._plot;
     }
 
-    get Mx() {
-        return (this._plot) ? this._plot._Mx : null;
+    get Mx(): MxContext | null {
+        return this._plot ? this._plot._Mx : null;
     }
 
-    get Gx() {
-        return (this._plot) ? this._plot._Gx : null;
+    get Gx(): GxContext | null {
+        return this._plot ? this._plot._Gx : null;
     }
 
-    get canvas() {
+    get canvas(): HTMLCanvasElement | undefined {
         return this._canvas;
     }
 
-    get Context() {
-        return (this._canvas) ? this._canvas.getContext("2d") : null;
+    get Context(): CanvasRenderingContext2D | null {
+        return this._canvas ? this._canvas.getContext("2d") : null;
     }
 
     /**
      * Called when the plugin is removed from the plot.
      */
-    dispose() {
+    dispose(): void {
         this.pluginDispose();
 
         this._plot = undefined;
@@ -155,7 +170,7 @@ class Plugin {
     /**
      * Refresh is called when the plugin needs to redraw itself.
      */
-    refresh() {
+    refresh(): void {
         if (!this._plot || !this._canvas) {
             return;
         }
@@ -166,46 +181,45 @@ class Plugin {
     }
 
     /**
-     * Provides the menu for the plugin
+     * Provides the menu for the plugin.
      *
-     * @returns
-     *    A mx.menu compatible object or a function that creates one
+     * @returns A mx.menu compatible object or a function that creates one
      */
-    menu() {
+    menu(): MenuItem[] | undefined {
         return this.pluginGetMenu();
     }
 
     /**
      * Defines a new Property that the Plugin exposes.
-     * 
-     * @param {string} PropertyName 
-     * @param {object} definition 
+     *
+     * @param PropertyName - Name of the property
+     * @param definition - Property definition schema
      */
-    defineProperty(PropertyName, definition) {
+    defineProperty(PropertyName: string, definition?: PropertyDefinition): void {
         if (this.definedproperties === undefined) {
             this.definedproperties = {};
         }
 
-        definition = definition || {};
+        const def: PropertyDefinition = definition || {};
 
-        this.definedproperties[PropertyName] = definition;
+        this.definedproperties[PropertyName] = def;
 
         // Fluentize the API
-        this[PropertyName] = function() {
+        this[PropertyName] = function(this: Plugin) {
             if (!arguments.length) {
                 return this.properties[PropertyName];
             }
 
-            if (definition.readonly) {
+            if (def.readonly) {
                 throw "property " + PropertyName + " is readonly";
             }
 
             if (this.properties[PropertyName] !== arguments[0]) {
                 this.properties[PropertyName] = arguments[0];
-                if (definition.callback) {
-                    definition.callback(arguments[0]);
+                if (def.callback) {
+                    def.callback(arguments[0]);
                 }
-                if (definition.refreshOnChange) {
+                if (def.refreshOnChange) {
                     this.refresh();
                 }
                 return this;
@@ -213,8 +227,8 @@ class Plugin {
         };
     }
 
-    resetProperties(overrides) {
-        for (let propName in this.definedproperties) {
+    resetProperties(overrides?: Record<string, any>): void {
+        for (const propName in this.definedproperties) {
             this.properties[propName] = this.definedproperties[propName].defaultValue;
         }
         this.assignProperties(overrides);
@@ -222,12 +236,12 @@ class Plugin {
 
     /**
      * Updates the Plugin's properties with new values.
-     * 
-     * @param {object} properties 
+     *
+     * @param properties - New property values to assign
      */
-    assignProperties(properties) {
+    assignProperties(properties?: Record<string, any>): void {
         let refresh = false;
-        for (let propName in properties) {
+        for (const propName in properties) {
             // don't let the user define new properties
             if (!this.definedproperties.hasOwnProperty(propName)) {
                 continue;
@@ -246,7 +260,7 @@ class Plugin {
             this.properties[propName] = properties[propName];
             // make the callback if necessary
             if (this.definedproperties[propName].callback) {
-                this.definedproperties[propName].callback(properties[propName]);
+                this.definedproperties[propName].callback!(properties[propName]);
             }
             // if a refresh is necessary, call it later
             if (this.definedproperties[propName].refreshOnChange === true) {
@@ -260,16 +274,13 @@ class Plugin {
     }
 
     /**
-     * Register to receive a plugin specific event
+     * Register to receive a plugin specific event.
      *
-     * @param type
-     *    The type of event
-     * @param fn
-     *    The function callback
-     *  @param context
-     *     Context that will be provided to the callback
+     * @param type - The type of event
+     * @param fn - The function callback
+     * @param context - Context that will be provided to the callback
      */
-    on(type, fn, context) {
+    on(type: string, fn: (...args: any[]) => void, context?: any): void {
         if (!this._events) {
             this._events = {};
         }
@@ -289,16 +300,16 @@ class Plugin {
     /**
      * Emit a plugin event.
      */
-    emit(type, data) {
-        var event = Object.assign({}, data, {
+    emit(type: string, data?: Record<string, any>): this {
+        const event = Object.assign({}, data, {
             type: type,
             target: this
         });
         if (this._events) {
-            var listeners = this._events[type];
+            const listeners = this._events[type];
             if (listeners) {
-                for (var i = 0, len = listeners.length; i < len; i++) {
-                    var l = listeners[i];
+                for (let i = 0, len = listeners.length; i < len; i++) {
+                    const l = listeners[i];
                     l.cb.call(l.ctx || this, event);
                 }
             }
@@ -307,53 +318,46 @@ class Plugin {
     }
 
     /**
-     * Unregister callback for a plugin specific event
+     * Unregister callback for a plugin specific event.
      *
-     * @param type
-     *    The type of event
-     * @param fn
-     *    The function callback
-     *  @param context
-     *     Context that will be provided to the callback
+     * @param type - The type of event
+     * @param fn - The function callback
+     * @param context - Context that will be provided to the callback
      */
-    off(type, fn, context) {
-        var listeners,
-            i,
-            len;
+    off(type?: string, fn?: (...args: any[]) => void, context?: any): this | undefined {
         if (!type) {
             // clear all listeners if called without arguments
             delete this._events;
+            return undefined;
         }
         if (!this._events) {
-            return;
+            return undefined;
         }
-        listeners = this._events[type];
+        const listeners = this._events[type];
         if (!listeners) {
-            return;
+            return undefined;
         }
         if (context === this) {
             context = undefined;
         }
-        if (listeners) {
-            // find fn and remove it
-            for (i = 0, len = listeners.length; i < len; i++) {
-                var l = listeners[i];
-                if (l.ctx !== context) {
-                    continue;
-                }
-                if (l.fn === fn) {
-                    listeners.splice(i, 1);
-                    return;
-                }
+        // find fn and remove it
+        for (let i = 0, len = listeners.length; i < len; i++) {
+            const l = listeners[i];
+            if (l.ctx !== context) {
+                continue;
+            }
+            if (l.cb === fn) {
+                listeners.splice(i, 1);
+                return undefined;
             }
         }
         return this;
     }
 
     /**
-     * Add a listener to a Plot event
+     * Add a listener to a Plot event.
      */
-    addListener(what, callback) {
+    addListener(what: string, callback: (...args: any[]) => void): void {
         if (!this.Mx) {
             throw "listeners cannot be added until pluginInit is called";
         }
@@ -361,9 +365,9 @@ class Plugin {
     }
 
     /**
-     * Remove a listener from the Plot
+     * Remove a listener from the Plot.
      */
-    removeListener(what, callback) {
+    removeListener(what: string, callback: (...args: any[]) => void): void {
         if (!this.Mx) {
             throw "listeners cannot be removed until pluginInit is called";
         }

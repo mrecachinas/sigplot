@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigplot.annotations.js
+ * File: sigplot.annotations.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -23,35 +23,72 @@
  * under the License.
  */
 
-import m from "./m.js";
 import mx from "./mx.js";
+import type { MxContext } from "./types.js";
 
+interface AnnotationOptions {
+    display: boolean;
+    textBaseline: CanvasTextBaseline;
+    textAlign: CanvasTextAlign;
+    prevent_hover?: boolean;
+}
 
-/**
- * @constructor
- * @param options
- * @returns {AnnotationPlugin}
- */
-var AnnotationPlugin = function(options) {
-    this.options = (options === undefined) ? {} : options;
+interface Annotation {
+    x: number;
+    y: number;
+    value: string | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+    width: number;
+    height: number;
+    highlight?: boolean;
+    selected?: boolean;
+    absolute_placement?: boolean;
+    pxl_x?: number;
+    pxl_y?: number;
+    font?: string;
+    color?: string;
+    highlight_color?: string;
+    popup?: string;
+    popupTextColor?: string;
+    textBaseline?: CanvasTextBaseline;
+    textAlign?: CanvasTextAlign;
+    onclick?: () => void;
+}
 
-    if (this.options.display === undefined) {
-        this.options.display = true;
+// TODO: plot type should be the SigPlot class once migrated
+interface AnnotationPlot {
+    _Mx: MxContext;
+    _Gx: any;
+    addListener(what: string, callback: (evt: any) => void): void;
+    removeListener(what: string, callback: (evt: any) => void): void;
+    redraw(): void;
+    refresh(): void;
+}
+
+class AnnotationPlugin {
+    options: AnnotationOptions;
+    annotations: Annotation[];
+    plot: AnnotationPlot | undefined;
+    private onmousemove: ((evt: any) => void) | undefined;
+    private onmousedown: ((evt: any) => void) | undefined;
+    private onmouseup: ((evt: any) => void) | undefined;
+
+    constructor(options?: Partial<AnnotationOptions>) {
+        this.options = {
+            display: true,
+            textBaseline: "alphabetic",
+            textAlign: "left",
+            ...(options || {})
+        };
+
+        this.annotations = [];
     }
 
-    this.options.textBaseline = this.options.textBaseline || "alphabetic";
-    this.options.textAlign = this.options.textAlign || "left";
-
-    this.annotations = [];
-};
-
-AnnotationPlugin.prototype = {
-    init: function(plot) {
-        var self = this;
+    init(plot: AnnotationPlot): void {
+        const self = this;
         this.plot = plot;
-        var Mx = this.plot._Mx;
+        const Mx = this.plot._Mx;
 
-        this.onmousemove = function(evt) {
+        this.onmousemove = function(evt: any): void {
             // Ignore if there are no annotations
             if (self.annotations.length === 0) {
                 return;
@@ -73,11 +110,11 @@ AnnotationPlugin.prototype = {
             }
 
             // If the mouse is close to an annotation, highlight it
-            var need_refresh = false;
-            for (var i = 0; i < self.annotations.length; i++) {
-                var annotation = self.annotations[i];
+            let need_refresh = false;
+            for (let i = 0; i < self.annotations.length; i++) {
+                const annotation = self.annotations[i];
 
-                var pxl = {
+                const pxl: { x: number | undefined; y: number | undefined } = {
                     x: undefined,
                     y: undefined
                 };
@@ -93,7 +130,7 @@ AnnotationPlugin.prototype = {
                 if (annotation.pxl_y !== undefined) {
                     pxl.y = annotation.pxl_y;
                 }
-                var res = mx.real_to_pixel(Mx, annotation.x, annotation.y);
+                const res = mx.real_to_pixel(Mx, annotation.x, annotation.y);
                 if (pxl.x === undefined) {
                     pxl.x = res.x;
                 }
@@ -102,7 +139,7 @@ AnnotationPlugin.prototype = {
                     pxl.y = res.y;
                 }
 
-                var rect_upperleft = {
+                const rect_upperleft: { x: number; y: number } = {
                     x: pxl.x,
                     y: pxl.y
                 };
@@ -138,8 +175,8 @@ AnnotationPlugin.prototype = {
         };
         this.plot.addListener("mmove", this.onmousemove);
 
-        this.onmousedown = function(evt) {
-            for (var i = 0; i < self.annotations.length; i++) {
+        this.onmousedown = function(evt: any): void {
+            for (let i = 0; i < self.annotations.length; i++) {
                 // leverage the fact that annotation.highlight is
                 // set when the mouse is over the annotation
                 if (self.annotations[i].highlight) {
@@ -149,55 +186,55 @@ AnnotationPlugin.prototype = {
         };
         this.plot.addListener("mdown", this.onmousedown);
 
-        this.onmouseup = function(evt) {
-            for (var i = 0; i < self.annotations.length; i++) {
+        this.onmouseup = function(_evt: any): void {
+            for (let i = 0; i < self.annotations.length; i++) {
                 // leverage the fact that annotation.highlight is
                 // set when the mouse is over the annotation
                 if (self.annotations[i].selected) {
                     // Issue a highlight event
-                    var evt = document.createEvent('Event');
-                    evt.initEvent('annotationclick', true, true);
-                    evt.annotation = self.annotations[i];
-                    var executeDefault = mx.dispatchEvent(self.plot._Mx, evt);
+                    const clickEvt: any = document.createEvent('Event');
+                    clickEvt.initEvent('annotationclick', true, true);
+                    clickEvt.annotation = self.annotations[i];
+                    const executeDefault: boolean = mx.dispatchEvent(self.plot!._Mx, clickEvt);
                     if ((executeDefault) && (self.annotations[i].onclick)) {
-                        self.annotations[i].onclick();
+                        self.annotations[i].onclick!();
                     }
                 }
                 self.annotations[i].selected = undefined;
             }
         };
         document.addEventListener("mouseup", this.onmouseup, false);
-    },
+    }
 
-    set_highlight: function(state, annotations, x, y) {
-        var _annotations = annotations || this.annotations;
-        for (var i = 0; i < _annotations.length; i++) {
+    set_highlight(state: boolean, annotations?: Annotation[], x?: number, y?: number): void {
+        const _annotations = annotations || this.annotations;
+        for (let i = 0; i < _annotations.length; i++) {
             // Issue a highlight event
-            var evt = document.createEvent('Event');
+            const evt: any = document.createEvent('Event');
             evt.initEvent('annotationhighlight', true, true);
             evt.annotation = _annotations[i];
             evt.state = state;
             evt.x = x;
             evt.y = y;
-            var executeDefault = mx.dispatchEvent(this.plot._Mx, evt);
+            const executeDefault: boolean = mx.dispatchEvent(this.plot!._Mx, evt);
             if (executeDefault) {
                 _annotations[i].highlight = state;
             }
         }
-    },
+    }
 
-    menu: function() {
-        var _display_handler = (function(self) {
-            return function() {
+    menu(): { text: string; menu: { title: string; items: Array<{ text: string; checked?: boolean; style?: string; handler: () => void }> } } {
+        const _display_handler = (function(self: AnnotationPlugin) {
+            return function(): void {
                 self.options.display = !self.options.display;
-                self.plot.redraw();
+                self.plot!.redraw();
             };
         }(this));
 
-        var _clearall_handler = (function(self) {
-            return function() {
+        const _clearall_handler = (function(self: AnnotationPlugin) {
+            return function(): void {
                 self.annotations = [];
-                self.plot.redraw();
+                self.plot!.redraw();
             };
         }(this));
 
@@ -216,29 +253,28 @@ AnnotationPlugin.prototype = {
                 }]
             }
         };
-    },
+    }
 
-    add_annotation: function(annotation) {
+    add_annotation(annotation: Annotation): number {
         this.annotations.push(annotation);
 
-        this.plot.redraw();
+        this.plot!.redraw();
         return this.annotations.length;
-    },
+    }
 
-    clear_annotations: function() {
+    clear_annotations(): void {
         this.annotations = [];
 
-        this.plot.redraw();
-    },
+        this.plot!.redraw();
+    }
 
-    refresh: function(canvas) {
+    refresh(canvas: HTMLCanvasElement): void {
         if (!this.options.display) {
             return;
         }
-        var Gx = this.plot._Gx;
-        var Mx = this.plot._Mx;
-        var ctx = canvas.getContext("2d");
-        var self = this;
+        const Mx = this.plot!._Mx;
+        const ctx = canvas.getContext("2d")!;
+        const self = this;
 
         ctx.save();
         // Ensure annotations are clipped at the plot borders
@@ -246,14 +282,14 @@ AnnotationPlugin.prototype = {
         ctx.rect(Mx.l, Mx.t, Mx.r - Mx.l, Mx.b - Mx.t);
         ctx.clip();
 
-        mx.onCanvas(Mx, canvas, function() {
+        mx.onCanvas(Mx, canvas, function(): void {
 
             // iterate backwards so we can remove from the end...in the future
             // if we decide to have annotations auto-remove
-            for (var i = self.annotations.length - 1; i >= 0; i--) {
-                var annotation = self.annotations[i];
+            for (let i = self.annotations.length - 1; i >= 0; i--) {
+                const annotation = self.annotations[i];
 
-                var pxl = {
+                const pxl: { x: number | undefined; y: number | undefined } = {
                     x: undefined,
                     y: undefined
                 };
@@ -269,7 +305,7 @@ AnnotationPlugin.prototype = {
                 if (annotation.pxl_y !== undefined) {
                     pxl.y = annotation.pxl_y;
                 }
-                var res = mx.real_to_pixel(Mx, annotation.x, annotation.y);
+                const res = mx.real_to_pixel(Mx, annotation.x, annotation.y);
                 if (pxl.x === undefined) {
                     pxl.x = res.x;
                 }
@@ -279,17 +315,15 @@ AnnotationPlugin.prototype = {
                 }
 
                 if (!mx.inrect(pxl.x, pxl.y, Mx.l, Mx.t, Mx.r - Mx.l, Mx.b - Mx.t)) {
-                    // do we want to auto-remove?
-                    //self.annotations.splice(i,1);
                     continue;
                 }
 
                 if ((annotation.value instanceof HTMLImageElement) ||
                     (annotation.value instanceof HTMLCanvasElement) ||
                     ((typeof HTMLVideoElement !== 'undefined') && annotation.value instanceof HTMLVideoElement)) {
-                    annotation.width = annotation.value.width;
-                    annotation.height = annotation.value.height;
-                    ctx.drawImage(annotation.value, pxl.x - (annotation.width / 2), pxl.y - (annotation.height / 2));
+                    annotation.width = (annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement).width;
+                    annotation.height = (annotation.value as HTMLImageElement | HTMLCanvasElement | HTMLVideoElement).height;
+                    ctx.drawImage(annotation.value as CanvasImageSource, pxl.x - (annotation.width / 2), pxl.y - (annotation.height / 2));
                 } else {
                     // Setup the text styles
                     ctx.font = annotation.font || "bold italic 20px new century schoolbook";
@@ -300,13 +334,13 @@ AnnotationPlugin.prototype = {
                     }
                     ctx.globalAlpha = 1;
                     // Measure the text
-                    annotation.width = ctx.measureText(annotation.value).width;
+                    annotation.width = ctx.measureText(annotation.value as string).width;
                     annotation.height = ctx.measureText("M").width; // approximation of height
 
                     // Render the text
                     ctx.textBaseline = annotation.textBaseline || self.options.textBaseline;
                     ctx.textAlign = annotation.textAlign || self.options.textAlign;
-                    ctx.fillText(annotation.value, pxl.x, pxl.y);
+                    ctx.fillText(annotation.value as string, pxl.x, pxl.y);
                 }
 
 
@@ -318,12 +352,12 @@ AnnotationPlugin.prototype = {
         });
 
         ctx.restore();
-    },
-
-    dispose: function() {
-        this.plot = undefined;
-        this.annotations = undefined;
     }
-};
+
+    dispose(): void {
+        this.plot = undefined;
+        this.annotations = [];
+    }
+}
 
 export default AnnotationPlugin;

@@ -1,47 +1,72 @@
-
 import common from "./common.js";
+import type { MxContext, Menu, MenuItem } from "./types.js";
 
+interface DomMenuOptions {
+    itemClass?: string;
+}
 
-   var DomMenu = function(Mx, menu, options) {
-    this.options = {
-        itemClass: "sigplot-menu-item"
-    };
-    common.update(this.options, options);
-    this._Mx = Mx;
-    this._container = Mx.root;
-    this._menu = document.createElement("div");
-    var style = "z-index:2;float:left;position:relative;left:" + Mx.xpos + "px;top:" + Mx.ypos + "px;";
-    this._menu.classList.add("sigplot-menu");
-    var d = new Date();
-    this._menuId = "menu-" + d.getSeconds() + d.getMilliseconds();
-    this._menu.classList.add(this._menuId);
-    this._menu.style = style;
-    this._items = [];
-    this.setCSS();
-    this.createMenu(menu);
-};
-DomMenu.prototype = {
-    createMenu: function(menu) {
-        var self = this;
-        var Mx = this._Mx;
-        var originalFinalize = menu.finalize;
+class DomMenu {
+    options: { itemClass: string };
+    finalize: (() => void) | undefined;
+
+    private _Mx: MxContext;
+    private _container: HTMLElement;
+    private _menu: HTMLDivElement;
+    private _menuId: string;
+    private _items: HTMLLIElement[];
+    private _active: HTMLLIElement | null;
+    private _moving: boolean;
+    private _movingOffsetX: number;
+    private _movingOffsetY: number;
+    private _moveMenu: ((e: MouseEvent) => void) | null;
+
+    constructor(Mx: MxContext, menu: Menu, options?: DomMenuOptions) {
+        this.options = {
+            itemClass: "sigplot-menu-item"
+        };
+        common.update(this.options, options);
+        this._Mx = Mx;
+        this._container = Mx.root;
+        this._menu = document.createElement("div");
+        const style = "z-index:2;float:left;position:relative;left:" + Mx.xpos + "px;top:" + Mx.ypos + "px;";
+        this._menu.classList.add("sigplot-menu");
+        const d = new Date();
+        this._menuId = "menu-" + d.getSeconds() + d.getMilliseconds();
+        this._menu.classList.add(this._menuId);
+        this._menu.style.cssText = style;
+        this._items = [];
+        this._active = null;
+        this._moving = false;
+        this._movingOffsetX = 0;
+        this._movingOffsetY = 0;
+        this._moveMenu = null;
+        this.setCSS();
+        this.createMenu(menu);
+    }
+
+    createMenu(menu: Menu): void {
+        const self = this;
+        const Mx = this._Mx;
+        const originalFinalize = menu.finalize;
         menu.finalize = function() {
             self.remove();
-            originalFinalize();
+            if (originalFinalize) {
+                originalFinalize();
+            }
         };
         this.finalize = menu.finalize;
-        var title = document.createElement("div");
-        title.addEventListener("mousedown", function(e) {
+        const title = document.createElement("div");
+        title.addEventListener("mousedown", function(e: MouseEvent) {
             e.preventDefault();
             self._movingOffsetX = e.offsetX;
             self._movingOffsetY = e.offsetY;
             self._moving = true;
         });
-        title.addEventListener("mouseup", function(e) {
+        title.addEventListener("mouseup", function(e: MouseEvent) {
             e.preventDefault();
             self._moving = false;
         });
-        self._moveMenu = function(e) {
+        self._moveMenu = function(e: MouseEvent) {
             if (self._moving) {
                 self._menu.style.position = 'fixed';
                 self._menu.style.top = e.clientY - self._movingOffsetY + 'px';
@@ -52,29 +77,35 @@ DomMenu.prototype = {
         title.classList.add("sigplot-menu-title");
         title.innerText = menu.title;
         this._menu.append(title);
-        var list = document.createElement("ul");
+        const list = document.createElement("ul");
         list.classList.add("sigplot-menu-list");
-        menu.items.forEach(function(item) {
-            var li = self._createMenuItem(item, menu);
+        menu.items.forEach(function(item: MenuItem) {
+            const li = self._createMenuItem(item, menu);
             list.append(li);
         });
         this._menu.append(list);
         this._container.append(this._menu);
-        this._menu.addEventListener("contextmenu", function(e) {
+        this._menu.addEventListener("contextmenu", function(e: Event) {
             e.preventDefault();
-            self.finalize();
+            if (self.finalize) {
+                self.finalize();
+            }
         });
-        Mx.menu = this;
-        Mx.widget = {
+        (Mx as any).menu = self;
+        (Mx as any).widget = {
             type: "MENU",
-            callback: function(event) {
+            callback: function(event: any) {
                 if (event.type === "mousedown") {
                     if (event.which === 1 || event.which === 2 || event.which === 3) {
-                        if ((self._Mx.menu === self) && (!event.target.classList.contains(self.options.itemClass))) {
-                            self.finalize();
+                        if (((self._Mx as any).menu === self) && (!event.target.classList.contains(self.options.itemClass))) {
+                            if (self.finalize) {
+                                self.finalize();
+                            }
                         }
-                        if (!self._Mx.menu) {
-                            self.finalize();
+                        if (!(self._Mx as any).menu) {
+                            if (self.finalize) {
+                                self.finalize();
+                            }
                         }
                     }
                 }
@@ -86,64 +117,71 @@ DomMenu.prototype = {
                 }
             }
         };
-    },
-    _handleKeyEvents: function(event) {
-        var self = this;
+    }
+
+    private _handleKeyEvents(event: KeyboardEvent): void {
         if (event.key === "ArrowDown") {
             event.preventDefault();
-            if (!self._active) {
-                self._setActive(self._items[0]);
+            if (!this._active) {
+                this._setActive(this._items[0]);
             } else {
-                var target = self._items.indexOf(self._active) + 1;
+                const target = this._items.indexOf(this._active) + 1;
 
-                if (target > self._items.length - 1) {
+                if (target > this._items.length - 1) {
                     return; //Last item in the list keep it active
                 }
-                self._setActive(self._items[target]);
+                this._setActive(this._items[target]);
             }
         }
         if (event.key === "ArrowUp") {
             event.preventDefault();
-            if (!self._active) {
-                self._setActive(self._items[0]);
+            if (!this._active) {
+                this._setActive(this._items[0]);
             } else {
-                var target = self._items.indexOf(self._active) - 1;
+                const target = this._items.indexOf(this._active) - 1;
                 if (target < 0) {
                     return; // First item in the list keep it active
                 }
-                self._setActive(self._items[target]);
+                this._setActive(this._items[target]);
             }
         }
 
         if (event.key === "Enter") {
             event.preventDefault();
-            if (!self._active) {
-                self._setActive(self._items[0]);
+            if (!this._active) {
+                this._setActive(this._items[0]);
             }
 
-            var el = self._active;
-            if (el.onclick) {
-                el.onclick();
-            } else if (el.click) {
-                el.click();
+            const el = this._active;
+            if (el) {
+                if (el.onclick) {
+                    (el.onclick as any).call(el);
+                } else {
+                    el.click();
+                }
             }
         }
-    },
-    _setActive: function(li) {
+    }
+
+    private _setActive(li: HTMLLIElement): void {
         if (this._active) {
             this._clearActive();
         }
         this._active = li;
         li.classList.add('active');
-    },
-    _clearActive: function() {
-        this._active.classList.remove('active');
+    }
+
+    private _clearActive(): void {
+        if (this._active) {
+            this._active.classList.remove('active');
+        }
         this._active = null;
-    },
-    _createMenuItem: function(item, menu) {
-        var self = this;
-        var Mx = this._Mx;
-        var li = document.createElement("li");
+    }
+
+    private _createMenuItem(item: MenuItem, menu: Menu): HTMLLIElement {
+        const self = this;
+        const Mx = this._Mx;
+        const li = document.createElement("li");
         li.className += " " + self.options.itemClass;
         li.innerText = item.text;
         if (item.style) {
@@ -157,52 +195,51 @@ DomMenu.prototype = {
         }
         li.addEventListener("click", function() {
             self.remove();
-            Mx.menu = undefined;
-            Mx.widget = null;
+            (Mx as any).menu = undefined;
+            (Mx as any).widget = null;
             if (item.handler) {
                 item.handler();
             } else if (item.menu) {
-                var newmenu = item.menu;
+                let newmenu = item.menu as any;
                 if (typeof item.menu === 'function') {
-                    newmenu = item.menu();
+                    newmenu = (item.menu as Function)();
                 }
                 newmenu.finalize = menu.finalize;
                 new DomMenu(Mx, newmenu);
             }
 
-            if ((!Mx.menu) && (menu.finalize)) {
+            if (!(Mx as any).menu && menu.finalize) {
                 menu.finalize();
             }
         });
-        li.addEventListener("mouseenter", function(e) {
-            self._setActive(e.target);
+        li.addEventListener("mouseenter", function(e: MouseEvent) {
+            self._setActive(e.target as HTMLLIElement);
         });
-        li.addEventListener("mouseleave", function(e) {
+        li.addEventListener("mouseleave", function() {
             self._clearActive();
         });
         self._items.push(li);
         return li;
-    },
-    remove: function() {
+    }
 
-        var Mx = this._Mx;
-        Mx.menu = undefined;
-        Mx.widget = null;
+    remove(): void {
+        const Mx = this._Mx;
+        (Mx as any).menu = undefined;
+        (Mx as any).widget = null;
         this._menu.remove();
-        document.body.removeEventListener("mousemove", this._moveMenu);
-    },
-    setCSS: function() {
-        var Mx = this._Mx;
-        var cssId = "mx-menu-css"; // id so we can always replace the css if we want to update this with mx.setTheme..
-        var style = document.createElement('style');
-        var textContent;
-        style.id = cssId;
+        if (this._moveMenu) {
+            document.body.removeEventListener("mousemove", this._moveMenu);
+        }
+    }
+
+    setCSS(): void {
+        const Mx = this._Mx;
+        const font = (Mx as any).font?.font ?? "";
         //This really sucks...... and I hate it. -Sean
-        /* jshint ignore:start */
-        textContent = "" +
+        const textContent = "" +
             "." + this._menuId + "{\n" +
             "background-color: " + Mx.xwbg + ";\n" +
-            "font: " + Mx.font.font + ";\n" +
+            "font: " + font + ";\n" +
             "color:" + Mx.xwfg + "\n" +
             "}   \n" +
             ".sigplot-menu-list {\n" +
@@ -232,7 +269,7 @@ DomMenu.prototype = {
             "    float: left;\n" +
             "    border-radius: 5px;\n" +
             "    padding: 3px;\n" +
-            "    font: " + Mx.font.font + ";\n" +
+            "    font: " + font + ";\n" +
             "    color:" + Mx.xwfg + "\n" +
             "}\n" +
             "." + this._menuId + ">ul>li.separator {\n" +
@@ -257,16 +294,15 @@ DomMenu.prototype = {
             "    height: 3px;\n" +
             "}\n";
 
-        /* jshint ignore:end */
-        if (!this._container.getElementsByTagName("style").length) {
-            var style = document.createElement('style');
-            style.textContent = textContent;
-            this._container.appendChild(style);
+        const existingStyles = this._container.getElementsByTagName("style");
+        if (!existingStyles.length) {
+            const styleEl = document.createElement('style');
+            styleEl.textContent = textContent;
+            this._container.appendChild(styleEl);
         } else {
-            var style = this._container.getElementsByTagName("style")[0];
-            style.textContent = textContent;
+            existingStyles[0].textContent = textContent;
         }
     }
-};
+}
 
 export default DomMenu;

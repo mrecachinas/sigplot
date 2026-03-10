@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigplot.playback.js
+ * File: sigplot.playback.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -23,36 +23,61 @@
  * under the License.
  */
 
-import m from "./m.js";
 import mx from "./mx.js";
 import common from "./common.js";
+import type { MxContext, CanvasStyle, PixelPoint } from "./types.js";
 
+type PlaybackState = "paused" | "playing";
 
-/**
- * @constructor
- * @param options
- * @returns {PlaybackControlsPlugin}
- */
-var PlaybackControlsPlugin = function(options) {
-    this.options = {
-        display: true,
-        size: 25,
-        lineWidth: 2,
-        fillStyle: false
-    };
-    common.update(this.options, options);
-    this.state = "paused";
-    this.highlight = false;
-};
+interface PlaybackOptions {
+    display: boolean;
+    size: number;
+    lineWidth: number;
+    fillStyle: CanvasStyle | false;
+    strokeStyle?: CanvasStyle;
+    position?: PixelPoint;
+}
 
-PlaybackControlsPlugin.prototype = {
-    init: function(plot) {
+// TODO: plot type should be the SigPlot class once migrated
+interface PlaybackPlot {
+    _Mx: MxContext;
+    _Gx: any;
+    addListener(what: string, callback: (evt: any) => void): void;
+    removeListener(what: string, callback: (evt: any) => void): void;
+    redraw(): void;
+    refresh(): void;
+}
+
+class PlaybackControlsPlugin {
+    options: PlaybackOptions;
+    state: PlaybackState;
+    highlight: boolean;
+    plot: PlaybackPlot | undefined;
+    private onmousemove: ((evt: any) => void) | undefined;
+    private onmousedown: ((evt: any) => void) | undefined;
+    private onmouseclick: ((evt: any) => void) | undefined;
+
+    constructor(options?: Partial<PlaybackOptions>) {
+        this.options = {
+            display: true,
+            size: 25,
+            lineWidth: 2,
+            fillStyle: false
+        };
+        if (options) {
+            common.update(this.options, options);
+        }
+        this.state = "paused";
+        this.highlight = false;
+    }
+
+    init(plot: PlaybackPlot): void {
         this.plot = plot;
 
         // Register for mouse events
-        var self = this;
-        var Mx = this.plot._Mx;
-        this.onmousemove = function(evt) {
+        const self = this;
+        const Mx = this.plot._Mx;
+        this.onmousemove = function(evt: any): void {
             if (Mx.warpbox) {
                 return;
             } // Don't highlight if a warpbox is being drawn
@@ -66,7 +91,7 @@ PlaybackControlsPlugin.prototype = {
         };
         this.plot.addListener("mmove", this.onmousemove);
 
-        this.onmousedown = function(evt) {
+        this.onmousedown = function(evt: any): void {
             if (Mx.warpbox) {
                 return;
             } // Don't handle if a warpbox is being drawn
@@ -79,7 +104,7 @@ PlaybackControlsPlugin.prototype = {
         // Prevents zooms and stuff from occuring
         this.plot.addListener("mdown", this.onmousedown);
 
-        this.onmouseclick = function(evt) {
+        this.onmouseclick = function(evt: any): void {
             if (Mx.warpbox) {
                 return;
             } // Don't handle if a warpbox is being drawn
@@ -91,16 +116,16 @@ PlaybackControlsPlugin.prototype = {
             }
         };
         this.plot.addListener("mclick", this.onmouseclick);
-    },
+    }
 
-    set_highlight: function(ishighlight) {
+    set_highlight(ishighlight: boolean): void {
         if (ishighlight !== this.highlight) {
             this.highlight = ishighlight;
-            this.plot.redraw();
+            this.plot!.redraw();
         }
-    },
+    }
 
-    toggle: function(new_state) {
+    toggle(new_state?: PlaybackState): void {
         if (!new_state) {
             if (this.state === "paused") {
                 new_state = "playing";
@@ -111,43 +136,43 @@ PlaybackControlsPlugin.prototype = {
 
         if (new_state !== this.state) {
             if (this.plot) {
-                var Mx = this.plot._Mx;
-                var evt = document.createEvent('Event');
+                const Mx = this.plot._Mx;
+                const evt: any = document.createEvent('Event');
                 evt.initEvent('playbackevt', true, true);
                 evt.state = new_state;
-                var executeDefault = mx.dispatchEvent(Mx, evt);
+                const executeDefault: boolean = mx.dispatchEvent(Mx, evt);
                 if (executeDefault) {
                     this.state = new_state;
                 }
                 this.plot.redraw();
             }
         }
-    },
+    }
 
-    addListener: function(what, callback) {
-        var Mx = this.plot._Mx;
+    addListener(what: string, callback: (evt: any) => void): void {
+        const Mx = this.plot!._Mx;
         mx.addEventListener(Mx, what, callback, false);
-    },
+    }
 
-    removeListener: function(what, callback) {
-        var Mx = this.plot._Mx;
+    removeListener(what: string, callback: (evt: any) => void): void {
+        const Mx = this.plot!._Mx;
         mx.removeEventListener(Mx, what, callback, false);
-    },
+    }
 
-    ismouseover: function(xpos, ypos) {
-        var position = this.position();
-        var distance_from_ctr = Math.pow(xpos - position.x, 2) + Math.pow(ypos - position.y, 2);
-        var R = this.options.size / 2;
+    ismouseover(xpos: number, ypos: number): boolean {
+        const position = this.position();
+        const distance_from_ctr = Math.pow(xpos - position.x!, 2) + Math.pow(ypos - position.y!, 2);
+        const R = this.options.size / 2;
 
         return (distance_from_ctr < Math.pow(R, 2));
-    },
+    }
 
-    position: function() {
+    position(): { x: number | null; y: number | null } {
         if (this.options.position) {
             return this.options.position;
         } else if (this.plot) {
-            var Mx = this.plot._Mx;
-            var R = this.options.size / 2;
+            const Mx = this.plot._Mx;
+            const R = this.options.size / 2;
             return {
                 x: Mx.l + R + this.options.lineWidth + 1,
                 y: Mx.t + R + this.options.lineWidth + 1
@@ -158,60 +183,59 @@ PlaybackControlsPlugin.prototype = {
                 y: null
             };
         }
-    },
+    }
 
-    refresh: function(canvas) {
+    refresh(canvas: HTMLCanvasElement): void {
         if (!this.options.display) {
             return;
         }
-        var Gx = this.plot._Gx;
-        var Mx = this.plot._Mx;
+        const Mx = this.plot!._Mx;
 
-        var ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d")!;
 
         ctx.lineWidth = this.options.lineWidth;
-        var R = this.options.size / 2;
+        let R = this.options.size / 2;
 
         if (this.highlight) {
             ctx.lineWidth += 2;
             R += 1;
         }
 
-        var position = this.position();
+        const position = this.position();
 
 
         ctx.beginPath();
-        ctx.arc(position.x, position.y, R - ctx.lineWidth, 0, Math.PI * 2, true);
+        ctx.arc(position.x!, position.y!, R - ctx.lineWidth, 0, Math.PI * 2, true);
         ctx.closePath();
 
-        ctx.strokeStyle = this.options.strokeStyle || Mx.fg;
+        ctx.strokeStyle = (this.options.strokeStyle || Mx.fg) as string;
         ctx.stroke();
 
         if (this.options.fillStyle) {
-            ctx.fillStyle = this.options.fillStyle;
+            ctx.fillStyle = this.options.fillStyle as string;
             ctx.fill();
         }
 
         if (this.state === "paused") {
-            var p1 = {
+            const p1: PixelPoint = {
                 x: R * 0.8,
                 y: R * 0.56
             };
-            var p2 = {
+            const p2: PixelPoint = {
                 x: R * 1.45,
                 y: R
             };
-            var p3 = {
+            const p3: PixelPoint = {
                 x: R * 0.8,
                 y: R * 1.45
             };
 
-            p1.x += (position.x - R);
-            p2.x += (position.x - R);
-            p3.x += (position.x - R);
-            p1.y += (position.y - R);
-            p2.y += (position.y - R);
-            p3.y += (position.y - R);
+            p1.x += (position.x! - R);
+            p2.x += (position.x! - R);
+            p3.x += (position.x! - R);
+            p1.y += (position.y! - R);
+            p2.y += (position.y! - R);
+            p3.y += (position.y! - R);
 
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
@@ -219,58 +243,57 @@ PlaybackControlsPlugin.prototype = {
             ctx.lineTo(p3.x, p3.y);
             ctx.closePath();
 
-            ctx.fillStyle = this.options.strokeStyle || Mx.fg;
+            ctx.fillStyle = (this.options.strokeStyle || Mx.fg) as string;
             ctx.fill();
         } else {
             ctx.lineCap = 'round';
             ctx.lineWidth = Math.floor(Math.min(1, this.options.size / 8));
 
-            var p1 = {
+            const p1a: PixelPoint = {
                 x: R * 0.8,
                 y: R / 2
             };
-            var p2 = {
+            const p2a: PixelPoint = {
                 x: R * 0.8,
                 y: R * 1.5
             };
-            p1.x += (position.x - R);
-            p2.x += (position.x - R);
-            p1.y += (position.y - R);
-            p2.y += (position.y - R);
+            p1a.x += (position.x! - R);
+            p2a.x += (position.x! - R);
+            p1a.y += (position.y! - R);
+            p2a.y += (position.y! - R);
 
             ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(p1a.x, p1a.y);
+            ctx.lineTo(p2a.x, p2a.y);
             ctx.closePath();
             ctx.stroke();
 
-            var p1 = {
+            const p1b: PixelPoint = {
                 x: R + (R / 5),
                 y: R / 2
             };
-            var p2 = {
+            const p2b: PixelPoint = {
                 x: R + (R / 5),
                 y: R * 1.5
             };
-            p1.x += (position.x - R);
-            p2.x += (position.x - R);
-            p1.y += (position.y - R);
-            p2.y += (position.y - R);
+            p1b.x += (position.x! - R);
+            p2b.x += (position.x! - R);
+            p1b.y += (position.y! - R);
+            p2b.y += (position.y! - R);
 
             ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(p1b.x, p1b.y);
+            ctx.lineTo(p2b.x, p2b.y);
             ctx.closePath();
             ctx.stroke();
         }
 
         ctx.restore();
-    },
-
-    dispose: function() {
-        this.plot = undefined;
-        this.boxes = undefined;
     }
-};
+
+    dispose(): void {
+        this.plot = undefined;
+    }
+}
 
 export default PlaybackControlsPlugin;

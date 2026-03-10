@@ -26,9 +26,11 @@
 /*jslint nomen: true, browser: true, devel: true */
 
 import common from "./common.js";
-import sigfile from "sigfile";
-import m from "./m.js";
-import mx from "./mx.js";
+import * as sigfile from "sigfile";
+import m_import from "./m.js";
+const m: any = m_import;
+import mx_import from "./mx.js";
+const mx: any = mx_import;
 import Layer1D from "./sigplot.layer1d.js";
 import Layer2D from "./sigplot.layer2d.js";
 import Layer1DSDS from "./sigplot.layer1dSDS.js";
@@ -40,26 +42,40 @@ import BoxesPlugin from "./sigplot.boxes.js";
 import PlaybackControlsPlugin from "./sigplot.playback.js";
 import SliderPlugin from "./sigplot.slider.js";
 
+import type {
+    GxContext,
+    PlotSettings,
+    LayerOptions,
+    BlueHeader,
+    MxContext,
+    Layer,
+    PluginInterface,
+    ColormapColor,
+    Menu,
+    MenuItem,
+    Scrollbar,
+} from "./types.ts";
+
 var version = "version-PLACEHOLDER";
 
 var bluefile = sigfile.bluefile;
 var matfile = sigfile.matfile;
 
 
-function sigplot(element, options) {
+function sigplot(this: any, element: HTMLElement | string, options?: PlotSettings) {
     if (!(this instanceof sigplot)) {
-        return new sigplot.Plot(element, options);
+        return new (sigplot as any).Plot(element, options);
     }
 }
 
-sigplot.bluefile = bluefile;
-sigplot.matfile = matfile;
-sigplot.common = common;
-sigplot.m = m;
-sigplot.mx = mx;
-sigplot.Layer1D = Layer1D;
-sigplot.Layer2D = Layer2D;
-sigplot.version = version;
+(sigplot as any).bluefile = bluefile;
+(sigplot as any).matfile = matfile;
+(sigplot as any).common = common;
+(sigplot as any).m = m;
+(sigplot as any).mx = mx;
+(sigplot as any).Layer1D = Layer1D;
+(sigplot as any).Layer2D = Layer2D;
+(sigplot as any).version = version;
 
 /**
  * Text of the keypress help dialog.
@@ -101,7 +117,7 @@ var MAIN_HELP = "To zoom, press and drag the left mouse (LM) over the region of 
 
 // CSS spinner injected once into the document
 var _spinnerStyleInjected = false;
-function ensureSpinnerStyle() {
+function ensureSpinnerStyle(): void {
     if (_spinnerStyleInjected) { return; }
     _spinnerStyleInjected = true;
     var style = document.createElement("style");
@@ -121,7 +137,7 @@ function ensureSpinnerStyle() {
  * @memberOf sigplot
  * @private
  */
-sigplot.browserIsCompatible = function browserIsCompatible() {
+(sigplot as any).browserIsCompatible = function browserIsCompatible(): boolean {
     // We need a Canvas
     var test_canvas = document.createElement('canvas');
     var hascanvas = (test_canvas.getContext) ? true : false;
@@ -318,8 +334,8 @@ sigplot.browserIsCompatible = function browserIsCompatible() {
  *
  * @returns {Plot}
  */
-var Plot = function(element, options) {
-    if (!sigplot.browserIsCompatible()) {
+var Plot = function(this: any, element: HTMLElement | string, options?: PlotSettings) {
+    if (!(sigplot as any).browserIsCompatible()) {
         throw "Browser is not compatible";
     }
     // Register with the Mx structure - Step #4
@@ -370,7 +386,7 @@ var Plot = function(element, options) {
             }
             display_specs(plot);
 
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('mmove', true, true);
             evt.originalEvent = e;
             evt.xpos = xpos;
@@ -415,7 +431,7 @@ var Plot = function(element, options) {
             }
 
             if (Gx.cntrls === 2) {
-                var evt = document.createEvent('Event');
+                var evt = document.createEvent('Event') as any;
                 evt.initEvent('mtag', true, true);
                 evt.originalEvent = e;
                 evt.x = Gx.retx;
@@ -485,7 +501,7 @@ var Plot = function(element, options) {
             // Update Mx event fields
             mx.ifevent(Mx, event);
 
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('mdown', true, true);
             evt.originalEvent = event;
             evt.xpos = Mx.xpos;
@@ -499,7 +515,7 @@ var Plot = function(element, options) {
             }
 
             // Check if event occured in the pan region
-            var inPan = inPanRegion(plot);
+            var inPan: any = inPanRegion(plot);
 
             // Event processing
             if (inPan.inPanRegion) { // Mouse position lies in a pan
@@ -701,7 +717,7 @@ var Plot = function(element, options) {
                     }
                 } else if (event.which === 2) {
                     if (!Gx.nomenu) {
-                        var evt = document.createEvent('Event');
+                        var evt = document.createEvent('Event') as any;
                         evt.initEvent('showmenu', true, true);
                         evt.originalEvent = event;
                         evt.x = Mx.x;
@@ -750,7 +766,7 @@ var Plot = function(element, options) {
                     Mx.ypos = m.bound(position.y, 0, Mx.height);
 
                     // See if the finger lies on the pan-bars
-                    var inPan = inPanRegion(plot, position);
+                    var inPan: any = inPanRegion(plot, position);
                     if (!inPan.inPanRegion) {
                         Mx.touches = event.targetTouches;
                     } // TODO support touch 'pan' on the panbars
@@ -793,7 +809,7 @@ var Plot = function(element, options) {
                 Mx.xpos = new_xpos;
                 Mx.ypos = new_ypos;
 
-                var inPan = inPanRegion(plot, position);
+                var inPan: any = inPanRegion(plot, position);
                 // If we are in the pan region, don't take any action
                 if (inPan.inPanRegion) {
                     return;
@@ -847,10 +863,10 @@ var Plot = function(element, options) {
                 var xran = Mx.stk[k].xmax - Mx.stk[k].xmin;
                 var yran = Mx.stk[k].ymax - Mx.stk[k].ymin;
 
-                var xmin = Mx.stk[k].xmin + (scaling * xran);
-                var xmax = Mx.stk[k].xmax - (scaling * xran);
-                var ymin = Mx.stk[k].ymin + (scaling * yran);
-                var ymax = Mx.stk[k].ymax - (scaling * yran);
+                var xmin: any = Mx.stk[k].xmin + (scaling * xran);
+                var xmax: any = Mx.stk[k].xmax - (scaling * xran);
+                var ymin: any = Mx.stk[k].ymin + (scaling * yran);
+                var ymax: any = Mx.stk[k].ymax - (scaling * yran);
 
                 Mx.stk[k].xmin = Math.max(Gx.xmin, xmin);
                 Mx.stk[k].xmax = Math.min(Gx.xmax, xmax);
@@ -924,7 +940,7 @@ var Plot = function(element, options) {
             mx.ifevent(plot._Mx, event);
 
             if ((Mx.mouseOver === false) && (Gx.mouseClickActive)) {
-                var evt = document.createEvent('Event');
+                var evt = document.createEvent('Event') as any;
                 evt.initEvent('mup', true, true);
                 evt.originalEvent = event;
                 // xpos/ypos/x/y are clipped 
@@ -952,7 +968,7 @@ var Plot = function(element, options) {
             // Update Mx event fields
             mx.ifevent(plot._Mx, event);
 
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('mup', true, true);
             evt.originalEvent = event;
             evt.xpos = Mx.xpos;
@@ -985,7 +1001,7 @@ var Plot = function(element, options) {
                         Gx.xmrk = Gx.retx;
                         Gx.ymrk = Gx.rety;
 
-                        var mtagevt = document.createEvent('Event');
+                        var mtagevt = document.createEvent('Event') as any;
                         mtagevt.initEvent('mtag', true, true);
                         mtagevt.originalEvent = event;
                         mtagevt.x = Gx.xmrk;
@@ -996,7 +1012,7 @@ var Plot = function(element, options) {
                         mtagevt.h = undefined;
                         mtagevt.shift = event.shiftKey;
                         if (mx.dispatchEvent(Mx, mtagevt)) {
-                            var mclkevt = document.createEvent('Event');
+                            var mclkevt = document.createEvent('Event') as any;
                             mclkevt.initEvent('mclick', true, true);
                             mclkevt.originalEvent = event;
                             mclkevt.xpos = mtagevt.xpos;
@@ -1016,7 +1032,7 @@ var Plot = function(element, options) {
                     if (Gx.nomenu) {
                         // Send an event so that a custom menu can be displayed
                         // if desired
-                        var evt = document.createEvent('Event');
+                        var evt = document.createEvent('Event') as any;
                         evt.initEvent('showmenu', true, true);
                         evt.originalEvent = event;
                         evt.x = event.x || event.clientX;
@@ -1032,7 +1048,7 @@ var Plot = function(element, options) {
 
                             var emit_hidemenu = function() {
                                 try {
-                                    var hideMenuEvt = document.createEvent('Event');
+                                    var hideMenuEvt = document.createEvent('Event') as any;
                                     hideMenuEvt.initEvent('hidemenu', true, true);
                                     if (mx.dispatchEvent(Mx, hideMenuEvt)) {
                                         mx.addEventListener(Mx, "mousedown", plot.onmousedown, false);
@@ -1084,7 +1100,7 @@ var Plot = function(element, options) {
             // Update Mx event fields
             mx.ifevent(plot._Mx, event);
 
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('mdblclick', true, true);
             evt.originalEvent = event;
             evt.xpos = Mx.xpos;
@@ -1107,7 +1123,7 @@ var Plot = function(element, options) {
             var Gx = plot._Gx;
 
             // Check if event occured in the pan region
-            var inPan = inPanRegion(plot);
+            var inPan: any = inPanRegion(plot);
 
             // Event processing
             if (inPan.inPanRegion) { // Mouse position lies in a pan
@@ -1194,6 +1210,7 @@ var Plot = function(element, options) {
 
         var Mx = plot._Mx;
         var Gx = plot._Gx;
+        var event: any; // shared event reference for throttled closures
 
         var throttledPan = m.throttle(100, function(inPan) {
             // Mouse wheel
@@ -1250,16 +1267,17 @@ var Plot = function(element, options) {
             }
         });
 
-        return function(event) {
+        return function(evt: any) {
+            event = evt; // update shared reference for throttled closures
             // Update Mx event fields
-            mx.ifevent(Mx, event);
+            mx.ifevent(Mx, evt);
 
             // Check if event occured in the pan region
-            var inPan = inPanRegion(plot);
+            var inPan: any = inPanRegion(plot);
 
             // Event processing
             if (plot.mouseOnCanvas) {
-                event.preventDefault();
+                evt.preventDefault();
 
                 if (inPan.inPanRegion) {
                     throttledPan(inPan);
@@ -1290,7 +1308,7 @@ var Plot = function(element, options) {
     // may be desired to disable keypress behavior and implement
     // it at a higher-level...by default keypress behavior
     // is enabled and only works if the mouse if over the plot
-    if (!options.nokeypress) {
+    if (!(options as any).nokeypress) {
         this.onkeypress = (function(plot) {
             return function(event) {
                 var Mx = plot._Mx;
@@ -1310,7 +1328,7 @@ var Plot = function(element, options) {
                     var keyCode = common.getKeyCode(event);
 
                     // Since the mouse is in the plot area, send a keypress event
-                    var evt = document.createEvent('Event');
+                    var evt = document.createEvent('Event') as any;
                     evt.initEvent('plotkeypress', true, true);
                     evt.originalEvent = event;
                     evt.keyCode = keyCode;
@@ -1452,7 +1470,7 @@ var Plot = function(element, options) {
                         sigplot_show_timecode(plot);
                     } else if (keyCode === 109) { // 'm'
                         if (!Gx.nomenu) {
-                            var evt = document.createEvent('Event');
+                            var evt = document.createEvent('Event') as any;
                             evt.initEvent('showmenu', true, true);
                             evt.originalEvent = event;
                             evt.x = Mx.x;
@@ -2163,7 +2181,7 @@ Plot.prototype = {
         this.refresh();
 
         // Notify listeners that a reread was performed
-        var evt = document.createEvent('Event');
+        var evt = document.createEvent('Event') as any;
         evt.initEvent('reread', true, true);
         mx.dispatchEvent(this._Mx, evt);
     },
@@ -2521,11 +2539,12 @@ Plot.prototype = {
 
     overlay_wpipe: function(wsurl, overrides, layerOptions, fps) {
         let plot = this;
-        let wpipe = {
+        let wpipe: any = {
             hcb: null,
             layer_n: null,
             plotLayerOptions: null,
             ws: null,
+            lyr: null,
         };
         wpipe.ws = new WebSocket(wsurl, "pipe-data");
         wpipe.ws.binaryType = "arraybuffer";
@@ -2885,7 +2904,7 @@ Plot.prototype = {
         var Mx = this._Mx;
 
         // Notify listeners that a file was overlayed
-        var evt = document.createEvent('Event');
+        var evt = document.createEvent('Event') as any;
         evt.initEvent('lyradd', true, true);
         evt.name = layer.name; // the name of the layer
         evt.layer = layer;
@@ -2968,19 +2987,19 @@ Plot.prototype = {
 
         if (layerOptions.layerType === undefined) {
             if (hcb["class"] === 1) {
-                layers = Layer1D.overlay(this, hcb, layerOptions);
+                layers = (Layer1D as any).overlay(this, hcb, layerOptions);
             } else if (hcb["class"] === 2) {
-                layers = Layer2D.overlay(this, hcb, layerOptions);
+                layers = (Layer2D as any).overlay(this, hcb, layerOptions);
             }
         } else {
             if (layerOptions.layerType === "1D") {
-                layers = Layer1D.overlay(this, hcb, layerOptions);
+                layers = (Layer1D as any).overlay(this, hcb, layerOptions);
             } else if (layerOptions.layerType === "2D") {
-                layers = Layer2D.overlay(this, hcb, layerOptions);
+                layers = (Layer2D as any).overlay(this, hcb, layerOptions);
             } else if (layerOptions.layerType === "1DSDS") {
-                layers = Layer1DSDS.overlay(this, hcb, layerOptions);
+                layers = (Layer1DSDS as any).overlay(this, hcb, layerOptions);
             } else if (layerOptions.layerType === "2DSDS") {
-                layers = Layer2DSDS.overlay(this, hcb, layerOptions);
+                layers = (Layer2DSDS as any).overlay(this, hcb, layerOptions);
             } else {
                 layers = layerOptions.layerType.overlay(this, hcb, layerOptions);
             }
@@ -3107,7 +3126,7 @@ Plot.prototype = {
                         this.remove_layer(this.get_lyr_uuid(n));
                     }
                 } else if (index < 0) {
-                    var n = Gx.HCB.length + index;
+                    n = Gx.HCB.length + index;
                     if (n < 0) {
                         return;
                     }
@@ -3159,7 +3178,7 @@ Plot.prototype = {
 
         // Find all layers tied to this HCB
         if (HCB && index >= 0) {
-            for (var n = Gx.lyr.length - 1; n >= 0; n--) {
+            for (var n: any = Gx.lyr.length - 1; n >= 0; n--) {
                 if (Gx.lyr[n].hcb === HCB) {
                     delete_layer(this, n);
                 }
@@ -3169,7 +3188,7 @@ Plot.prototype = {
         this.refresh();
 
         // Notify listeners that a file has been deoverlayed
-        var evt = document.createEvent('Event');
+        var evt = document.createEvent('Event') as any;
         evt.initEvent('file_deoverlayed', true, true);
         if (fileName !== "") {
             evt.fileName = fileName; // The fileName that was
@@ -3267,7 +3286,7 @@ Plot.prototype = {
             ul.y = ytmp;
         }
 
-        var zstk = {};
+        var zstk: any = {};
 
         // xscl/yscl are reset in sigplot.refresh
         zstk.xscl = Mx.stk[Mx.level].xscl;
@@ -3302,7 +3321,7 @@ Plot.prototype = {
         Gx.inContinuousZoom = continuous;
 
         this.inZoom = true; // prevent recursive zooms
-        var evt = document.createEvent('Event');
+        var evt = document.createEvent('Event') as any;
         evt.initEvent('zoom', true, true);
         evt.level = Mx.level;
         evt.inContinuousZoom = Gx.inContinuousZoom;
@@ -3356,7 +3375,7 @@ Plot.prototype = {
 
         this.inZoom = true; // prevent recursive zoom
         // Send the event to listeners
-        var evt = document.createEvent('Event');
+        var evt = document.createEvent('Event') as any;
         evt.initEvent('unzoom', true, true);
         evt.level = Mx.level;
         evt.xmin = Mx.stk[Mx.level].xmin;
@@ -4018,7 +4037,7 @@ Plot.prototype = {
 
         if (Gx.specs) {
             if (Gx.sections === 0) {
-                var drawaxis_flags = {
+                var drawaxis_flags: any = {
                     grid: Gx.grid
                 };
                 if (Gx.panning === 2) {
@@ -4096,7 +4115,7 @@ Plot.prototype = {
                 Gx.legendBtnLocation = null;
             }
         } else if (Gx.grid && Gx.sections >= 0) {
-            var drawaxis_flags = {
+            var drawaxis_flags: any = {
                 grid: true,
                 noaxisbox: true,
                 noxtics: true,
@@ -4164,7 +4183,7 @@ var cam = ["(absc)", "(indx)", "(1/ab)", "(dydx)"];
  * @memberOf sigplot
  * @private
  */
-function SIGPLOTLAYER() {
+function SIGPLOTLAYER(this: any) {
 
     this.xbuf = undefined; // raw (ArrayBuffer) of ABSC data
     this.ybuf = undefined; // raw (ArrayBuffer) of ORD data
@@ -4204,7 +4223,7 @@ function SIGPLOTLAYER() {
  * @memberOf sigplot
  * @private
  */
-function GX() {
+function GX(this: any) {
     this.initialized = false;
     this.xptr = undefined; // xpoints as anything "array-like"...
     this.yptr = undefined; // ypoints as anything "array-like"...
@@ -4395,7 +4414,7 @@ function GX() {
  * @memberOf sigplot
  * @private
  */
-function setup_cmap(plot, cmap) {
+function setup_cmap(plot: any, cmap: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -4442,7 +4461,7 @@ function setup_cmap(plot, cmap) {
  * @memberOf sigplot
  * @private
  */
-function sigplot_show_x(plot) {
+function sigplot_show_x(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -4463,7 +4482,7 @@ function sigplot_show_x(plot) {
  * @memberOf sigplot
  * @private
  */
-function sigplot_show_timecode(plot) {
+function sigplot_show_timecode(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -4487,7 +4506,7 @@ function sigplot_show_timecode(plot) {
  * @memberOf sigplot
  * @private
  */
-function sigplot_show_y(plot) {
+function sigplot_show_y(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -4506,7 +4525,7 @@ function sigplot_show_y(plot) {
  * @memberOf sigplot
  * @private
  */
-function sigplot_show_z(plot) {
+function sigplot_show_z(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -4538,7 +4557,7 @@ function sigplot_show_z(plot) {
  *            acceptable.
  * @private
  */
-function sigplot_scrollScaleMenu(plot, command) {
+function sigplot_scrollScaleMenu(plot: any, command: string) {
     var Mx = plot._Mx;
 
     mx.removeEventListener(Mx, "mousedown", plot.onmousedown, false);
@@ -4579,7 +4598,7 @@ function sigplot_scrollScaleMenu(plot, command) {
  * @memberOf sigplot
  * @private
  */
-function sigplot_mainmenu(plot) {
+function sigplot_mainmenu(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -5401,7 +5420,7 @@ function sigplot_mainmenu(plot) {
         COLORMAP_MENU.menu.items.push(menuitem);
     }
 
-    var traceoptionsmenu = function(index) {
+    var traceoptionsmenu = function(index?: number) {
         return {
             title: "TRACE OPTIONS",
             items: [{
@@ -6223,7 +6242,7 @@ function sigplot_mainmenu(plot) {
                     var link = document.createElement("a");
                     link.href = img;
                     link.download = "SigPlot." + (new Date()).getTime() + ".png";
-                    link.display = "none";
+                    (link as any).display = "none";
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -6235,7 +6254,7 @@ function sigplot_mainmenu(plot) {
                     var link = document.createElement("a");
                     link.href = img;
                     link.download = "SigPlot." + (new Date()).getTime() + ".jpg";
-                    link.display = "none";
+                    (link as any).display = "none";
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -6247,7 +6266,7 @@ function sigplot_mainmenu(plot) {
                     var link = document.createElement("a");
                     link.href = img;
                     link.download = "SigPlot." + (new Date()).getTime() + ".svg";
-                    link.display = "none";
+                    (link as any).display = "none";
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -6271,7 +6290,7 @@ function sigplot_mainmenu(plot) {
     var EXIT_ITEM = {
         text: "Exit",
         handler: function() {
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('sigplotexit', true, true);
             mx.dispatchEvent(Mx, evt);
         }
@@ -6304,7 +6323,7 @@ function sigplot_mainmenu(plot) {
  * @memberOf sigplot
  * @private
  */
-function sigplot_legend_menu(plot, index) {
+function sigplot_legend_menu(plot: any, index: number) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -6806,7 +6825,7 @@ function sigplot_legend_menu(plot, index) {
  * @memberOf sigplot
  * @private
  */
-function rubberbox_cb(plot, triggerEvent) {
+function rubberbox_cb(plot: any, triggerEvent: any) {
     return function(event, xo, yo, xl, yl, action, mode) {
         var Gx = plot._Gx;
         var Mx = plot._Mx;
@@ -6841,7 +6860,7 @@ function rubberbox_cb(plot, triggerEvent) {
                 plot.pixel_zoom(xo, yo, xl, yl);
                 plot.refresh();
             } else if (action === "select") {
-                var evt = document.createEvent('Event');
+                var evt = document.createEvent('Event') as any;
                 evt.initEvent('mtag', true, true);
                 evt.originalEvent = event;
                 var re = pixel_to_real(plot, x, y);
@@ -6856,7 +6875,7 @@ function rubberbox_cb(plot, triggerEvent) {
                 evt.hpxl = h;
                 evt.shift = event.shiftKey;
                 if (mx.dispatchEvent(Mx, evt)) {
-                    var mclkevt = document.createEvent('Event');
+                    var mclkevt = document.createEvent('Event') as any;
                     mclkevt.initEvent('mclick', true, true);
                     mclkevt.originalEvent = event;
                     mclkevt.xpos = evt.xpos;
@@ -6874,7 +6893,7 @@ function rubberbox_cb(plot, triggerEvent) {
  * @memberOf sigplot
  * @private
  */
-function plot_init(plot, o) {
+function plot_init(plot: any, o: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -7369,7 +7388,7 @@ function plot_init(plot, o) {
  * @memberOf sigplot
  * @private
  */
-function basefile(plot, open) {
+function basefile(plot: any, open: boolean) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
     // != BASEFILE(false)
@@ -7417,7 +7436,7 @@ function basefile(plot, open) {
  * @memberOf sigplot
  * @private
  */
-function draw_accessories(plot, mode) {
+function draw_accessories(plot: any, mode: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
     if (mode > 0) {
@@ -7439,7 +7458,7 @@ function draw_accessories(plot, mode) {
  * @memberOf sigplot
  * @private
  */
-function draw_plugins(plot) {
+function draw_plugins(plot: any) {
     var Gx = plot._Gx;
     var ctx = plot._Mx.canvas.getContext("2d");
     var canvas;
@@ -7475,7 +7494,7 @@ function draw_plugins(plot) {
     }
 }
 
-function get_legend_pos(plot) {
+function get_legend_pos(plot: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -7499,7 +7518,7 @@ function get_legend_pos(plot) {
  * @memberOf sigplot
  * @private
  */
-function draw_legend(plot) {
+function draw_legend(plot: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
     //Gx.always_show_marker = true;
@@ -7611,7 +7630,7 @@ function draw_legend(plot) {
  * @memberOf sigplot
  * @private
  */
-function form_plotnote(plot) {
+function form_plotnote(plot: any) {
     var Gx = plot._Gx;
     if (Gx.note) {
         return;
@@ -7633,7 +7652,7 @@ function form_plotnote(plot) {
     }
 }
 
-function draw_pcut_x(plot) {
+function draw_pcut_x(plot: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -7683,7 +7702,7 @@ function draw_pcut_x(plot) {
     ctx.stroke();
 }
 
-function draw_pcut_y(plot) {
+function draw_pcut_y(plot: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -7739,7 +7758,7 @@ function draw_pcut_y(plot) {
     ctx.stroke();
 }
 
-function draw_layers(plot) {
+function draw_layers(plot: any) {
     let Gx = plot._Gx;
     let Mx = plot._Mx;
 
@@ -7790,7 +7809,7 @@ function draw_layers(plot) {
  * @private
  * @memberOf sigplot
  */
-function draw_layer(plot, layer) {
+function draw_layer(plot: any, layer: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -7805,7 +7824,7 @@ function draw_layer(plot, layer) {
 
     // TODO consider if this is a source of performance
     // issues on streaming plots
-    var evt = document.createEvent('Event');
+    var evt = document.createEvent('Event') as any;
     evt.initEvent('lyrdraw', true, true);
     evt.index = layer.index;
     evt.name = layer.name; // the name of the layer
@@ -7817,14 +7836,14 @@ function draw_layer(plot, layer) {
  * @memberOf sigplot
  * @private
  */
-function delete_layer(plot, n) {
+function delete_layer(plot: any, n: number) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
     //if (n < Gx.modlayer) Gx.modlayer = Gx.modlayer - 1;
     //if (n < Gx.modsource) Gx.modsource = Gx.modsource - 1;
 
     // Notify listeners that a layer is about to be deleted
-    var evt = document.createEvent('Event');
+    var evt = document.createEvent('Event') as any;
     evt.initEvent('lyrdel', true, true);
     evt.index = n;
     evt.name = Gx.lyr[n].name; // the name of the layer
@@ -7856,7 +7875,7 @@ function delete_layer(plot, n) {
  * @private
  */
 
-function draw_p_cuts(plot) {
+function draw_p_cuts(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
     if (Gx.lyr[0].hcb["class"] !== 2) {
@@ -7914,7 +7933,7 @@ function draw_p_cuts(plot) {
  * @memberOf sigplot
  * @private
  */
-function draw_crosshairs(plot) {
+function draw_crosshairs(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -7945,7 +7964,7 @@ function draw_crosshairs(plot) {
  * @memberOf sigplot
  * @private
  */
-function draw_marker(plot) {
+function draw_marker(plot: any) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -7984,7 +8003,7 @@ function draw_marker(plot) {
  * @memberOf sigplot
  * @private
  */
-function changephunits(plot, newphunits) {
+function changephunits(plot: any, newphunits: string) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
     var newplab = Gx.plab;
@@ -8018,7 +8037,7 @@ function changephunits(plot, newphunits) {
  * @memberOf sigplot
  * @private
  */
-function changemode(plot, newmode) {
+function changemode(plot: any, newmode: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -8102,7 +8121,7 @@ function changemode(plot, newmode) {
  * @memberOf sigplot
  * @private
  */
-function draw_panbars(plot) {
+function draw_panbars(plot: any) {
     var k; // integer*4
     //var i1; // integer*4
     //var itext; // integer*4
@@ -8159,7 +8178,7 @@ function draw_panbars(plot) {
  * @memberOf sigplot
  * @private
  */
-function pan(plot, action, flag, mouseEvent) {
+function pan(plot: any, action: string, flag: number, mouseEvent?: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -8241,7 +8260,7 @@ function pan(plot, action, flag, mouseEvent) {
             }
 
             plot.inPan = true; // prevent recursive pans
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('ypan', true, true);
             evt.level = Mx.level;
             evt.xmin = Mx.stk[Mx.level].xmin;
@@ -8303,7 +8322,7 @@ function pan(plot, action, flag, mouseEvent) {
             }
 
             plot.inPan = true; // prevent recursive pans
-            var evt = document.createEvent('Event');
+            var evt = document.createEvent('Event') as any;
             evt.initEvent('xpan', true, true);
             evt.level = Mx.level;
             evt.xmin = Mx.stk[Mx.level].xmin;
@@ -8340,7 +8359,7 @@ function pan(plot, action, flag, mouseEvent) {
  * @private
  * @memberOf sigplot
  */
-function drag_scrollbar(plot, scrollAction, event) {
+function drag_scrollbar(plot: any, scrollAction: any, event: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
     var min;
@@ -8389,7 +8408,7 @@ function drag_scrollbar(plot, scrollAction, event) {
         scrollAction.slice(0, 1));
 
     plot.inPan = true; // prevent recursive pans
-    var evt = document.createEvent('Event');
+    var evt = document.createEvent('Event') as any;
     if (scrollAction === "XPAN") {
         evt.initEvent('xpan', true, true);
     } else if (scrollAction === "YPAN") {
@@ -8427,7 +8446,7 @@ function drag_scrollbar(plot, scrollAction, event) {
  * @private
  * @memberOf sigplot
  */
-function drag_updateRange(Mx, Gx, scrollbar, scrollAction, range, event) {
+function drag_updateRange(Mx: any, Gx: any, scrollbar: any, scrollAction: any, range: any, event: any) {
     scrollbar.action = mx.SB_DRAG;
 
     if (scrollAction === "YPAN") {
@@ -8481,8 +8500,8 @@ function drag_updateRange(Mx, Gx, scrollbar, scrollAction, range, event) {
  * @memberOf sigplot
  * @private
  */
-function setupPrompt(plot, promptText, isValid, onSuccess, inputValue,
-    xpos, ypos, callback) {
+function setupPrompt(plot: any, promptText: string, isValid: any, onSuccess: any, inputValue?: any,
+    xpos?: any, ypos?: any, callback?: any) {
     var Mx = plot._Mx;
 
     if (Mx.prompt) {
@@ -8534,7 +8553,7 @@ function setupPrompt(plot, promptText, isValid, onSuccess, inputValue,
  * @memberOf sigplot
  * @private
  */
-function enable_listeners(plot) {
+function enable_listeners(plot: any) {
     var Mx = plot._Mx;
     mx.addEventListener(Mx, "mousedown", plot.onmousedown, false);
     mx.addEventListener(Mx, "mousemove", plot.throttledOnMouseMove, false);
@@ -8553,7 +8572,7 @@ function enable_listeners(plot) {
  * @memberOf sigplot
  * @private
  */
-function disable_listeners(plot) {
+function disable_listeners(plot: any) {
     var Mx = plot._Mx;
 
     mx.removeEventListener(Mx, "mousedown", plot.onmousedown, false);
@@ -8576,7 +8595,7 @@ function disable_listeners(plot) {
  * @memberOf sigplot
  * @private
  */
-function display_specs(plot) {
+function display_specs(plot: any) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -8807,7 +8826,7 @@ function display_specs(plot) {
  * @param ylab
  *         force a specific y-label
  */
-function scale_base(plot, mode, xxmin, xxmax, xlab, ylab) {
+function scale_base(plot: any, mode: any, xxmin?: any, xxmax?: any, xlab?: any, ylab?: any) {
     const Mx = plot._Mx;
     const Gx = plot._Gx;
 
@@ -8943,7 +8962,7 @@ function scale_base(plot, mode, xxmin, xxmax, xlab, ylab) {
  * @memberOf sigplot
  * @private
  */
-function set_panbounds(plot, {
+function set_panbounds(plot: any, {
     xmin,
     xmax,
     ymin,
@@ -8986,7 +9005,7 @@ function set_panbounds(plot, {
  * @memberOf sigplot
  * @private
  */
-function pixel_to_real(plot, xpos, ypos) {
+function pixel_to_real(plot: any, xpos: number, ypos: number) {
     var Gx = plot._Gx;
     var Mx = plot._Mx;
 
@@ -9002,7 +9021,7 @@ function pixel_to_real(plot, xpos, ypos) {
  * @memberOf sigplot
  * @private
  */
-function coordsInRectangle(x, y, rect_x, rect_y, rect_width, rect_height) {
+function coordsInRectangle(x: number, y: number, rect_x: number, rect_y: number, rect_width: number, rect_height: number) {
     return (x >= rect_x && x <= rect_x + rect_width && y >= rect_y && y <= rect_y + rect_height);
 }
 
@@ -9010,7 +9029,7 @@ function coordsInRectangle(x, y, rect_x, rect_y, rect_width, rect_height) {
  * @memberOf sigplot
  * @private
  */
-function coordsInTriangle(x, y, tri_x1, tri_y1, tri_x2, tri_y2, tri_x3, tri_y3) {
+function coordsInTriangle(x: number, y: number, tri_x1: number, tri_y1: number, tri_x2: number, tri_y2: number, tri_x3: number, tri_y3: number) {
     // Uses barycentric coordinates
     // https://en.wikipedia.org/wiki/Barycentric_coordinate_system ( and http://blackpawn.com/texts/pointinpoly/)
 
@@ -9044,7 +9063,7 @@ function coordsInTriangle(x, y, tri_x1, tri_y1, tri_x2, tri_y2, tri_x3, tri_y3) 
  * @memberOf sigplot
  * @private
  */
-function inPanRegion(plot, coord) {
+function inPanRegion(plot: any, coord?: any) {
     var inPanRegion = false;
     var Gx = plot._Gx;
     var Mx = plot._Mx;
@@ -9118,7 +9137,7 @@ function inPanRegion(plot, coord) {
  * @memberOf sigplot
  * @private
  */
-function inPanCenterRegion(plot) {
+function inPanCenterRegion(plot: any) {
     var inCenterRegion = false;
     var Mx = plot._Mx;
     var x = Mx.xpos;
@@ -9162,7 +9181,7 @@ function inPanCenterRegion(plot) {
  * @private
  * @memberOf sigplot
  */
-function onScrollbar(position, scrollbar) {
+function onScrollbar(position: any, scrollbar: any) {
     var s1;
     var sw;
 
@@ -9209,7 +9228,7 @@ function onScrollbar(position, scrollbar) {
  * @memberOf sigplot
  * @private
  */
-function middleClickScrollMenuAction(plot, action, direction) {
+function middleClickScrollMenuAction(plot: any, action: string, direction: string) {
     var Mx = plot._Mx;
 
     // Determine the appropriate scrollbar to work with
@@ -9234,7 +9253,7 @@ function middleClickScrollMenuAction(plot, action, direction) {
         direction.slice(0, 1));
 
     plot.inPan = true; // prevent recursive pans
-    var evt = document.createEvent('Event');
+    var evt = document.createEvent('Event') as any;
     if (direction === "XPAN") {
         evt.initEvent('xpan', true, true);
     } else if (direction === "YPAN") {
@@ -9265,7 +9284,7 @@ function middleClickScrollMenuAction(plot, action, direction) {
  * @memberOf sigplot
  * @private
  */
-function updateViewbox(plot, newMin, newMax, axis) {
+function updateViewbox(plot: any, newMin: number, newMax: number, axis: string) {
     var Mx = plot._Mx;
     var Gx = plot._Gx;
 
@@ -9300,8 +9319,8 @@ function updateViewbox(plot, newMin, newMax, axis) {
     }
 }
 
-sigplot.Plot = Plot;
-sigplot.plugins = {
+(sigplot as any).Plot = Plot;
+(sigplot as any).plugins = {
     AccordionPlugin,
     AnnotationPlugin,
     BoxesPlugin,

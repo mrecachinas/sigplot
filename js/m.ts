@@ -1,6 +1,6 @@
 /**
  * @license
- * File: m.js
+ * File: m.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -23,109 +23,54 @@
  * under the License.
  */
 
-/*jslint nomen: true, browser: true, devel: true*/
-
-//Uses Immediately-invoked Function Expressions (IIFE)s for namespaces
-//See http://addyosmani.com/blog/essential-js-namespacing/ for details.
-
-import sigfile from "sigfile";
+import * as sigfile from "sigfile";
 import loglevel from "loglevel";
+import type { BlueHeader, Mc as McType, MinMaxResult, NumericArray, UnitEntry } from "./types";
 
 var bluefile = sigfile.bluefile;
 
+/**
+ * At runtime, hcb.dview is actually a TypedArray (Float32Array, Float64Array, etc.)
+ * set by bluefile.BlueHeader.setData(), not a DataView despite the interface declaration.
+ * This helper retrieves it with the correct runtime type.
+ */
+function getDview(hcb: BlueHeader): any {
+    return hcb.dview;
+}
+
+interface TouchLike {
+    pageX: number;
+    pageY: number;
+}
+
+interface VectorConfig {
+    MV: string;
+    MS: string;
+    nbpt: number;
+    view: undefined;
+}
 
 function m() {}
 
 m.log = loglevel;
 
 /**
- *
- *
- * @memberOf sigplot
- * @private
- */
-var PointArray = null;
-
-/**
- * True if we detected that we are on an iOS device
- *
- * @memberOf sigplot
  * @private
  */
 var iOS = (navigator.userAgent.match(/(iPad|iPhone|iPod)/i) ? true : false);
-if ((iOS) || // iOS doesn't support Float64
-    (typeof Float64Array === 'undefined') || // If it's undefined it's obviously not supported
-    (Float64Array.emulated) || // If it's emulated, don't waste time on extra precision
-    (!Float64Array.BYTES_PER_ELEMENT)) { // If bytes per element isn't defined, it's a buggy implementation (i.e. PhantomJS)
-    m.PointArray = Float32Array;
+if ((iOS) ||
+    (typeof Float64Array === 'undefined') ||
+    ((Float64Array as any).emulated) ||
+    (!Float64Array.BYTES_PER_ELEMENT)) {
+    m.PointArray = Float32Array as any;
 } else {
-    m.PointArray = Float64Array;
+    m.PointArray = Float64Array as any;
 }
 
-
-/** UNITS Structure:
- *		0: ["None", "U"],
- *		1: ["Time", "sec"],
- *		2: ["Delay", "sec"],
- *		3: ["Frequency", "Hz"],
- *		4: ["Time code format", ""],
- *		5: ["Distance", "m"],
- *		6: ["Speed", "m/s"],
- *		7: ["Acceleration", "m/sec^2"],
- *		8: ["Jerk", "m/sec^3"],
- *		9: ["Doppler", "Hz"],
- *		10: ["Doppler rate", "Hz/sec"],
- *		11: ["Energy", "J"],
- *		12: ["Power", "W"],
- *		13: ["Mass", "g"],
- *		14: ["Volume", "l"],
- *		15: ["Angular power density", "W/ster"],
- *		16: ["Integrated power density", "W/rad"],
- *		17: ["Spatial power density", "W/m^2"],
- *		18: ["Integrated power density", "W/m"],
- *		19: ["Spectral power density", "W/MHz"],
- *		20: ["Amplitude", "U"],
- *		21: ["Real", "U"],
- *		22: ["Imaginary", "U"],
- *		23: ["Phase", "rad"],
- *		24: ["Phase", "deg"],
- *		25: ["Phase", "cycles"],
- *		26: ["10*Log", "U"],
- *		27: ["20*Log", "U"],
- *		28: ["Magnitude", "U"],
- *		29: ["Unknown", "U"],
- *		30: ["Unknown", "U"],
- *		31: ["General dimensionless", ""],
- *		32: ["Counts", ""],
- *		33: ["Angle", "rad"],
- *		34: ["Angle", "deg"],
- *		35: ["Relative power", "dB"],
- *		36: ["Relative power", "dBm"],
- *		37: ["Relative power", "dBW"],
- *		38: ["Solid angle", "ster"],
- *		40: ["Distance", "ft"],
- *		41: ["Distance", "nmi"],
- *		42: ["Speed", "ft/sec"],
- *		43: ["Speed", "nmi/sec"],
- *		44: ["Speed", "knots=nmi/hr"],
- *		45: ["Acceleration", "ft/sec^2"],
- *		46: ["Acceleration", "nmi/sec^2"],
- *		47: ["Acceleration", "knots/sec"],
- *		48: ["Acceleration", "G"],
- *		49: ["Jerk", "G/sec"],
- *		50: ["Rotation", "rps"],
- *		51: ["Rotation", "rpm"],
- *		52: ["Angular velocity", "rad/sec"],
- *		53: ["Angular velocity", "deg/sec"],
- *		54: ["Angular acceleration", "rad/sec^2"],
- *		55: ["Angular acceleration", "deg/sec^2"],
- *		60: ["Latitude", "deg"],
- *		61: ["Longitude", "deg"],
- *		62: ["Altitude", "ft"],
- *		63: ["Altitude", "m"]
+/** UNITS Structure
  * @global
  */
-var UNITS = {
+var UNITS: Record<number, UnitEntry> = {
     0: ["None", "U", true, true],
     1: ["Time", "sec", true, true],
     2: ["Delay", "sec", true, false],
@@ -193,15 +138,6 @@ m.UNITS = UNITS;
  * @private
  */
 m.Mc = {
-    // Colormaps are stored as 7 element tables which are then
-    //	interpolated to the number of colors actually used in a graphics routine
-    //	call to MX$COLORMAP.
-
-    // There are 4 colormap tables stored in the environment: A GREYSCALE,
-    // COLORRAMP, COLORWHEEL, COLORSPECTRUM, or SUNSET.  The specific values that
-    // are listed here are from xcolordef.prm (use the XCOLORMAP widget).
-    //
-    // The actual values are a result of tribal knowledge and years of experience
     colormap: [{
             name: "Greyscale",
             colors: [{
@@ -510,11 +446,10 @@ m.PIPESIZE = 1024 * 1024;
 
 /**
  * Converts unit strings to number code
- * @param	{string}	unitInput	User unit input
  */
-m.unit_lookup = function(unitInput) {
+m.unit_lookup = function(unitInput: string | number): number | string {
     for (var i = 0; i < 64; i++) {
-        var u;
+        var u: UnitEntry;
         if (UNITS[i] === undefined) {
             u = UNITS[0];
         } else {
@@ -541,15 +476,10 @@ m.unit_lookup = function(unitInput) {
 
 /**
  * Creates new file with header initialized to type-1000 defaults
- * and data appended. (tbd)
- * @param	{string}	filename	Name of File to Create
- * @param  	{array}		data		Input data buffer
- * @param  	{array}	  	overrides	List of fields/values to be overridden in the bluefile header
- * @param   {function}	cleanup	Function to be called when layer is deoverlayed
- * @return 	{header} 	hcb		Return <hcb> type-1000 bluefile header, filename=null
+ * and data appended.
  */
-m.initialize = function(data, overrides, cleanup) {
-    var hcb = new bluefile.BlueHeader(null);
+m.initialize = function(data: any, overrides?: Record<string, any>, cleanup?: () => void): BlueHeader {
+    var hcb: BlueHeader = new bluefile.BlueHeader(null);
 
     hcb.version = 'BLUE';
     hcb.size = 0;
@@ -565,12 +495,9 @@ m.initialize = function(data, overrides, cleanup) {
     hcb.yunits = 0;
     hcb.enabled_streaming_pcut = false;
 
-    // if cleanup function provided, add it to the header
-    // otherwise, it'll be undefined
     hcb.cleanup = cleanup;
 
     if (!overrides) {
-        /* if no overrides provided...set it to empty*/
         overrides = {};
     }
 
@@ -578,22 +505,17 @@ m.initialize = function(data, overrides, cleanup) {
         hcb[field] = overrides[field];
     }
 
-    //Convert xunits and yunits to numbers if they are strings
-    hcb["xunits"] = m.unit_lookup(hcb["xunits"]);
-    hcb["yunits"] = m.unit_lookup(hcb["yunits"]);
+    hcb["xunits"] = m.unit_lookup(hcb["xunits"]) as number;
+    hcb["yunits"] = m.unit_lookup(hcb["yunits"]) as number;
 
-
-    // Force type 2000 is subsize is specified
     if (hcb["subsize"] > 1) {
         hcb.type = 2000;
     } else if (Array.isArray(data) && (Array.isArray(data[0]) || ArrayBuffer.isView(data[0]))) {
-        //If this is a 2-D array automatically set subsize
         hcb.type = 2000;
-        hcb.subsize = data[0].length;
+        hcb.subsize = (data[0] as any).length;
         hcb.size = data.length;
     }
     hcb["class"] = hcb.type / 1000;
-    // If this is a type 2000 , subsize *must* be provided
     if ((hcb["class"] === 2) && (hcb["subsize"] === undefined)) {
         throw "subsize must be provided with type 2000 files";
     }
@@ -605,12 +527,11 @@ m.initialize = function(data, overrides, cleanup) {
         hcb.pipe = true;
         hcb.in_byte = 0;
         hcb.out_byte = 0;
-        // TODO round pipe size to nearest number of elements
         var pipesize = overrides.pipesize || m.PIPESIZE;
 
         hcb.buf = new ArrayBuffer(pipesize);
         hcb.setData(hcb.buf);
-        hcb.data_free = hcb.dview.length;
+        hcb.data_free = getDview(hcb).length;
     }
 
     return hcb;
@@ -618,14 +539,12 @@ m.initialize = function(data, overrides, cleanup) {
 
 /**
  * Convert type-2000 header internals to force GRAB and FILAD routines to treat file as a 1000-type file.
- * @param	{header}	hcb		Bluefile header control block
  */
-m.force1000 = function(hcb) {
+m.force1000 = function(hcb: BlueHeader): void {
     if (hcb["class"] === 2) {
         if ((hcb.size) && (!hcb.pipe)) {
             hcb.size = hcb.subsize * hcb.size;
         } else {
-            // assume the size is 0
             hcb.size = 0;
         }
         hcb.bpe = hcb.bpe / hcb.subsize;
@@ -635,33 +554,26 @@ m.force1000 = function(hcb) {
 
 /**
  * Get data from file at specified start location.
- * @param	{header}	hcb		Bluefile header control block
- * @param	{array}		bufview		Data buffer to receive data
- * @param	{number}	start		Start location
- * @param	{number}	nget		Number of requested data
- * @return	{number}	ngot		Number of received data
  */
-m.grab = function(hcb, bufview, start, nget) {
-    if (!hcb.dview) {
+m.grab = function(hcb: BlueHeader, bufview: any, start: number, nget: number): number {
+    var dv = getDview(hcb);
+    if (!dv) {
         return 0;
     }
 
-    // TODO reformat
     if (hcb.format[0] === 'C') {
         start = start * 2;
     }
 
-    nget = hcb.ape * nget; // TODO - this is never used????
+    nget = hcb.ape * nget;
 
-    //var ngot = Math.min(bufview.length, (hcb.dview.length-start)); //mmm
-    var ngot = Math.min(bufview.length, (hcb.dview.length - start));
-    // iOS doesn't have .set on TypedArrays
+    var ngot = Math.min(bufview.length, (dv.length - start));
     if (bufview.set === undefined) {
         for (var i = 0; i < ngot; i++) {
-            bufview[i] = hcb.dview[start + i];
+            bufview[i] = dv[start + i];
         }
     } else {
-        bufview.set(hcb.dview.subarray(start, start + ngot));
+        bufview.set(dv.subarray(start, start + ngot));
     }
     if (hcb.format[0] === 'C') {
         ngot = ngot / 2;
@@ -671,30 +583,28 @@ m.grab = function(hcb, bufview, start, nget) {
 
 /**
  * Append data buffer to file specified in the bluefile header control block.
- * @param	{header}	hcb		Bluefile header control block
- * @param	{array}		data		Data buffer
- * @param   {boolean}       [sync=false]    dispatch onpipewrite syncronously
  */
-m.filad = function(hcb, data, sync) {
+m.filad = function(hcb: BlueHeader, data: any, sync?: boolean): void {
+    var dv = getDview(hcb);
     if (hcb.data_free < data.length) {
         throw "Pipe full";
     }
-    var sidx = hcb.in_byte / hcb.dview.BYTES_PER_ELEMENT;
+    var sidx = hcb.in_byte / dv.BYTES_PER_ELEMENT;
     var eidx = (sidx + data.length);
-    if (eidx > hcb.dview.length) {
-        var head = hcb.dview.length - sidx;
+    if (eidx > dv.length) {
+        var head = dv.length - sidx;
         var tail = data.length - head;
         if (data.subarray) {
-            hcb.dview.set(data.subarray(0, head), sidx);
-            hcb.dview.set(data.subarray(head, data.length), 0);
+            dv.set(data.subarray(0, head), sidx);
+            dv.set(data.subarray(head, data.length), 0);
         } else {
-            hcb.dview.set(data.slice(0, head), sidx);
-            hcb.dview.set(data.slice(head, data.length), 0);
+            dv.set(data.slice(0, head), sidx);
+            dv.set(data.slice(head, data.length), 0);
         }
-        hcb.in_byte = (tail * hcb.dview.BYTES_PER_ELEMENT);
+        hcb.in_byte = (tail * dv.BYTES_PER_ELEMENT);
     } else {
-        hcb.dview.set(data, sidx);
-        hcb.in_byte = (eidx * hcb.dview.BYTES_PER_ELEMENT) % hcb.buf.byteLength;
+        dv.set(data, sidx);
+        hcb.in_byte = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf.byteLength;
     }
     hcb.data_free -= data.length;
     if (hcb.onwritelisteners) {
@@ -709,25 +619,19 @@ m.filad = function(hcb, data, sync) {
 };
 
 /**
- * @param	{header}	hcb		Bluefile header control block
- * @return	{number}	elements available
  * @private
  */
-m.pavail = function(hcb) {
-    return hcb.dview.length - hcb.data_free;
+m.pavail = function(hcb: BlueHeader): number {
+    return getDview(hcb).length - hcb.data_free;
 };
 
 /**
  * Get data from file in dataflow fashion.
- * @param	{array}		hcb	Bluefile header control block
- * @param 	{array}		dview	Data buffer to receive data
- * @param	{number}	nget	Input variable name of parameter to receive data
- * @param	{number}	offset	Offset into file
- * @return	{number}	ngot	Number of data values gotten
  */
 // WARNING - nget is number of scalars...which differs from the normal API
-m.grabx = function(hcb, dview, nget, offset) {
-    var navail = hcb.dview.length - hcb.data_free;
+m.grabx = function(hcb: BlueHeader, dview: any, nget?: number, offset?: number): number {
+    var dv = getDview(hcb);
+    var navail = dv.length - hcb.data_free;
     if (offset === undefined) {
         offset = 0;
     }
@@ -743,17 +647,17 @@ m.grabx = function(hcb, dview, nget, offset) {
         return 0;
     }
 
-    var sidx = hcb.out_byte / hcb.dview.BYTES_PER_ELEMENT;
+    var sidx = hcb.out_byte / dv.BYTES_PER_ELEMENT;
     var eidx = (sidx + nget);
-    if (eidx >= hcb.dview.length) {
-        var head = hcb.dview.length - sidx;
-        eidx = eidx - hcb.dview.length;
-        dview.set(hcb.dview.subarray(sidx, hcb.dview.length), offset);
-        dview.set(hcb.dview.subarray(0, eidx), offset + head);
+    if (eidx >= dv.length) {
+        var head = dv.length - sidx;
+        eidx = eidx - dv.length;
+        dview.set(dv.subarray(sidx, dv.length), offset);
+        dview.set(dv.subarray(0, eidx), offset + head);
     } else {
-        dview.set(hcb.dview.subarray(sidx, eidx), offset);
+        dview.set(dv.subarray(sidx, eidx), offset);
     }
-    hcb.out_byte = (eidx * hcb.dview.BYTES_PER_ELEMENT) % hcb.buf.byteLength;
+    hcb.out_byte = (eidx * dv.BYTES_PER_ELEMENT) % hcb.buf.byteLength;
     hcb.data_free += nget;
     var ngot = nget;
     return ngot;
@@ -761,11 +665,9 @@ m.grabx = function(hcb, dview, nget, offset) {
 
 
 /**
- * @param	{header}	hcb		Bluefile header control block
- * @param	{number}	onwrite		-
  * @private
  */
-m.addPipeWriteListener = function(hcb, onwrite) {
+m.addPipeWriteListener = function(hcb: BlueHeader, onwrite: () => void): void {
     if (!hcb.onwritelisteners) {
         hcb.onwritelisteners = [];
     }
@@ -776,21 +678,17 @@ m.addPipeWriteListener = function(hcb, onwrite) {
 
 /**
  * Returns ASCII description of units code
- * @param 	{number}	UNITS array index (see global UNITS)
- * @return 	{string}	ASCII code pair
  */
 // ~= M$UNITS_NAME
-m.units_name = function(units) {
+m.units_name = function(units: number): string {
     var u = UNITS[units];
     return u[0] + " (" + u[1] + ")";
 };
 
 /**
  * Extract filename from full path
- * @param 	{string}	pathfilename	Full path, including filename
- * @return	{string}	filename	    Trimmed filename
  */
-m.trim_name = function(pathfilename) {
+m.trim_name = function(pathfilename: string): string {
     var i = pathfilename.indexOf(']');
     if (i === -1) {
         i = pathfilename.indexOf('/');
@@ -807,24 +705,22 @@ m.trim_name = function(pathfilename) {
 };
 
 /**
- * Takes an integer code for units and a multiplier and returns the string representation of the two.
- * Example: l = m.label(1,1.0e3) ==> l =  Time (Ksec)
- * @param 	{number}	units	Integer code for Unit (see global UNITS)
- * @param 	{number} 	mult	Units multiplier (i.e 1.0e3 ==> 'K')
- * @return {string} representation of units and multiplier
+ * Takes an integer code for units and a multiplier and returns the string representation.
  */
 // ~= M$LABEL
-m.label = function(units, mult) {
-    var u = ["Unknown", "U"];
+m.label = function(units: number | string | UnitEntry, mult: number): string {
+    var u: [string, string | null] = ["Unknown", "U"];
 
     if (typeof units === "string") {
         u = [units, null];
     } else if (Array.isArray(units)) {
-        u = units;
+        u = units as unknown as [string, string | null];
     } else {
-        u = UNITS[units];
-        if (u === undefined) {
+        var entry = UNITS[units as number];
+        if (entry === undefined) {
             u = ["Unknown", "U"];
+        } else {
+            u = [entry[0], entry[1]];
         }
     }
 
@@ -838,22 +734,19 @@ m.label = function(units, mult) {
 };
 
 /**
- * @method bound
- * @param a
- * @param b
- * @param c
+ * Clamp value between bounds
  */
-m.bound = function(a, b, c) {
+m.bound = function(a: number, b: number, c: number): number {
     return a < b ? b : (a > c ? c : a);
 };
 
-m.touch_distance = function(touchA, touchB) {
+m.touch_distance = function(touchA: TouchLike, touchB: TouchLike): number {
     var xd = (touchA.pageX - touchB.pageX);
     var yd = (touchA.pageY - touchB.pageY);
     return Math.sqrt((xd * xd) + (yd * yd));
 };
 
-m.mult_prefix = function(mult) {
+m.mult_prefix = function(mult: number): string {
     var prefix = "?";
 
     /* jshint -W116 */
@@ -892,20 +785,19 @@ m.mult_prefix = function(mult) {
 /**
  * @private
  */
-var VECTOR = {
-    MV: 'F', // vector type
-    MS: 'F', // scalar type...not really necessary in javascript
+var VECTOR: VectorConfig = {
+    MV: 'F',
+    MS: 'F',
     nbpt: 4,
     view: undefined
 };
 
 
 /**
- * Sets data type for all subsequent calls to vector libraries.  Remains in effect until another call to this routine.
- * @param ctype
+ * Sets data type for all subsequent calls to vector libraries.
  */
-// ~= VSTYPE - not really necessary
-m.vstype = function(ctype) {
+// ~= VSTYPE
+m.vstype = function(ctype: string): void {
     VECTOR.MS = ctype;
     VECTOR.MV = ctype;
     if (VECTOR.MV === 'D') {
@@ -921,7 +813,7 @@ m.vstype = function(ctype) {
     }
 };
 
-m.log10 = function(v, lo_thresh) {
+m.log10 = function(v: number, lo_thresh?: number): number {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -929,13 +821,11 @@ m.log10 = function(v, lo_thresh) {
 };
 
 /**
- * For each vector element in <src>, determine the max of <src> element and <lo_thresh>, returns the log(base10) of that value in <dst>
- * @param	{array}		src		Input vector.
- * @param 	{number} 	lo_thresh	User-set minimum log threshold (if not defined, set default=1.0e-20). Prevent computing log of 0 or negative values.
- * @param 	{array}		dst		Ouput vector.  If undefined, <src> elements will be overwritten.
+ * For each vector element in src, determine the max of src element and lo_thresh,
+ * returns the log(base10) of that value in dst
  */
-// ~= M$VLOG10- not really necessary
-m.vlog10 = function(src, lo_thresh, dst) {
+// ~= M$VLOG10
+m.vlog10 = function(src: NumericArray, lo_thresh?: number, dst?: NumericArray): void {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -951,15 +841,10 @@ m.vlog10 = function(src, lo_thresh, dst) {
 };
 
 /**
- * Same as vlog10 but multiply each output value by a scale factor <dbscale>.
- * @param 	{array}		src		Input vector.
- * @param 	{number}	lo_thresh	User-set minimum log threshold.
- *                                              If undefined, defaults to 1.0e-20. Prevent computing log of 0 or negative values.
- * @param 	{number}	dbscale		Output scale factor. If undefined, defaults to 1.
- * @param 	{array}		dst		Output vector. If undefined, <src> elements will be overwritten.
+ * Same as vlog10 but multiply each output value by a scale factor dbscale.
  * @private
  */
-m.vlogscale = function(src, lo_thresh, dbscale, dst) {
+m.vlogscale = function(src: NumericArray, lo_thresh?: number, dbscale?: number, dst?: NumericArray): void {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -979,16 +864,11 @@ m.vlogscale = function(src, lo_thresh, dbscale, dst) {
 };
 
 /**
- * Same as vlogscale but computes magnitude squared.
- *
- * @param 	{array}		src		Input vector.
- * @param 	{number}	lo_thresh	User-set minimum log threshold.
- *                                              If undefined, defaults to 1.0e-20. Prevent computing log of 0 or negative values.
- * @param 	{number}	dbscale		Output scale factor. If undefined, defaults to 1.
- * @param 	{array}		dst		Output vector. If undefined, <src> elements will be overwritten.
+ * Same as vlogscale but computes magnitude squared from interleaved complex data
+ * (src is interleaved: [r0, i0, r1, i1, ...]).
  * @private
  */
-m.cvmag2logscale = function(src, lo_thresh, dbscale, dst) {
+m.cvmag2logscale = function(src: NumericArray, lo_thresh?: number, dbscale?: number, dst?: NumericArray): void {
     if (lo_thresh === undefined) {
         lo_thresh = 1.0e-20;
     }
@@ -1011,14 +891,10 @@ m.cvmag2logscale = function(src, lo_thresh, dbscale, dst) {
 };
 
 /**
- * Multiply <count> elements of <src> by <mul>, store results in <dst>
- * @param	{array} 	src		Input vector.
- * @param	{number}	mul		Vector multiplier.
- * @param	{array}		dst		Output vector. If not defined, <src> elements will be overwritten.
- * @param	{number}	count		Number of elements to apply multiplier, starting with first <src> element.
+ * Multiply count elements of src by mul, store results in dst
  */
 // ~= M$VSMUL
-m.vsmul = function(src, mul, dst, count) {
+m.vsmul = function(src: NumericArray, mul: number, dst?: NumericArray, count?: number): void {
     if (dst === undefined) {
         dst = src;
     }
@@ -1037,18 +913,10 @@ m.vsmul = function(src, mul, dst, count) {
 };
 
 /**
- * Finds max and min values in vector <vec> and returns values.
- * @param 	{array}		vec		Input vector.
- * @param	{number}	size		Number of elements to search to find max.min values.
- * @return 	{array}		mxmin		Index and value of min and max elements in <vec>.
+ * Finds max and min values in vector vec and returns values.
  */
 // ~= M$VMXMN
-m.vmxmn = function(vec, size) {
-    // Originally this code used an object to hold the values
-    // but Chrome 34.0.1847.131 seemed to have a bug where
-    // these values would somehow get messed up...oddly
-    // putting printouts or breakpoints prevented the
-    // problem from showing up.
+m.vmxmn = function(vec: NumericArray, size: number): MinMaxResult {
     var smax = vec[0];
     var smin = vec[0];
     var imax = 0;
@@ -1073,20 +941,13 @@ m.vmxmn = function(vec, size) {
 };
 
 /**
- * Move <count> elements from <src> to <dest>.  Stride is the distance between each array element in either or both the input and output vectors.
- * @param {array}	src		Input vector.
- * @param {number}	sstride		Input stride.
- * @param {array}	dest		Output vector.
- * @param {number}	dstride		Output stride.
- * @param {number}	count		Number of input vector elements to move, starting with 0th element of <vec>. Cannot exceed vector lengths,
- *					taking into account the strides.
+ * Move count elements from src to dest with strides.
  */
-m.vmov = function(src, sstride, dest, dstride, count) {
+m.vmov = function(src: NumericArray, sstride: number, dest: NumericArray, dstride: number, count?: number): void {
     if (count === undefined) {
         count = src.length;
     }
     count = Math.min(src.length, count);
-    //count = Math.min(src.length, count, (count)*(dest.length)*(dstride)); //mmm-TODO
 
     for (var i = 0; i < count; i++) {
         var s = i * sstride;
@@ -1102,15 +963,9 @@ m.vmov = function(src, sstride, dest, dstride, count) {
 };
 
 /**
- * Move <count> elements from <src> to <dest> keeping the maximum value.  Stride is the distance between each array element in either or both the input and output vectors.
- * @param {array}	src		Input vector.
- * @param {number}	sstride		Input stride.
- * @param {array}	dest		Output vector.
- * @param {number}	dstride		Output stride.
- * @param {number}	count		Number of input vector elements to move, starting with 0th element of <vec>. Cannot exceed vector lengths,
- *					taking into account the strides.
+ * Move count elements from src to dest keeping the maximum value (with decay).
  */
-m.vmovmax = function(src, sstart, sstride, dest, dstart, dstride, count, decay) {
+m.vmovmax = function(src: NumericArray, sstart: number, sstride: number, dest: NumericArray, dstart: number, dstride: number, count?: number, decay?: number): void {
     if (count === undefined) {
         count = src.length;
     }
@@ -1126,21 +981,17 @@ m.vmovmax = function(src, sstart, sstride, dest, dstart, dstride, count, decay) 
         if (d >= dest.length) {
             break;
         }
-        adjust = (src[s] - dest[d]) * (1 - Math.exp(-decay));
+        adjust = (src[s] - dest[d]) * (1 - Math.exp(-decay!));
         dest[d] = Number.isNaN(dest[d] + adjust) ? src[s] : dest[d] + adjust;
         dest[d] = Math.max(dest[d], src[s]);
     }
 };
 
 /**
- * Initialize <count> consecutive elements of input vector <vec> with value <inpval>.
- * @param	{array}		vec		Input vector
- * @param	{number}	inpval		Value
- * @param 	{number}	count		Number of elements to write, starting with 0th element of <vec>.  If undefined, entire <vec> is written.
+ * Initialize count consecutive elements of input vector vec with value inpval.
  */
 // ~= M$VFILL
-// TODO - more optimal version?
-m.vfill = function(vec, inpval, count) {
+m.vfill = function(vec: NumericArray, inpval: number, count?: number): void {
     if (count === undefined) {
         count = vec.length;
     }
@@ -1151,19 +1002,15 @@ m.vfill = function(vec, inpval, count) {
 };
 
 /**
- * Compute the absolute value of <count> elements in <vec> and write to output vector <dest>
- * @param 	{array}		vec		Input vector.
- * @param 	{array}		dest		Ouput vector. If <dest> is undefined, overwrite input vector <vec>.
- * @param 	{number}	count		Number of elements to write, starting with 0th element of <vec>. Cannot exceed vector lengths.
+ * Compute the absolute value of count elements in vec and write to output vector dest
  */
-m.vabs = function(vec, dest, count) {
+m.vabs = function(vec: NumericArray, dest?: NumericArray, count?: number): void {
     if (count === undefined) {
         count = vec.length;
     }
     if (dest === undefined) {
         dest = vec;
     }
-    //count = Math.min(dest.length, count, vec.length); //mmm-TODO
     for (var i = 0; i < count; i++) {
         dest[i] = Math.abs(vec[i]);
     }
@@ -1171,18 +1018,15 @@ m.vabs = function(vec, dest, count) {
 
 
 /**
- * Computes the magnitude of <count> complex vector <cxvec> elements. Store results in output vector <dest>.
- * @param	{array}		cxvec		Input vector
- * @param 	{array}		dest		Output vector
- * @param 	{number}	count		Number of elements to write, starting with 0th element of <cxvec>. Cannot exceed vector lengths.  If undefined, defaults to output vector <dest> length.
+ * Computes the magnitude of count complex vector cxvec elements
+ * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVMAG
-m.cvmag = function(cxvec, dest, count) {
+m.cvmag = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
     count = Math.min(dest.length, count);
-    //count = Math.min(dest.length, count, cxvec.length); //mmm-TODO
 
     for (var i = 0; i < count; i++) {
         var j = 2 * i + 1;
@@ -1194,18 +1038,15 @@ m.cvmag = function(cxvec, dest, count) {
 };
 
 /**
- * Computes the magnitude squared of <count> complex vector <cxvec> elements. Store results in output vector <dest>.
- * @param	{array}		cxvec		Input vector
- * @param 	{array}		dest		Output vector
- * @param 	{number}	count		Number of elements to write, starting with 0th element of <cxvec>. Cannot exceed vector lengths.  If undefined, defaults to output vector <dest> length.
+ * Computes the magnitude squared of count complex vector cxvec elements
+ * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVMAG2
-m.cvmag2 = function(cxvec, dest, count) {
+m.cvmag2 = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
     count = Math.min(dest.length, count);
-    //count = Math.min(dest.length, count, cxvec.length); //mmm-TODO
 
     var j = 0;
     for (var i = 0; i < count; i++) {
@@ -1218,18 +1059,15 @@ m.cvmag2 = function(cxvec, dest, count) {
 };
 
 /**
- * Computes phase in radians of <count> complex vector <cxvec> elements. Store results in output vector <dest>.
- * @param	{array}		cxvec		Input vector
- * @param 	{array}		dest		Output vector
- * @param 	{number}	count		Number of elements to write, starting with 0th element of <cxvec>. Cannot exceed vector lengths.  If undefined, defaults to output vector <dest> length.
+ * Computes phase in radians of count complex vector cxvec elements
+ * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVPHA
-m.cvpha = function(cxvec, dest, count) {
+m.cvpha = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
     count = Math.min(dest.length, count);
-    //count = Math.min(dest.length, count, cxvec.length); //mmm-TODO
 
     var j = 0;
     var re = 0;
@@ -1249,13 +1087,11 @@ m.cvpha = function(cxvec, dest, count) {
 };
 
 /**
- * Computes the phase in degrees of <count> complex vector <cxvec> elements. Store results in output vector <dest>.
- * @param	{array}		cxvec		Input vector
- * @param 	{array}		dest		Output vector
- * @param 	{number}	count		Number of elements to write, starting with 0th element of <cxvec>. Cannot exceed vector lengths.  If undefined, defaults to output vector <dest> length.
+ * Computes the phase in degrees of count complex vector cxvec elements
+ * (interleaved: [r0, i0, r1, i1, ...]).
  */
 // ~= M$CVPHAD
-m.cvphad = function(cxvec, dest, count) {
+m.cvphad = function(cxvec: NumericArray, dest: NumericArray, count?: number): void {
     if (count === undefined) {
         count = dest.length;
     }
@@ -1279,21 +1115,19 @@ m.cvphad = function(cxvec, dest, count) {
 };
 
 /**
- * @param n
+ * Truncate a number to its integer part.
  * @private
  */
 // ~= INT(), DINT
-m.trunc = function(n) {
+m.trunc = function(n: number): number {
     return n - n % 1;
 };
 
 /**
- * @param a1
- * @param a2
+ * Transfer of sign function from Fortran.
  * @private
  */
-// Transfer of sign function from Fortran
-m.sign = function(a1, a2) {
+m.sign = function(a1: number, a2: number): number {
     if (a2 >= 0) {
         return Math.abs(a1);
     } else {
@@ -1302,39 +1136,26 @@ m.sign = function(a1, a2) {
 };
 
 /**
- * @method pad2
- * @param number
  * @private
  */
 
-function pad2(number) {
+function pad2(number: number): string {
     return (number < 10 ? '0' : '') + number;
 }
 
 /**
- * Convert J1950 time or seconds-since-Epoch (midnight Dec-31-1949) to time-of-day. Fractional seconds accurate to milliseconds.
- * @param 	{number}	sec		Number of seconds.
- * @return	{string}	tod		Time of day
+ * Convert J1950 time or seconds-since-Epoch (midnight Dec-31-1949) to time-of-day.
+ * Fractional seconds accurate to milliseconds.
  */
-
-/* Output string can be in different forms as follows:
- * -31536000 <  sec < 0                   -DDD::HH:MM:SS
- *         0 <= sec < 86400                     HH:MM:SS
- *         86400 <= sec < 31536000         DDD::HH:MM:SS
- *         31536000 <=sec            YYYY:MM:DD:HH:MM:SS.<FFFFFF>
- *                                    where FFFFFF is in microseconds
- *
- */
-
-m.sec2tod = function(sec, trim_trailing_zeros) {
+m.sec2tod = function(sec: number, trim_trailing_zeros?: boolean): string {
     var tod = "";
     var j1950 = Date.UTC(1950, 0, 1); //From 1950 to 1970
     var j1950Date = new Date(j1950); //debug var
     var d = new Date();
     var midnightToday = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-    var diffDaySecs = 86400; //    86400 secs = 24*60*60
-    var diffYearSecs = 31536000; // 31536000 secs = 365*24*60*60
-    var negDiffYearSecs = -1 * diffYearSecs; //-31536000 secs
+    var diffDaySecs = 86400;
+    var diffYearSecs = 31536000;
+    var negDiffYearSecs = -1 * diffYearSecs;
 
     if (sec >= 0) {
         if (sec < diffDaySecs) {
@@ -1346,7 +1167,7 @@ m.sec2tod = function(sec, trim_trailing_zeros) {
             tod = "24:00:00";
         } else if (sec < diffYearSecs) {
             // ddd:hh:mm:ss
-            var days = sec / diffDaySecs;
+            var days: any = sec / diffDaySecs;
             days = [days > 0 ? Math.floor(days) : Math.ceil(days)];
 
             // Break down integral seconds in the day into hours, minutes and seconds.
@@ -1366,7 +1187,7 @@ m.sec2tod = function(sec, trim_trailing_zeros) {
     } else {
         if (sec > negDiffYearSecs) {
             // -ddd:hh:mm:ss
-            var days = sec / diffDaySecs;
+            var days: any = sec / diffDaySecs;
             days = (days <= 0) ? Math.ceil(days) : Math.floor(days);
 
             // Break down integral seconds in the day into hours, minutes and seconds.
@@ -1391,9 +1212,6 @@ m.sec2tod = function(sec, trim_trailing_zeros) {
     }
 
     // violate legacy behavior, include full precision always
-    // even if we are on a full second boundary, otherwise
-    // on rising/falling rasters it can look like the display
-    // is flickering
     var fractional = (sec % 1);
     if (fractional === 0.0) {
         tod += ".000000";
@@ -1404,7 +1222,6 @@ m.sec2tod = function(sec, trim_trailing_zeros) {
     if (trim_trailing_zeros) {
         var dloc = tod.indexOf(".");
         var zloc = -1;
-        // If there is a 'decimal point'
         if (dloc !== -1) {
             zloc = tod.substr(dloc, tod.length).indexOf("0");
         }
@@ -1427,10 +1244,8 @@ var j1950offset = (20.0 * 365.0 + 5.0) * (24 * 3600);
 /**
  * 0.0 - 86400 == m.sec2tod
  * >86400 then modulo 86400
- *   if modulo <= 0 return m.sec2tod(modulo)+86400
- *   if module <
  */
-m.sec2tspec = function(sec, mode, trim_trailing_zeros) {
+m.sec2tspec = function(sec: number, mode?: string, trim_trailing_zeros?: boolean): string {
     mode = mode || "";
     if (sec >= 0 && sec <= 86400) {
         return m.sec2tod(sec, trim_trailing_zeros);
@@ -1447,13 +1262,11 @@ m.sec2tspec = function(sec, mode, trim_trailing_zeros) {
 };
 
 /**
- * @param 	{number}	sec		Number of seconds.
- * @return	{string}	tod		Time of day
+ * Convert seconds to time-of-day (j1970 epoch).
  */
-
-m.sec2tod_j1970 = function(sec) {
+m.sec2tod_j1970 = function(sec: number): string {
     var tod = "";
-    var d;
+    var d: Date;
     if ((sec >= 0) && (sec < 86400)) {
         // hh:mm:ss
         d = new Date(sec * 1000);
@@ -1476,42 +1289,36 @@ m.sec2tod_j1970 = function(sec) {
     return tod;
 };
 
-m.j1970toj1950 = function(t) {
-    if (t.getTime !== undefined) {
-        return ((t.getTime() / 1000) + j1950offset);
+m.j1970toj1950 = function(t: number | Date): number {
+    if ((t as Date).getTime !== undefined) {
+        return (((t as Date).getTime() / 1000) + j1950offset);
     } else {
-        return (t + j1950offset);
+        return ((t as number) + j1950offset);
     }
 };
 
-m.j1950toj1970 = function(t) {
+m.j1950toj1970 = function(t: number): number {
     return (t - j1950offset);
 };
 
 /**
+ * Throttle calls to "callback" routine and ensure that it
+ * is not invoked any more often than "delay" milliseconds.
  * @private
  */
-// Throttle calls to "callback" routine and ensure that it
-// is not invoked any more often than "delay" milliseconds.
-//
-m.throttle = function(delay, callback) {
+m.throttle = function(delay: number, callback: (...args: any[]) => void): () => void {
     var previousCall = new Date().getTime();
     return function() {
         var time = new Date().getTime();
 
-        //
-        // if "delay" milliseconds have expired since
-        // the previous call then propagate this call to
-        // "callback"
-        //
         if ((time - previousCall) >= delay) {
             previousCall = time;
-            callback.apply(null, arguments);
+            callback.apply(null, arguments as any);
         }
     };
 };
 
-m.pad = function(value, padamt) {
+m.pad = function(value: number, padamt?: number | string): number {
     if (!padamt) {
         return 0;
     }

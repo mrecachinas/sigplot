@@ -1,6 +1,6 @@
 /**
  * @license
- * File: sigplot.boxes.js
+ * File: sigplot.boxes.ts
  * Copyright (c) 2012-2017, LGS Innovations Inc., All rights reserved.
  *
  * This file is part of SigPlot.
@@ -26,26 +26,102 @@
 import common from "./common.js";
 import m from "./m.js";
 import mx from "./mx.js";
+import type { CanvasStyle } from "./types.js";
+
+export interface BoxesPluginOptions {
+    display?: boolean;
+    enableSelect?: boolean;
+    enableMove?: boolean;
+    enableResize?: boolean;
+    lineWidth?: number;
+    alpha?: number;
+    font?: string;
+    fill?: boolean;
+    strokeStyle?: CanvasStyle;
+    fillStyle?: CanvasStyle;
+    absolutePlacement?: boolean;
+}
+
+export interface Box {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    id: string;
+    selected?: boolean;
+    highlight?: boolean;
+    text?: string;
+    fill?: boolean;
+    fillStyle?: CanvasStyle;
+    alpha?: number;
+    strokeStyle?: CanvasStyle;
+    lineWidth?: number;
+    font?: string;
+    absolutePlacement?: boolean;
+    absolute_placement?: boolean; // Deprecated alias
+}
+
+interface SelectedState {
+    x: number;
+    y: number;
+    xpos: number;
+    ypos: number;
+    orig_box: Box;
+    box: Box;
+    controlPoint: string | null;
+    which: number;
+}
+
+interface PlotMouseEvent extends Event {
+    which: number;
+    x: number;
+    y: number;
+    xpos: number;
+    ypos: number;
+    preventDefault(): void;
+}
+
+interface BoxEvent extends Event {
+    box: Box;
+}
+
+interface BoxMoveEvent extends Event {
+    source: BoxesPlugin;
+    box: Box;
+    action: string;
+}
+
+interface BoxSelectEvent extends Event {
+    source: BoxesPlugin;
+    boxes: Box[];
+    action: string;
+    which: number;
+}
 
 
 class BoxesPlugin {
+    options: {
+        display: boolean;
+        enableSelect: boolean;
+        enableMove: boolean;
+        enableResize: boolean;
+        lineWidth: number;
+        alpha: number;
+        font?: string;
+        fill: boolean;
+        strokeStyle?: CanvasStyle;
+        fillStyle?: CanvasStyle;
+        absolutePlacement: boolean;
+    };
+    plot: any; // TODO: Type as SigPlot instance
+    boxes: Box[];
+    _clickTimer: ReturnType<typeof setTimeout> | null;
+    _selected: SelectedState | undefined;
 
     /**
-     * @constructor
+     * Constructor for the BoxesPlugin
      * 
-     * @param {Object} options - options for the plugin
-     * @param {Boolean} options.display - controls if boxes should be displayed or hidden
-     * @param {Boolean} options.enableSelect - controls if boxes can be selected with the mouse
-     * @param {Boolean} options.enableMove - controls if boxes can be moved with the mouse
-     * @param {Boolean} options.enableResize - controls if boxes can be resized with the mouse
-     * @param {Number} options.lineWidth - the line width (in pixels) for drawing the box
-     * @param {Number} options.alpha - the transparency for drawing the box fill
-     * @param {Boolean} options.fill - if boxes should be filled or not
-     * @param {*} options.strokeStyle - the canvas style to be used for the line and box text
-     * @param {*} options.fillStyle - the canvas style to be used for the box fill
-     * @param {Boolean} options.absolutePlacement - if boxes x,y,w,h are in pixels instead of real coordinates
-     * 
-     * @returns {BoxesPlugin}
+     * @param options - options for the plugin
      */
     constructor({
         display = true,
@@ -59,34 +135,39 @@ class BoxesPlugin {
         strokeStyle,
         fillStyle,
         absolutePlacement = false
-    } = {}) {
-        this.options = {};
+    }: BoxesPluginOptions = {}) {
+        this.options = {
+            display,
+            enableSelect,
+            enableMove,
+            enableResize,
+            lineWidth,
+            alpha,
+            font,
+            fill,
+            strokeStyle,
+            fillStyle,
+            absolutePlacement
+        };
+        
+        this.boxes = [];
+        this._clickTimer = null;
+        this._selected = undefined;
 
-        this.options.display = display;
-        this.options.enableSelect = enableSelect;
-        this.options.enableMove = enableMove;
-        this.options.enableResize = enableResize;
-        this.options.lineWidth = lineWidth;
-        this.options.alpha = alpha;
-        this.options.font = font;
-        this.options.fill = fill;
-        this.options.strokeStyle = strokeStyle;
-        this.options.fillStyle = fillStyle;
-        this.options.absolutePlacement = absolutePlacement;
+        // Bind methods to maintain 'this' context
+        this._onMouseDown = this._onMouseDown.bind(this);
+        this._onMouseMove = this._onMouseMove.bind(this);
+        this._onMouseClick = this._onMouseClick.bind(this);
     }
 
     /**
      * Initializer called when plot.add_plugin() is used.
      * This should not be called directly.
      */
-    init(plot) {
+    init(plot: any): void { // TODO: Type plot parameter
         this.plot = plot;
         this.boxes = [];
         this._clickTimer = null;
-
-        this._onMouseDown = this._onMouseDown.bind(this);
-        this._onMouseMove = this._onMouseMove.bind(this);
-        this._onMouseClick = this._onMouseClick.bind(this);
 
         this.plot.addListener("mdown", this._onMouseDown);
         this.plot.addListener("mmove", this._onMouseMove);
@@ -102,7 +183,7 @@ class BoxesPlugin {
     /**
      * Get/Set display property.
      */
-    display(val) {
+    display(val?: boolean): boolean | void {
         if (val === undefined) {
             return this.options.display;
         } else {
@@ -114,7 +195,7 @@ class BoxesPlugin {
     /**
      * Get/Set enableSelect property.
      */
-    enableSelect(val) {
+    enableSelect(val?: boolean): boolean | void {
         if (val === undefined) {
             return this.options.enableSelect;
         } else {
@@ -131,7 +212,7 @@ class BoxesPlugin {
     /**
      * Get/Set enableMove property.
      */
-    enableMove(val) {
+    enableMove(val?: boolean): boolean | void {
         if (val === undefined) {
             return this.options.enableMove;
         } else {
@@ -143,7 +224,7 @@ class BoxesPlugin {
     /**
      * Get/Set enableResize property.
      */
-    enableResize(val) {
+    enableResize(val?: boolean): boolean | void {
         if (val === undefined) {
             return this.options.enableResize;
         } else {
@@ -155,37 +236,24 @@ class BoxesPlugin {
     /**
      * Get list of all boxes.
      */
-    getBoxes() {
+    getBoxes(): Box[] {
         return this.boxes;
     }
 
     /**
      * Add a new box.
      *
-     * @param {Object} box - the box to add
-
-     * @param {Number} box.x - upper left corner x position of box
-     * @param {Number} box.y - upper left corner y position of box
-     * @param {Number} box.w - the width of the box along the x-dimension
-     * @param {Number} box.h - the height of the box along the x-dimension
-     * @param {string} box.text - a text label for the box
-     * @param {Boolen} box.fill - true if you want the box to be filled in
-     * @param {string} box.fillStyle - the fillStyle to use, defaults to strokeStyle
-     * @param {string} box.strokeStyle - the strokeStyle to use, defaults to the default fore-ground color
-     * @param {Number} box.alpha - the alpha transparency to use
-     * @param {Number} box.lineWidth - the width for the box outline
-     * @param {Boolen} box.absolutePlacement - true if you want the box x,y,w,h coordinates to be pixel instead of real
-     * 
+     * @param box - the box to add
      * @returns the unique id for the box
      */
-    addBox(box) {
+    addBox(box: Partial<Box>): string {
         const Mx = this.plot._Mx;
 
-        const _box = {
-            x: box.x,
-            y: box.y,
-            w: box.w,
-            h: box.h,
+        const _box: Box = {
+            x: box.x!,
+            y: box.y!,
+            w: box.w!,
+            h: box.h!,
             text: box.text,
             id: common.uuidv4(),
             fill: box.fill,
@@ -203,7 +271,7 @@ class BoxesPlugin {
 
         this.plot.redraw();
 
-        const evt = document.createEvent('Event');
+        const evt: any = document.createEvent('Event') as BoxEvent;
         evt.box = _box;
         evt.initEvent('boxadd', true, true);
         mx.dispatchEvent(Mx, evt);
@@ -212,14 +280,12 @@ class BoxesPlugin {
     }
 
     /**
-     * Brings a box to the front of the z-order
-     * 
-     * @param {string} id - the unique id of the box to remove
+     * Get all selected boxes.
      */
-    getSelectedBoxes() {
-        const selectedBoxes = [];
-        let box;
-        let ii;
+    getSelectedBoxes(): Box[] {
+        const selectedBoxes: Box[] = [];
+        let box: Box;
+        let ii: number;
         for (ii = (this.boxes.length - 1); ii > -1; ii--) {
             box = this.boxes[ii];
             if (box.selected) {
@@ -232,7 +298,7 @@ class BoxesPlugin {
     /**
      * Brings a box to the front of the z-order
      * 
-     * @param {string} id - the unique id of the box to remove
+     * @param id - the unique id of the box to remove
      */
     bringBoxToFront(id) {
         let box;
@@ -252,7 +318,7 @@ class BoxesPlugin {
      * 
      * @param {string} id - the unique id of the box to remove
      */
-    sendBoxToBack(id) {
+    sendBoxToBack(id: string): void {
         let box;
         let ii;
         for (ii = (this.boxes.length - 1); ii > -1; ii--) {
@@ -268,9 +334,9 @@ class BoxesPlugin {
     /**
      * Removes a box.
      * 
-     * @param {string} id - the unique id of the box to remove
+     * @param id - the unique id of the box to remove
      */
-    removeBox(id) {
+    removeBox(id: string): void {
         const Mx = this.plot._Mx;
 
         let box;
@@ -280,7 +346,7 @@ class BoxesPlugin {
             if (box.id === id) {
                 this.boxes.splice(ii, 1);
 
-                const evt = document.createEvent('Event');
+                const evt = document.createEvent('Event') as any;
                 evt.box = box;
                 evt.initEvent('boxremove', true, true);
                 mx.dispatchEvent(Mx, evt);
@@ -295,7 +361,7 @@ class BoxesPlugin {
     /**
      * Removes all boxes
      */
-    clearBoxes() {
+    clearBoxes(): void {
         const Mx = this.plot._Mx;
 
         let box;
@@ -304,7 +370,7 @@ class BoxesPlugin {
             box = this.boxes[ii];
             this.boxes.splice(ii, 1);
 
-            const evt = document.createEvent('Event');
+            const evt = document.createEvent('Event') as any;
             evt.box = box;
             evt.initEvent('boxremove', true, true);
             mx.dispatchEvent(Mx, evt);
@@ -423,7 +489,7 @@ class BoxesPlugin {
     }
 
     // Mouse down handler
-    _onMouseDown(evt) {
+    _onMouseDown(evt: PlotMouseEvent): void {
         const Mx = this.plot._Mx;
 
         // we never intercept middle mouse for boxes
@@ -464,6 +530,8 @@ class BoxesPlugin {
             this._selected = {
                 x: evt.x,
                 y: evt.y,
+                xpos: evt.xpos,
+                ypos: evt.ypos,
                 orig_box: Object.assign({}, boxes_selected[0]),
                 box: boxes_selected[0],
                 controlPoint: controlPoint,
@@ -477,7 +545,7 @@ class BoxesPlugin {
         }
     }
 
-    _onMouseMove(evt) {
+    _onMouseMove(evt: PlotMouseEvent): void {
         const Mx = this.plot._Mx;
 
         // Ignore if there are no boxes
@@ -600,7 +668,7 @@ class BoxesPlugin {
     }
 
     // Mouse click handler
-    _onMouseClick(evt) {
+    _onMouseClick(evt: PlotMouseEvent): boolean {
         const Mx = this.plot._Mx;
         let allowDefault = true;
         // the box is handling this, so prevent default actions
@@ -618,6 +686,8 @@ class BoxesPlugin {
                     this._selected = {
                         x: evt.x,
                         y: evt.y,
+                        xpos: evt.xpos,
+                        ypos: evt.ypos,
                         orig_box: Object.assign({}, boxes_selected[0]),
                         box: boxes_selected[0],
                         controlPoint: controlPoint,
@@ -674,7 +744,7 @@ class BoxesPlugin {
                 }
 
                 // Only issue box move if the box has moved
-                const sevt = document.createEvent('Event');
+                const sevt = document.createEvent('Event') as any;
                 sevt.source = this;
                 sevt.box = selected.box;
                 sevt.action = evt.type;
@@ -703,7 +773,7 @@ class BoxesPlugin {
                 evt.preventDefault();
                 allowDefault = false;
                 this._clickTimer = setTimeout(() => {
-                    const sevt = document.createEvent('Event');
+                    const sevt = document.createEvent('Event') as any;
                     sevt.source = this;
                     sevt.boxes = selected_boxes;
                     sevt.action = evt.type;

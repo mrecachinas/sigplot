@@ -1,10 +1,46 @@
 
 import tinycolor from "tinycolor2";
 
+/** Internal RGBA color with optional position and computed fields */
+interface ColorRGBA {
+    red: number;
+    green: number;
+    blue: number;
+    alpha: number;
+    pos?: number;
+    hex?: string;
+    color?: number;
+    [index: number]: number;
+}
+
+/** Color input that uses a "color" key (e.g., CSS string) with optional position */
+interface ColorWithColorKey {
+    color: string;
+    pos?: number;
+    [key: string]: any;
+}
+
+/** Percentage-based RGB input (values 0–100) */
+interface ColorPercentage {
+    red: number;
+    green: number;
+    blue: number;
+    alpha?: number;
+    pos?: number;
+    [key: string]: any;
+}
+
+type ColorInput = string | ColorWithColorKey | ColorPercentage | number[];
+
+interface ColorMapOptions {
+    ncolors?: number;
+    alpha?: number;
+}
+
 if (typeof Object.assign !== 'function') {
     // Must be writable: true, enumerable: false, configurable: true
     Object.defineProperty(Object, "assign", {
-        value: function assign(target, varArgs) { // .length of function is 2
+        value: function assign(target: any, _varArgs: any) { // .length of function is 2
             'use strict';
             if (target == null) { // TypeError if undefined or null
                 throw new TypeError('Cannot convert undefined or null to object');
@@ -27,60 +63,67 @@ if (typeof Object.assign !== 'function') {
         configurable: true
     });
 }
-var ColorMap = window.ColorMap = function(colors, options) {
-    this.options = {
-        ncolors: 500,
-        alpha: 255
-    };
-    this.options = Object.assign(this.options, options);
-    this.map = [];
-    var _min = 0;
-    this._low = 0;
-    this._high = 1;
-    var ncolors = this.options.ncolors;
-    this._fscale = ncolors / (this._high - this._low);
-    var colorindex = 1;
-    var colorBlockIndex = 1;
-    colors = JSON.parse(JSON.stringify(colors)); //make a copy so we dont change the original colors
-    colors = this._parseColors(colors);
-    this.colors = colors;
-    var col1 = colors[0];
-    var col2 = colors[1];
-    // pos is the percentage of scale (0-100), so
-    // colorStop is how many percentage is allocated
-    // to this band
-    var colorStop = colors[1].pos - colors[0].pos;
-    // now many colors are allocated to this block
-    var colorsInBlock = ncolors * (colorStop / 100);
-    // the interpolation step per color number
-    var factorStep = 1 / colorsInBlock;
-    for (var n = 0; n < ncolors - 2; n++) {
-        if (colorBlockIndex > colorsInBlock) {
-            col1 = colors[colorindex];
-            col2 = colors[colorindex + 1];
-            // if we are at the end of the color list
-            if (col2 === undefined) {
-                break;
+
+class ColorMap {
+    options: { ncolors: number; alpha: number };
+    map: ColorRGBA[];
+    colors: ColorRGBA[];
+    _low: number;
+    _high: number;
+    _fscale: number;
+
+    constructor(colors: ColorInput[], options?: ColorMapOptions) {
+        this.options = {
+            ncolors: 500,
+            alpha: 255
+        };
+        this.options = Object.assign(this.options, options);
+        this.map = [];
+        this._low = 0;
+        this._high = 1;
+        var ncolors = this.options.ncolors;
+        this._fscale = ncolors / (this._high - this._low);
+        var colorindex = 1;
+        var colorBlockIndex = 1;
+        var parsedColors: ColorRGBA[] = JSON.parse(JSON.stringify(colors)); //make a copy so we dont change the original colors
+        parsedColors = this._parseColors(parsedColors as any);
+        this.colors = parsedColors;
+        var col1 = parsedColors[0];
+        var col2 = parsedColors[1];
+        // pos is the percentage of scale (0-100), so
+        // colorStop is how many percentage is allocated
+        // to this band
+        var colorStop = parsedColors[1].pos! - parsedColors[0].pos!;
+        // now many colors are allocated to this block
+        var colorsInBlock = ncolors * (colorStop / 100);
+        // the interpolation step per color number
+        var factorStep = 1 / colorsInBlock;
+        for (var n = 0; n < ncolors - 2; n++) {
+            if (colorBlockIndex > colorsInBlock) {
+                col1 = parsedColors[colorindex];
+                col2 = parsedColors[colorindex + 1];
+                // if we are at the end of the color list
+                if (col2 === undefined) {
+                    break;
+                }
+                if ((col1.pos! >= 100) && (col2.pos! >= 100)) {
+                   break;
+               }
+                colorStop = col2.pos! - col1.pos!;
+                colorsInBlock = ncolors * (colorStop / 100);
+                factorStep = 1 / colorsInBlock;
+                colorBlockIndex = 1;
+                colorindex += 1;
             }
-            if ((col1.pos >= 100) && (col2.pos >= 100)) {
-               break;
-           }
-            var colorStop = col2.pos - col1.pos;
-            var colorsInBlock = ncolors * (colorStop / 100);
-            var factorStep = 1 / colorsInBlock;
-            var colorBlockIndex = 1;
-            colorindex += 1;
+            this._addColor(this.interpolate(col1, col2, factorStep * colorBlockIndex));
+            colorBlockIndex += 1;
         }
-        this._addColor(this.interpolate(col1, col2, factorStep * colorBlockIndex));
-        colorBlockIndex += 1;
+
+       this._addColor(parsedColors[colorindex]);
+       this._addColor(parsedColors[0], true);
     }
 
-   this._addColor(colors[colorindex]);
-   this._addColor(colors[0], true);
-
-};
-ColorMap.prototype = {
-    _addColor: function(color, front) {
+    _addColor(color: ColorRGBA, front?: boolean): void {
         color.hex = this._rgbToHex(color.red, color.green, color.blue);
         color.color = (color.alpha << 24) | // alpha
             (color.blue << 16) | // blue
@@ -91,8 +134,9 @@ ColorMap.prototype = {
         } else {
             this.map.push(color);
         }
-    },
-    _parseColors: function(colors) {
+    }
+
+    _parseColors(colors: any[]): ColorRGBA[] {
         for (var i = 0, c = colors.length; i < c; i++) {
             var color = colors[i];
             if (typeof color === "string") {
@@ -102,9 +146,9 @@ ColorMap.prototype = {
                 colors[i] = {red:color.r,green:color.g,blue:color.b,alpha:this.options.alpha};
 
             } else if (color.hasOwnProperty("color")) {
-                var newColor = tinycolor(color.color);
+                var newColor: any = tinycolor(color.color);
                 newColor = newColor.toRgb();
-                newColor = {red:newColor.r,green:newColor.g,blue:newColor.b,alpha:this.options.alpha};
+                newColor = {red:newColor.r,green:newColor.g,blue:newColor.b,alpha:this.options.alpha} as ColorRGBA;
                 if (color.hasOwnProperty("pos")) {
                     newColor.pos = color.pos;
                 }
@@ -127,8 +171,9 @@ ColorMap.prototype = {
             }
         }
         return this._checkColorStops(colors);
-    },
-    _checkColorStops: function(colors) {
+    }
+
+    _checkColorStops(colors: ColorRGBA[]): ColorRGBA[] {
         var lastStop = 0;
         var colorsWithNoStops = 0;
         for (var i = 0, c = colors.length; i < c; i++) {
@@ -137,8 +182,8 @@ ColorMap.prototype = {
                 colorsWithNoStops += 1;
             } else {
                 if (colorsWithNoStops) {
-                    var stopSize = (color.pos - lastStop) / colorsWithNoStops;
-                    var currentPos = color.pos;
+                    var stopSize = (color.pos! - lastStop) / colorsWithNoStops;
+                    var currentPos = color.pos!;
                     for (var z = 1; z <= colorsWithNoStops; z++) {
                         colors[i - z].pos = currentPos - stopSize;
                         currentPos -= stopSize;
@@ -162,30 +207,36 @@ ColorMap.prototype = {
             }
         }
         return colors;
-    },
-    _componentToHex: function(c) {
+    }
+
+    _componentToHex(c: number): string {
         var hex = c.toString(16);
         return hex.length === 1 ? "0" + hex : hex;
-    },
-    _rgbToHex: function(r, g, b) {
+    }
+
+    _rgbToHex(r: number, g: number, b: number): string {
         return "#" + this._componentToHex(r) + this._componentToHex(g) + this._componentToHex(b);
-    },
-    _hexToRgb: function(hex) {
+    }
+
+    _hexToRgb(hex: string): { red: number; green: number; blue: number } | null {
         var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
             red: parseInt(result[1], 16),
             green: parseInt(result[2], 16),
             blue: parseInt(result[3], 16)
         } : null;
-    },
-    getColor: function(number) {
+    }
+
+    getColor(number: number): ColorRGBA {
         var colorindex = this.getColorIndex(number);
         return this.map[colorindex];
-    },
-    getColorByIndex: function(colorindex) {
+    }
+
+    getColorByIndex(colorindex: number): ColorRGBA {
        return this.map[colorindex];
-    },
-    getColorIndex: function(number) {
+    }
+
+    getColorIndex(number: number): number {
        var n = (number - this._low) * this._fscale;
        var colorindex = ~~n; //make int fastest method
        if (colorindex > this.map.length - 1) {
@@ -194,19 +245,22 @@ ColorMap.prototype = {
            colorindex = 0;
        }
        return colorindex;
-    },
-    getNColors : function() {
+    }
+
+    getNColors(): number {
         return this.map.length;
-    },
-    setRange: function(low, high) {
+    }
+
+    setRange(low: number, high: number): void {
         // only recalculate if a value has changed
         if ((this._low !== low) || (this._high !== high)) {
             this._low = low;
             this._high = high;
             this._fscale = this.map.length / Math.abs(this._high - this._low);
         }
-    },
-    interpolate: function(col1, col2, factor) {
+    }
+
+    interpolate(col1: ColorRGBA, col2: ColorRGBA, factor: number): ColorRGBA {
         return {
             red: col1.red + factor * (col2.red - col1.red),
             green: col1.green + factor * (col2.green - col1.green),
@@ -214,5 +268,9 @@ ColorMap.prototype = {
             alpha: col1.alpha + factor * (col2.alpha - col1.alpha)
         };
     }
-};
+}
+
+// Expose on window for backward compatibility
+(window as any).ColorMap = ColorMap;
+
 export default ColorMap;

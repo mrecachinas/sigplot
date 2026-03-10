@@ -42,9 +42,10 @@ import common from "./common.js";
 import CanvasInput from "./CanvasInput.js";
 import m from "./m.js";
 import DomMenu from "./mx.dommenu.js";
+import type { StkEntry, Scrollbar, WarpBox, WarpBoxStyle, Menu, MenuItem, PixelPoint, TraceOptions, TraceHighlight, CanvasStyle } from "./types.ts";
 
 
-function mx() {}
+const mx: any = function mx(): void {};
 
 mx.DomMenu = DomMenu;
 mx.XW_INIT = -3;
@@ -109,7 +110,7 @@ mx.MAX_ZOOM = 9;
  * The zoom stack structure object
  * @private
  */
-mx.STKSTRUCT = function() {
+mx.STKSTRUCT = function(this: any): void {
     this.xmin = 0.0; // real world val at x1(origin=1,4) or x2(origin=2,4)
     this.xmax = 0.0; // real world val at x2(origin=1,4) or x1(origin=2,4)
     this.ymin = 0.0; // real world val at y2(origin=1,2) or y1(origin=3,4)
@@ -126,7 +127,7 @@ mx.STKSTRUCT = function() {
  * The scrollbar structure object used to hold state about scrolling
  * @private
  */
-mx.SCROLLBAR = function() {
+mx.SCROLLBAR = function(this: any): void {
     this.flag = null; // int_4 // flag field for MX$SCROLLBAR routine
     this.action = null; // int_4 // returned action performed (XW_EVENT)
     this.smin = null;
@@ -162,7 +163,7 @@ mx.SCROLLBAR = function() {
  * @method WARPBOX
  * @private
  */
-function WARPBOX() {
+function WARPBOX(this: any): void {
     this.xo = 0;
     this.yo = 0;
     this.xl = 0;
@@ -181,7 +182,7 @@ function WARPBOX() {
  * @param element
  * @private
  */
-function MX(element) { // this is where the canvases are setup/defined
+function MX(this: any, element: HTMLElement): void { // this is where the canvases are setup/defined
     this.root = element;
 
     // Create a div to hold all the various canvas layers
@@ -279,7 +280,7 @@ function MX(element) { // this is where the canvases are setup/defined
 /* This is used as a helper function for defining highlight ranges/
  */
 
-function in_fill_range(ele, range_begin, range_end) {
+function in_fill_range(ele: number, range_begin: number, range_end: number): boolean {
     var left = false;
     var right = false;
 
@@ -304,7 +305,7 @@ function in_fill_range(ele, range_begin, range_end) {
  * @param {element}	element 	Reference to a DOM window element
  */
 /* Step #5*/
-mx.open = function(element) {
+mx.open = function(element: HTMLElement): any {
     var Mx = new MX(element); /* Step #6*/
 
     Mx.wid_canvas.oncontextmenu = function(event) {
@@ -467,7 +468,7 @@ mx.open = function(element) {
  * @param Mx
  * @private
  */
-mx.enableListeners = function(Mx) {
+mx.enableListeners = function(Mx: any): void {
     mx.addEventListener(Mx, "mousemove", Mx.onmousemove, false);
     window.addEventListener("mouseup", Mx.onmouseup, false);
     mx.addEventListener(Mx, "mousedown", Mx.onmousedown, false);
@@ -484,7 +485,7 @@ mx.enableListeners = function(Mx) {
  * @param Mx
  * @private
  */
-mx.disableListeners = function(Mx) {
+mx.disableListeners = function(Mx: any): void {
     mx.removeEventListener(Mx, "mousemove", Mx.onmousemove, false);
     window.removeEventListener("mouseup", Mx.onmouseup, false);
     mx.removeEventListener(Mx, "mousedown", Mx.onmousedown, false);
@@ -503,7 +504,7 @@ mx.disableListeners = function(Mx) {
  * @param useCapture
  * @private
  */
-mx.addEventListener = function(Mx, event, callback, useCapture) {
+mx.addEventListener = function(Mx: any, event: string, callback: EventListener, useCapture?: boolean): void {
     return Mx.wid_canvas.addEventListener(event, callback, useCapture);
 };
 
@@ -514,7 +515,7 @@ mx.addEventListener = function(Mx, event, callback, useCapture) {
  * @param useCapture
  * @private
  */
-mx.removeEventListener = function(Mx, event, callback, useCapture) {
+mx.removeEventListener = function(Mx: any, event: string, callback: EventListener, useCapture?: boolean): void {
     return Mx.wid_canvas.removeEventListener(event, callback, useCapture);
 };
 
@@ -523,7 +524,7 @@ mx.removeEventListener = function(Mx, event, callback, useCapture) {
  * @param event
  * @private
  */
-mx.dispatchEvent = function(Mx, event) {
+mx.dispatchEvent = function(Mx: any, event: Event): boolean {
     return Mx.wid_canvas.dispatchEvent(event);
 };
 
@@ -532,7 +533,7 @@ mx.dispatchEvent = function(Mx, event) {
  * @param func
  * @private
  */
-mx.onWidgetLayer = function(Mx, func) {
+mx.onWidgetLayer = function(Mx: any, func: () => any): any {
     mx.onCanvas(Mx, Mx.wid_canvas, func);
 };
 
@@ -541,7 +542,7 @@ mx.onWidgetLayer = function(Mx, func) {
  * @param func
  * @private
  */
-mx.onCanvas = function(Mx, canvas, func) {
+mx.onCanvas = function(Mx: any, canvas: HTMLCanvasElement, func?: () => any): any {
     var current_active = Mx.active_canvas;
     Mx.active_canvas = canvas;
     try {
@@ -558,7 +559,7 @@ mx.onCanvas = function(Mx, canvas, func) {
  * @param func
  * @private
  */
-mx.withWidgetLayer = function(Mx, func) {
+mx.withWidgetLayer = function(Mx: any, func: () => any): () => void {
     var f = function() {
         mx.onWidgetLayer(Mx, func);
     };
@@ -570,7 +571,7 @@ mx.withWidgetLayer = function(Mx, func) {
  * @param func
  * @private
  */
-mx.render = function(Mx, func) {
+mx.render = function(Mx: any, func?: () => void): void {
     if (!func) {
         return;
     }
@@ -594,7 +595,7 @@ mx.render = function(Mx, func) {
  * @param value
  * @private
  */
-mx.fullscreen = function(Mx, value) {
+mx.fullscreen = function(Mx: any, value?: boolean): void {
     if (value === undefined) {
         value = !Mx.fullscreen;
     }
@@ -629,7 +630,7 @@ mx.fullscreen = function(Mx, value) {
  * @param Mx
  * @private
  */
-mx.checkresize = function(Mx) {
+mx.checkresize = function(Mx: any): boolean {
     var canvas = Mx.canvas;
     if ((canvas.height !== Mx.root.clientHeight) || (canvas.width !== Mx.root.clientWidth)) {
 
@@ -650,7 +651,7 @@ mx.checkresize = function(Mx) {
  * @param Mx
  * @private
  */
-mx.invertbgfg = function(Mx) {
+mx.invertbgfg = function(Mx: any): void {
     mx.setbgfg(Mx, Mx.fg, Mx.bg, !Mx.xi);
 };
 
@@ -660,14 +661,14 @@ mx.invertbgfg = function(Mx) {
  * @param color3
  * @private
  */
-mx.mixcolor = function(color1, color2, perc1to2) {
+mx.mixcolor = function(color1: string, color2: string, perc1to2: number): string {
     var c1 = tinycolor(color1).toRgb();
     var c2 = tinycolor(color2).toRgb();
     var mix = 1.0 - perc1to2;
     c2.r = c1.r * mix + c2.r * perc1to2;
     c2.g = c1.g * mix + c2.g * perc1to2;
     c2.b = c1.b * mix + c2.b * perc1to2;
-    return tinycolor(c2).toHexString(true);
+    return (tinycolor(c2) as any).toHexString(true);
 };
 
 /**
@@ -679,7 +680,7 @@ mx.mixcolor = function(color1, color2, perc1to2) {
  * @param fillStyle
  * @private
  */
-mx.linear_gradient = function(Mx, x, y, w, h, fillStyle) {
+mx.linear_gradient = function(Mx: any, x: number, y: number, w: number, h: number, fillStyle: string[]): CanvasGradient {
     var ctx = Mx.active_canvas.getContext("2d");
     var step_size = 1.0 / fillStyle.length;
     var lingrad = ctx.createLinearGradient(x, y, w, h);
@@ -700,10 +701,10 @@ mx.linear_gradient = function(Mx, x, y, w, h, fillStyle) {
  * @param xi
  * @private
  */
-mx.setbgfg = function(Mx, bg, fg, xi) {
+mx.setbgfg = function(Mx: any, bg: string, fg: string, xi?: boolean | string): void {
     Mx.bg = tinycolor(bg).toHexString();
     Mx.fg = tinycolor(fg).toHexString();
-    Mx.xi = tinycolor(xi).toHexString();
+    Mx.xi = tinycolor(xi as any).toHexString();
 
     if ((tinycolor.equals(Mx.bg, "black")) && (tinycolor.equals(Mx.fg, "white"))) { ///mmm
         Mx.xwfg = Mx.fg; // X-Widget Foreground color
@@ -753,7 +754,7 @@ mx.setbgfg = function(Mx, bg, fg, xi) {
  * @param theme
  * @private
  */
-mx.settheme = function(Mx, theme) {
+mx.settheme = function(Mx: any, theme: any): void {
     Mx.bg = theme.bg;
     Mx.fg = theme.fg;
     Mx.xi = theme.xi;
@@ -769,7 +770,7 @@ mx.settheme = function(Mx, theme) {
  * Close graphics windows.
  * @param Mx
  */
-mx.close = function(Mx) {
+mx.close = function(Mx: any): void {
     var canvas = Mx.wid_canvas;
     canvas.removeEventListener("mousemove", Mx.onmousemove, false);
     //canvas.removeEventListener("touchmove", Mx.ontouchmove);
@@ -798,7 +799,7 @@ mx.close = function(Mx) {
 //
 // ~= MX$SCROLLBAR
 //
-mx.scrollbar = function(Mx, sb, xs, xe, ys, ye, out, qs, qe, mouseEvent, scrollbarState) {
+mx.scrollbar = function(Mx: any, sb: any, xs: number, xe: number, ys: number, ye: number, out: any, qs: number, qe: number, mouseEvent: any, scrollbarState: any): number {
     // Param types:
     // mx.SCROLLBAR* sb,
     // int xs, int xe, int ys, int ye,
@@ -898,7 +899,7 @@ mx.scrollbar = function(Mx, sb, xs, xe, ys, ye, out, qs, qe, mouseEvent, scrollb
 //
 // ~= mx_scroll
 //
-mx.scroll = function(Mx, sv, op, mouseEvent, scrollbarState) {
+mx.scroll = function(Mx: any, sv: any, op: number, mouseEvent: any, scrollbarState?: any): boolean {
     var btn; // an int
     var smin; // a real_8
     var srange; // a real_8
@@ -1140,7 +1141,7 @@ mx.scroll = function(Mx, sv, op, mouseEvent, scrollbarState) {
 //
 // ~= mx_scroll_loc
 //
-mx.scroll_loc = function(sv, x, y, w, h, origin, scrollbarState) {
+mx.scroll_loc = function(sv: any, x: number, y: number, w: number, h: number, origin: number, scrollbarState: any): void {
     // UPDATE local scrollbar and SCROLLBAR STATE
     if (sv === undefined) {
         return; /* mx.SCROLLBAR */
@@ -1182,7 +1183,7 @@ mx.scroll_loc = function(sv, x, y, w, h, origin, scrollbarState) {
 //
 // ~= mx_scroll_vals
 //
-mx.scroll_vals = function(sv, smin, srange, tmin, trange, step, page, scale, scrollbarState) {
+mx.scroll_vals = function(sv: any, smin: number, srange: number, tmin: number, trange: number, step: number, page: number, scale: number, scrollbarState: any): void {
     // UPDATE SCROLLBAR STATE as well
     if (sv === undefined) {
         return; /* an mx.SCROLLBAR */
@@ -1208,7 +1209,7 @@ mx.scroll_vals = function(sv, smin, srange, tmin, trange, step, page, scale, scr
 //
 // ~= MX$DRAW_SYMBOL
 //
-mx.draw_symbol = function(Mx, ic, x, y, symbol, rr, n) {
+mx.draw_symbol = function(Mx: any, ic: string, x: number, y: number, symbol: number | string | Function, rr: number, n?: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     var r = 0; // int
@@ -1224,7 +1225,7 @@ mx.draw_symbol = function(Mx, ic, x, y, symbol, rr, n) {
         };
     }
 
-    var c = ''; // char
+    var c: any = ''; // char
 
     fill = rr < 0;
     r = Math.abs(rr);
@@ -1353,7 +1354,7 @@ mx.draw_symbol = function(Mx, ic, x, y, symbol, rr, n) {
 //
 // ~= MX$DRAW_SYMBOLS
 //
-mx.draw_symbols = function(Mx, ic, pixx, pixy, npix, symbol, rr, istart) {
+mx.draw_symbols = function(Mx: any, ic: string, pixx: ArrayLike<number>, pixy: ArrayLike<number>, npix: number, symbol: number | string | Function, rr: number, istart: number): void {
     for (var i = 0; i < npix; i++) {
         mx.draw_symbol(Mx, ic, pixx[i], pixy[i], symbol, rr, i + istart);
     }
@@ -1375,7 +1376,7 @@ mx.draw_symbols = function(Mx, ic, pixx, pixy, npix, symbol, rr, istart) {
  * @param e_y2 Lines's y2-coordinate
  * @private
  */
-function isLeft(p_x, p_y, e_x1, e_y1, e_x2, e_y2) {
+function isLeft(p_x: number, p_y: number, e_x1: number, e_y1: number, e_x2: number, e_y2: number): number {
     return ((e_x1 - p_x) * (e_y2 - p_y) - (e_x2 - p_x) * (e_y1 - p_y));
 }
 
@@ -1390,7 +1391,7 @@ function isLeft(p_x, p_y, e_x1, e_y1, e_x2, e_y2) {
  * @param e_y2
  * @private
  */
-function update_winding_number(wn, p_x, p_y, e_x1, e_y1, e_x2, e_y2) {
+function update_winding_number(wn: number, p_x: number, p_y: number, e_x1: number, e_y1: number, e_x2: number, e_y2: number): number {
     if (e_y1 <= p_y) { // start y <= P.y
         if (e_y2 > p_y) { // an upward crossing
             if (isLeft(p_x, p_y, e_x1, e_y1, e_x2, e_y2) > 0) {
@@ -1423,7 +1424,7 @@ function update_winding_number(wn, p_x, p_y, e_x1, e_y1, e_x2, e_y2) {
 //
 // ~= MX$TRACE
 //
-mx.trace = function(Mx, color, xpoint, ypoint, npts, istart, skip, line, symb, rad, options) {
+mx.trace = function(Mx: any, color: string, xpoint: ArrayLike<number>, ypoint: ArrayLike<number>, npts: number, istart: number, skip?: number, line?: number, symb?: number | string | Function, rad?: number, options?: any): void {
     if ((xpoint === undefined) || (ypoint === undefined)) {
         throw "mx.trace requires xpoint and ypoint";
     }
@@ -1762,8 +1763,8 @@ mx.trace = function(Mx, color, xpoint, ypoint, npts, istart, skip, line, symb, r
         }
 
         if (options.highlight) {
-            for (var i = 0; i < options.highlight.length; i++) {
-                var highlight = options.highlight[i];
+            for (let hi = 0; hi < options.highlight.length; hi++) {
+                var highlight = options.highlight[hi];
                 if (!highlight.fill) {
                     continue;
                 }
@@ -1830,7 +1831,7 @@ mx.trace = function(Mx, color, xpoint, ypoint, npts, istart, skip, line, symb, r
 //
 // ~= MX$DRAW_MODE
 //
-mx.draw_mode = function(Mx, linewidth, style) {
+mx.draw_mode = function(Mx: any, linewidth?: number, style?: any): void {
     Mx.linewidth = (linewidth === undefined) ? 1 : linewidth;
     Mx.style = style;
 };
@@ -1848,7 +1849,7 @@ mx.draw_mode = function(Mx, linewidth, style) {
 //
 // ~= MX$DRAW_LINES
 //
-mx.draw_line = function(Mx, color, x1, y1, x2, y2, linewidth, style) {
+mx.draw_line = function(Mx: any, color: string | number | CanvasGradient, x1: number, y1: number, x2: number, y2: number, linewidth?: number, style?: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
     if (linewidth === undefined) {
         linewidth = Mx.linewidth;
@@ -1866,14 +1867,14 @@ mx.draw_line = function(Mx, color, x1, y1, x2, y2, linewidth, style) {
                 color = 0;
             }
             var cidx = Math.max(0, Math.min(Mx.pixel.map.length, color));
-            color = Mx.pixel.getColor(color);
+            var colorObj: any = Mx.pixel.getColor(color);
             color = to_rgb(
-                color.red,
-                color.green,
-                color.blue);
+                colorObj.red,
+                colorObj.green,
+                colorObj.blue);
         }
     }
-    draw_line(ctx, x1, y1, x2, y2, style, color, linewidth);
+    draw_line(ctx, x1, y1, x2, y2, style, color as string | CanvasGradient, linewidth);
 };
 
 /**
@@ -1886,7 +1887,7 @@ mx.draw_line = function(Mx, color, x1, y1, x2, y2, linewidth, style) {
 //
 // ~= MX$RUBBERLINE
 //
-mx.rubberline = function(Mx, x1, y1, x2, y2) {
+mx.rubberline = function(Mx: any, x1: number, y1: number, x2: number, y2: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
     draw_line(ctx, x1, y1, x2, y2, {
         mode: "xor"
@@ -1901,7 +1902,7 @@ mx.rubberline = function(Mx, x1, y1, x2, y2) {
  * @param npts
  * @private
  */
-mx.fill_trace = function(Mx, fillStyle, pixx, pixy, npts, l, r) {
+mx.fill_trace = function(Mx: any, fillStyle: string | string[], pixx: ArrayLike<number>, pixy: ArrayLike<number>, npts: number, l?: number, r?: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
     if (Array.isArray(fillStyle)) {
         ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, Mx.b - Mx.t, fillStyle);
@@ -1968,7 +1969,7 @@ mx.fill_trace = function(Mx, fillStyle, pixx, pixy, npts, l, r) {
 //
 // ~= MX$DRAW_LINES
 //
-mx.draw_lines = function(Mx, colors, pixx, pixy, npts, linewidth, style) {
+mx.draw_lines = function(Mx: any, colors: any, pixx: ArrayLike<number>, pixy: ArrayLike<number>, npts: number, linewidth?: number, style?: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (npts < 1) {
@@ -2074,7 +2075,7 @@ mx.draw_lines = function(Mx, colors, pixx, pixy, npts, linewidth, style) {
 //
 // ~= MX$CLIP
 //
-mx.clip = function(Mx, left, top, width, height) {
+mx.clip = function(Mx: any, left: number, top: number, width: number, height: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if ((left === 0) && (top === 0) && (width === 0) && (height === 0)) {
@@ -2093,7 +2094,7 @@ mx.clip = function(Mx, left, top, width, height) {
 //
 // ~= MX$CLEAR_WINDOW
 //
-mx.clear_window = function(Mx) {
+mx.clear_window = function(Mx: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     ctx.fillStyle = Mx.bg;
@@ -2104,7 +2105,7 @@ mx.clear_window = function(Mx) {
  * @param Mx
  * @private
  */
-mx.erase_window = function(Mx) {
+mx.erase_window = function(Mx: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     ctx.clearRect(0, 0, Mx.width, Mx.height);
@@ -2123,7 +2124,7 @@ mx.erase_window = function(Mx) {
 //
 // When CTRL is pressed, alt_style is used
 //
-mx.rubberbox = function(Mx, func, mode, def_style, alt_style) {
+mx.rubberbox = function(Mx: any, func: Function, mode?: string, def_style?: WarpBoxStyle, alt_style?: WarpBoxStyle): void {
     mx.warpbox(Mx, Mx.xpos, Mx.ypos, Mx.xpos, Mx.ypos, 0, Mx.width, 0, Mx.height, func, mode, def_style, alt_style);
 };
 
@@ -2146,7 +2147,7 @@ mx.rubberbox = function(Mx, func, mode, def_style, alt_style) {
 // ~= MX$WARPBOX
 // Unlike MX$WARPBOX, this is a non-blocking call.   As such the 'func' is a callback for then the rubberbox is finished.
 //
-mx.warpbox = function(Mx, xo, yo, xl, yl, xmin, xmax, ymin, ymax, func, mode, def_style, alt_style) {
+mx.warpbox = function(Mx: any, xo: number, yo: number, xl: number, yl: number, xmin: number, xmax: number, ymin: number, ymax: number, func?: Function, mode?: string, def_style?: WarpBoxStyle, alt_style?: WarpBoxStyle): void {
     if (!def_style) {
         def_style = {};
     }
@@ -2176,7 +2177,7 @@ mx.warpbox = function(Mx, xo, yo, xl, yl, xmin, xmax, ymin, ymax, func, mode, de
 //
 // ~= M$ORIGIN
 //
-mx.origin = function(inorigin, outorigin, instk) {
+mx.origin = function(inorigin: number, outorigin: number, instk: any): any {
     inorigin = Math.max(1, inorigin);
     outorigin = Math.max(1, outorigin);
 
@@ -2217,7 +2218,7 @@ mx.origin = function(inorigin, outorigin, instk) {
 //
 // ~= MX$MULT
 //
-mx.mult = function(end1, end2) {
+mx.mult = function(end1: number, end2: number): number {
     var absmax = Math.max(Math.abs(end1), Math.abs(end2));
     if (absmax === 0) {
         return 1.0;
@@ -2241,7 +2242,7 @@ mx.mult = function(end1, end2) {
  */
 //
 // event may be undefined or null
-mx.widget_callback = function(Mx, event) {
+mx.widget_callback = function(Mx: any, event: any): void {
     if (Mx.prompt) {
         if (event.which === 3) {
             Mx.prompt.input.onsubmit();
@@ -2271,7 +2272,7 @@ mx.widget_callback = function(Mx, event) {
  */
 //
 // ~= MX$DPROMPT - only higher-level
-mx.prompt = function(Mx, promptText, isValid, onSuccess, refresh, inputValue, xpos, ypos, errorTimeout) {
+mx.prompt = function(Mx: any, promptText: string, isValid: (value: any) => any, onSuccess: (value: any) => void, refresh?: Function, inputValue?: any, xpos?: number, ypos?: number, errorTimeout?: number): void {
     if (inputValue !== undefined) {
         var inputValid = isValid(inputValue);
 
@@ -2300,7 +2301,7 @@ mx.prompt = function(Mx, promptText, isValid, onSuccess, refresh, inputValue, xp
             height: Mx.text_h,
             fontFamily: fontFamily,
             /* jshint -W053 */
-            fontSize: new Number(fontSize),
+            fontSize: new Number(fontSize) as any,
             /* jshint +W053 */
             backgroundColor: Mx.bg,
             fontColor: Mx.fg,
@@ -2416,7 +2417,7 @@ mx.prompt = function(Mx, promptText, isValid, onSuccess, refresh, inputValue, xp
  * @param strict If strict is set to true - does not consider empty strings as valid floating point numbers.
  * @private
  */
-mx.floatValidator = function(value, strict) {
+mx.floatValidator = function(value: any, strict?: boolean): { valid: boolean; reason: string } {
     if (!(((strict === undefined || strict === false) && value === "")) &&
         isNaN(parseFloat(value)) || !isFinite(value)) {
         return {
@@ -2438,7 +2439,7 @@ mx.floatValidator = function(value, strict) {
  * @param strict If strict is set to true - does not consider empty strings as valid integers.
  * @private
  */
-mx.intValidator = function(value, strict) {
+mx.intValidator = function(value: any, strict?: boolean): { valid: boolean; reason: string } {
     if (((strict === undefined || strict === false) && value === "") ||
         ((parseFloat(value) === parseInt(value, 10)) && !isNaN(value))) {
         return {
@@ -2453,7 +2454,7 @@ mx.intValidator = function(value, strict) {
     }
 };
 
-mx.hexValidator = function(value, strict) {
+mx.hexValidator = function(value: any, strict?: boolean): { valid: boolean; reason: string } {
     var regColorcode = /^(#)?([0-9a-fA-F]{3})([0-9a-fA-F]{3})?$/;
     if (((strict === undefined || strict === false) && value === "") ||
         (regColorcode.test(value) !== false)) {
@@ -2479,7 +2480,7 @@ mx.hexValidator = function(value, strict) {
 //
 // ~= MX$MESSAGE
 //
-mx.message = function(Mx, msg, time, xpos, ypos, type) {
+mx.message = function(Mx: any, msg: string, time?: number, xpos?: number, ypos?: number, type?: string): void {
     mx.onWidgetLayer(Mx, function() {
 
         mx.render_message_box(Mx, msg, xpos, ypos);
@@ -2498,7 +2499,7 @@ mx.message = function(Mx, msg, time, xpos, ypos, type) {
     });
 };
 
-mx.render_message_box = function(Mx, msg, xpos, ypos, textColor) {
+mx.render_message_box = function(Mx: any, msg: string, xpos?: number, ypos?: number, textColor?: string): void {
     var GBorder = 3;
 
     // Unlike MX$MESSAGE, this implementaion if the message
@@ -2508,7 +2509,7 @@ mx.render_message_box = function(Mx, msg, xpos, ypos, textColor) {
     var linel = 0;
     var center;
     if (beg.length === 1) {
-        beg = [];
+        beg = [] as any[];
         var MESSWIDTH = 40;
 
         linel = Math.min((((Mx.width - 2 * GBorder) / Mx.text_w) - 2), msg.length);
@@ -2521,11 +2522,10 @@ mx.render_message_box = function(Mx, msg, xpos, ypos, textColor) {
 
         var cur = 0;
         var bg = 0;
-        var i = 0;
+        var i: any = 0;
         var j = 0;
         var end = 0;
         var brk = 0;
-        var beg = [];
 
         center = true;
         while (bg < msg.length) {
@@ -2569,7 +2569,7 @@ mx.render_message_box = function(Mx, msg, xpos, ypos, textColor) {
             j = Math.max(j, beg[i].length);
         }
     } else {
-        for (var i = 0; i < beg.length; i++) {
+        for (i = 0; i < beg.length; i++) {
             linel = Math.min((((Mx.width - 2 * GBorder) / Mx.text_w) - 2), Math.max(linel, beg[i].length));
         }
     }
@@ -2625,7 +2625,7 @@ mx.render_message_box = function(Mx, msg, xpos, ypos, textColor) {
  * @param fill_color
  * @param {Number} radius The corner radius. Defaults to 5;
  */
-mx.draw_round_box = function(Mx, color, x, y, w, h, fill_opacity, fill_color, radius) {
+mx.draw_round_box = function(Mx: any, color: string, x: number, y: number, w: number, h: number, fill_opacity?: number, fill_color?: string | CanvasGradient, radius?: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (!radius) {
@@ -2674,7 +2674,7 @@ mx.draw_round_box = function(Mx, color, x, y, w, h, fill_opacity, fill_color, ra
 //
 // ~= MX$DRAW_BOX
 //
-mx.draw_box = function(Mx, color, x, y, w, h, fill_opacity, fill_color) {
+mx.draw_box = function(Mx: any, color: string, x: number, y: number, w: number, h: number, fill_opacity?: number, fill_color?: string): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (color !== "xor") {
@@ -2759,7 +2759,7 @@ mx.draw_box = function(Mx, color, x, y, w, h, fill_opacity, fill_color) {
  * @param width
  */
 // ~= MX$SETFONT
-mx.set_font = function(Mx, width) {
+mx.set_font = function(Mx: any, width: number): void {
     var ctx = Mx.canvas.getContext("2d");
     var ctx_wid = Mx.wid_canvas.getContext("2d");
 
@@ -2795,7 +2795,7 @@ mx.set_font = function(Mx, width) {
  * @param style
  */
 // ~= MX$FTEXTLINE
-mx.textline = function(Mx, xstart, ystart, xend, yend, style) {
+mx.textline = function(Mx: any, xstart: number, ystart: number, xend: number, yend: number, style?: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
     if (!style) {
         style = {};
@@ -2815,7 +2815,7 @@ mx.textline = function(Mx, xstart, ystart, xend, yend, style) {
  * @param ndiv
  */
 // ~= MX$TICS
-mx.tics = function(dmin, dmax, ndiv, timecode) {
+mx.tics = function(dmin: number, dmax: number, ndiv: number, timecode?: boolean): { dtic: number; dtic1: number } {
     var dtic = 1;
     var dtic1 = dmin;
 
@@ -2927,7 +2927,7 @@ mx.tics = function(dmin, dmax, ndiv, timecode) {
  * @param flags
  */
 // ~= MX$FDRAWAXIS
-mx.drawaxis = function(Gx, Mx, xdiv, ydiv, xlab, ylab, flags) {
+mx.drawaxis = function(Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: number, ylab: number, flags: any): void {
     var stk1 = mx.origin(Mx.origin, 1, Mx.stk[Mx.level]);
     var iscl = 0;
     var isct = 0;
@@ -3110,9 +3110,9 @@ mx.drawaxis = function(Gx, Mx, xdiv, ydiv, xlab, ylab, flags) {
         };
     }
 
-    var sp = 1;
+    var sp: any = 1;
     var x;
-    var xlbl = "";
+    var xlbl: any = "";
     if (xticlabels) {
         if (flags.xtimecode) {
             xlbl = m.sec2tod(xTIC.dtic1);
@@ -3316,7 +3316,7 @@ mx.drawaxis = function(Gx, Mx, xdiv, ydiv, xlab, ylab, flags) {
  * @param rect_height
  * @private
  */
-mx.inrect = function(x, y, rect_x, rect_y, rect_width, rect_height) {
+mx.inrect = function(x: number, y: number, rect_x: number, rect_y: number, rect_width: number, rect_height: number): boolean {
     return (x >= rect_x && x <= rect_x + rect_width &&
         y >= rect_y && y <= rect_y + rect_height);
 };
@@ -3336,7 +3336,7 @@ var MENU_CONSTANTS = {
  * @param menu
  * @private
  */
-function _menu_redraw(Mx, menu) {
+function _menu_redraw(Mx: any, menu: any): void {
     if (menu.animationFrameHandle) {
         return;
     }
@@ -3492,7 +3492,7 @@ function _menu_redraw(Mx, menu) {
  * @param menu
  * @private
  */
-function _menu_takeaction(Mx, menu) {
+function _menu_takeaction(Mx: any, menu: any): void {
     mx.onWidgetLayer(Mx, function() {
         mx.erase_window(Mx);
     });
@@ -3526,7 +3526,7 @@ function _menu_takeaction(Mx, menu) {
  * @param menu
  * @private
  */
-function _menu_dismiss(Mx, menu) {
+function _menu_dismiss(Mx: any, menu: any): void {
     mx.onWidgetLayer(Mx, function() {
         mx.erase_window(Mx);
     });
@@ -3548,7 +3548,7 @@ function _menu_dismiss(Mx, menu) {
  * @param event
  * @private
  */
-function _menu_callback(Mx, menu, event) {
+function _menu_callback(Mx: any, menu: any, event: any): void {
     // Keep track of whats visible currently
     var i_begin = menu.queue[0];
     var i_end = menu.queue[MENU_CONSTANTS.n_show - 1];
@@ -3667,8 +3667,8 @@ function _menu_callback(Mx, menu, event) {
                 }
 
                 var matches = 0;
-                for (var i = 0; i < menu.items.length; i++) {
-                    var item = menu.items[i];
+                for (let mi = 0; mi < menu.items.length; mi++) {
+                    var item = menu.items[mi];
                     item.selected = false;
                     if (!item.text) {
                         continue;
@@ -3700,7 +3700,7 @@ function _menu_callback(Mx, menu, event) {
  * @param menu
  * @private
  */
-mx.menu = function(Mx, menu) {
+mx.menu = function(Mx: any, menu: any): void {
     if (Mx.useDomMenu) {
         new mx.DomMenu(Mx, menu);
         return;
@@ -3785,7 +3785,7 @@ mx.menu = function(Mx, menu) {
  * @param name
  * @private
  */
-mx.widgetbox = function(Mx, x, y, w, h, inx, iny, inw, inh, name) {
+mx.widgetbox = function(Mx: any, x: number, y: number, w: number, h: number, inx: number, iny: number, inw: any, inh: any, name?: string): void {
     var GBorder = 3;
     mx.shadowbox(Mx, x, y, w, h, 1, 2, "", 0.75);
     if (name) {
@@ -3824,7 +3824,7 @@ mx.widgetbox = function(Mx, x, y, w, h, inx, iny, inw, inh, name) {
 //
 // ~= MX$TEXT
 //
-mx.text = function(Mx, x, y, lbl, color) {
+mx.text = function(Mx: any, x: number, y: number, lbl: string, color?: string): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     x = Math.max(0, x);
@@ -3852,7 +3852,7 @@ mx.text = function(Mx, x, y, lbl, color) {
  * @private
  */
 // ~= glibf1.for CLIPT
-function clipt(denom, num, o) {
+function clipt(denom: number, num: number, o: { tL: number; tE: number }): boolean {
     var accept = true;
     var t;
 
@@ -3893,7 +3893,7 @@ function clipt(denom, num, o) {
  * @param width
  * @private
  */
-function draw_line(ctx, x1, y1, x2, y2, style, color, width) {
+function draw_line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, style?: any, color?: string | CanvasGradient, width?: number): void {
     // For odd width lines (i.e. 1,3,5...) if you draw right
     // on the pixel boundry the canvas will actually draw a slightly
     // grey line 2 px wide.  You have to add .5 to get what you want.
@@ -4032,7 +4032,7 @@ function draw_line(ctx, x1, y1, x2, y2, style, color, width) {
  * @param width - The line width to set.
  * @private
  */
-function draw_poly(ctx, pix, color, width) { // TODO Should this be a public method?
+function draw_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], color?: string, width?: number): void { // TODO Should this be a public method?
     start_poly(ctx, pix, width);
 
     if (color) {
@@ -4061,7 +4061,7 @@ function draw_poly(ctx, pix, color, width) { // TODO Should this be a public met
  * @param lineWidth - The line width to set
  * @private
  */
-function fill_poly(ctx, pix, lineColor, fillColor, width) { // TODO Should this be a public method?
+function fill_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], lineColor?: string, fillColor?: string, width?: number): void { // TODO Should this be a public method?
     start_poly(ctx, pix, width);
 
     if (lineColor) {
@@ -4088,7 +4088,7 @@ function fill_poly(ctx, pix, lineColor, fillColor, width) { // TODO Should this 
  * @param width - The line width to set.
  * @private
  */
-function start_poly(ctx, pix, width) {
+function start_poly(ctx: CanvasRenderingContext2D, pix: PixelPoint[], width?: number): void {
     if (pix.length < 1) {
         return;
     }
@@ -4126,7 +4126,7 @@ function start_poly(ctx, pix, width) {
  * @param lineWidth - The line width to set.
  * @private
  */
-function draw_rectangle(ctx, x, y, width, height, color, lineWidth) { // TODO Should this be a public method?
+function draw_rectangle(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, color?: string, lineWidth?: number): void { // TODO Should this be a public method?
     if (lineWidth) {
         ctx.lineWidth = lineWidth;
     }
@@ -4152,7 +4152,7 @@ function draw_rectangle(ctx, x, y, width, height, color, lineWidth) { // TODO Sh
  * @param lineWidth - The line width to set.
  * @private
  */
-function fill_rectangle(ctx, x, y, width, height, fillColor, strokeColor, lineWidth) { // TODO Should this be a public method?
+function fill_rectangle(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, fillColor?: string, strokeColor?: string, lineWidth?: number): void { // TODO Should this be a public method?
     if (lineWidth) {
         ctx.lineWidth = lineWidth;
     }
@@ -4171,7 +4171,7 @@ function fill_rectangle(ctx, x, y, width, height, fillColor, strokeColor, lineWi
  * @param perc
  * @private
  */
-function pc2px(perc) {
+function pc2px(perc: number): number {
     return Math.floor(Math.round(255 * (perc / 100)));
 }
 
@@ -4182,7 +4182,7 @@ function pc2px(perc) {
  * @param blue
  * @private
  */
-function to_rgb(red, green, blue) {
+function to_rgb(red: number, green: number, blue: number): string {
     return "rgb(" + Math.round(red) + ", " + Math.round(green) + ", " + Math.round(blue) + ")";
 }
 
@@ -4195,7 +4195,7 @@ function to_rgb(red, green, blue) {
  * @param z
  * @private
  */
-mx.getcolor = function(Mx, map, z) {
+mx.getcolor = function(Mx: any, map: any[], z: number): string {
     var iz = 0;
     for (; iz < 6 && map[iz + 1].pos === 0; iz++) {}
 
@@ -4225,7 +4225,7 @@ mx.getcolor = function(Mx, map, z) {
  * @private
  */
 // ~= glibf1.for TRIMLABEL
-function trimlabel(lbl, inside) {
+function trimlabel(lbl: string, inside?: boolean): string {
     var k;
     var j;
     if (lbl.substring(5, 8) === ".000000") { // this line seems to always evaluate to false
@@ -4251,7 +4251,7 @@ function trimlabel(lbl, inside) {
  * @param Mx
  * @private
  */
-mx.redraw_warpbox = function(Mx) {
+mx.redraw_warpbox = function(Mx: any): void {
     if (Mx.warpbox) {
         if (Mx._animationFrameHandle) {
             cancelAnimationFrame(Mx._animationFrameHandle);
@@ -4267,7 +4267,7 @@ mx.redraw_warpbox = function(Mx) {
  * @param Mx
  * @private
  */
-function display_warpbox(Mx) {
+function display_warpbox(Mx: any): void {
     Mx._animationFrameHandle = undefined;
     var warpbox = Mx.warpbox;
     var ctx = Mx.active_canvas.getContext("2d");
@@ -4320,7 +4320,7 @@ function display_warpbox(Mx) {
  * @param val
  * @private
  */
-function log10(val) {
+function log10(val: number): number {
     return Math.log(val) / Math.log(10);
 }
 
@@ -4355,7 +4355,7 @@ function log10(val) {
  * @param leading_nonzer
  * @private
  */
-mx.format_g = function(num, w, d, leading_nonzero) {
+mx.format_g = function(num: number, w: number, d: number, leading_nonzero?: boolean): string {
     var w = Math.min(w, d + 7);
     var f = Math.abs(num).toString();
 
@@ -4431,7 +4431,7 @@ mx.format_g = function(num, w, d, leading_nonzero) {
  * @param d number of digits after the decimal
  * @private
  */
-mx.format_f = function(num, s, d) {
+mx.format_f = function(num: number, s: number, d: number): string {
     d = Math.max(Math.min(d, 20), 0);
     var f = num.toFixed(d).toString();
     f = mx.pad(f, (s + d), " ");
@@ -4444,7 +4444,7 @@ mx.format_f = function(num, s, d) {
  * @param c
  * @private
  */
-mx.pad = function(s, size, c) {
+mx.pad = function(s: string, size: number, c: string): string {
     while (s.length < size) {
         s = c + s;
     }
@@ -4463,7 +4463,7 @@ mx.pad = function(s, size, c) {
  * @private
  */
 // ~= MX$SHADOWBOX
-mx.legacy_shadowbox = function(Mx, x, y, w, h, shape, func, label) {
+mx.legacy_shadowbox = function(Mx: any, x: number, y: number, w: number, h: number, shape: number, func: number, label: string): void {
     var length = label.length; // Original method declaration includes a length - but it only represents the length of the label
 
     var xt = 0; // Originally an int
@@ -4590,7 +4590,7 @@ mx.legacy_shadowbox = function(Mx, x, y, w, h, shape, func, label) {
  * @private
  */
 // ~= MX$SHADOWBOX
-mx.sigplot_shadowbox = function(Mx, x, y, w, h, shape, func, label, alpha) {
+mx.sigplot_shadowbox = function(Mx: any, x: number, y: number, w: number, h: number, shape: number, func: number, label: string, alpha?: number): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
     var length = label.length; // Original method declaration includes a length - but it only represents the length of the label
@@ -4599,7 +4599,7 @@ mx.sigplot_shadowbox = function(Mx, x, y, w, h, shape, func, label, alpha) {
 
     alpha = alpha || 1.0;
 
-    var pix = []; // Originally declared as a size 11 XPoint array
+    var pix: any[] = []; // Originally declared as a size 11 XPoint array
     for (var cnt = 0; cnt < 11; cnt++) { // initializing 11 points in the array
         pix[cnt] = {
             x: 0,
@@ -4613,7 +4613,7 @@ mx.sigplot_shadowbox = function(Mx, x, y, w, h, shape, func, label, alpha) {
         case mx.L_ArrowRight:
         case mx.L_ArrowUp:
         case mx.L_ArrowDown:
-            var pix = mx.chevron(shape, x, y, w, h);
+            pix = mx.chevron(shape, x, y, w, h);
             ctx.fillStyle = (func > 0) ? Mx.xwts : Mx.xwbs;
             fill_poly(ctx, pix.slice(0, 6));
             break;
@@ -4641,7 +4641,7 @@ if (mx.LEGACY_RENDER) { // TODO new-style conditional
     mx.shadowbox = mx.sigplot_shadowbox;
 }
 
-mx.chevron = function(shape, x, y, w, h, e) {
+mx.chevron = function(shape: number, x: number, y: number, w: number, h: number, e?: number): PixelPoint[] {
     // Figure out the largest square dimension
     var q = Math.min(w, h);
 
@@ -4736,7 +4736,7 @@ mx.chevron = function(shape, x, y, w, h, e) {
  * @private
  */
 // ~= mx_ifevent
-mx.ifevent = function(Mx, mouseEvent) {
+mx.ifevent = function(Mx: any, mouseEvent: any): void {
     Mx.button_press = 0;
     Mx.button_release = 0;
     Mx.state_mask = 0;
@@ -4802,7 +4802,7 @@ mx.ifevent = function(Mx, mouseEvent) {
 // ~= scroll_real2pix
 //
 // TODO Refactor real2pix to return an object instead of sending in reference vars?
-mx.scroll_real2pix = function(sv) {
+mx.scroll_real2pix = function(sv: any): { s1: number; sw: number } {
     // Param types:
     // sv - mx.SCROLLBAR
 
@@ -4851,7 +4851,7 @@ mx.scroll_real2pix = function(sv) {
  * @param op Optional op-code for XW_DRAW
  * @private
  */
-mx.redrawScrollbar = function(sv, Mx, op) {
+mx.redrawScrollbar = function(sv: any, Mx: any, op: number): void {
     var x;
     var y;
     var xcc;
@@ -4945,7 +4945,7 @@ mx.redrawScrollbar = function(sv, Mx, op) {
     sv.sw = sw;
 };
 
-mx.real_distance_to_pixel = function(Mx, x1, y1, x2, y2, clip) {
+mx.real_distance_to_pixel = function(Mx: any, x1: number, y1: number, x2: number, y2: number, clip?: boolean): { x: number; y: number; d: number; clipped: boolean } {
     var pos1 = mx.real_to_pixel(Mx, x1, y1, clip);
     var pos2 = mx.real_to_pixel(Mx, x2, y2, clip);
 
@@ -4960,7 +4960,7 @@ mx.real_distance_to_pixel = function(Mx, x1, y1, x2, y2, clip) {
     };
 };
 
-mx.real_box_to_pixel = function(Mx, x, y, w, h, clip) {
+mx.real_box_to_pixel = function(Mx: any, x: number, y: number, w: number, h: number, clip?: boolean): any {
     var ul, lr;
     if (Mx.origin === 1) {
         // regular x, regular y
@@ -4997,7 +4997,7 @@ mx.real_box_to_pixel = function(Mx, x, y, w, h, clip) {
  * @returns {number} pixel.clipped - true if the point would have or has been clipped
  * @private
  */
-mx.real_to_pixel = function(Mx, x, y, clip) {
+mx.real_to_pixel = function(Mx: any, x: number | null, y: number | null, clip?: boolean): any {
     var stk4 = mx.origin(Mx.origin, 4, Mx.stk[Mx.level]);
     if ((stk4.xscl === 0.0) || (stk4.yscl === 0.0)) {
         return {
@@ -5069,7 +5069,7 @@ mx.real_to_pixel = function(Mx, x, y, clip) {
  * @param ypos
  * @private
  */
-mx.pixel_to_real = function(Mx, xpos, ypos) {
+mx.pixel_to_real = function(Mx: any, xpos: number, ypos: number): { x: number; y: number } {
     var iretx = Math.min(Mx.r, Math.max(Mx.l, xpos));
     var irety = Math.min(Mx.b, Math.max(Mx.t, ypos));
     var retx;
@@ -5099,7 +5099,7 @@ mx.pixel_to_real = function(Mx, xpos, ypos) {
  * @param ncolors
  * @private
  */
-mx.colormap = function(Mx, map, ncolors) {
+mx.colormap = function(Mx: any, map: any, ncolors?: number): void {
     Mx.pixel = new ColorMap(map, {
         ncolors: ncolors
     });
@@ -5114,7 +5114,7 @@ mx.colormap = function(Mx, map, ncolors) {
  * @param h
  * @private
  */
-mx.colorbar = function(Mx, x, y, w, h) {
+mx.colorbar = function(Mx: any, x: number, y: number, w: number, h: number): void {
     if (!Mx.pixel) {
         m.log.warn("COLORMAP not initialized, cannot draw colorbar");
         return;
@@ -5135,7 +5135,7 @@ mx.colorbar = function(Mx, x, y, w, h) {
  * @param h
  * @private
  */
-mx.legend_colorbar = function(Mx, x, y, w, h) {
+mx.legend_colorbar = function(Mx: any, x: number, y: number, w: number, h: number): void {
     if (!Mx.pixel) {
         m.log.warn("COLORMAP not initialized, cannot draw colorbar");
         return;
@@ -5181,7 +5181,7 @@ mx.legend_colorbar = function(Mx, x, y, w, h) {
  * @param h
  *   optional height
  */
-function renderImageNoTypedArrays(Mx, ctx, buf, opacity, downscaling, smoothing, x, y, w, h, sx, sy, sw, sh, rotationAngle) {
+function renderImageNoTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any, opacity: number, downscaling: any, smoothing: boolean, x: number, y: number, w: number, h: number, sx?: number, sy?: number, sw?: number, sh?: number, rotationAngle?: number): void {
     if (sx === undefined) {
         sx = 0;
     }
@@ -5217,8 +5217,8 @@ function renderImageNoTypedArrays(Mx, ctx, buf, opacity, downscaling, smoothing,
     ctx.globalAlpha = opacity;
     if (!smoothing) {
         ctx.imageSmoothingEnabled = false;
-        ctx.mozImageSmoothingEnabled = false;
-        ctx.webkitImageSmoothingEnabled = false;
+        (ctx as any).mozImageSmoothingEnabled = false;
+        (ctx as any).webkitImageSmoothingEnabled = false;
     }
     if (rotationAngle) {
         ctx.translate(x + w / 2, y + h / 2);
@@ -5259,7 +5259,7 @@ function renderImageNoTypedArrays(Mx, ctx, buf, opacity, downscaling, smoothing,
  * @param h
  *   optional height
  */
-function renderImageTypedArrays(Mx, ctx, buf, opacity, downscaling, smoothing, x, y, w, h, sx, sy, sw, sh, rotationAngle) {
+function renderImageTypedArrays(Mx: any, ctx: CanvasRenderingContext2D, buf: any, opacity: number, downscaling: any, smoothing: boolean, x: number, y: number, w: number, h: number, sx?: number, sy?: number, sw?: number, sh?: number, rotationAngle?: number): void {
     if (sx === undefined) {
         sx = 0;
     }
@@ -5329,8 +5329,8 @@ function renderImageTypedArrays(Mx, ctx, buf, opacity, downscaling, smoothing, x
     ctx.globalAlpha = opacity;
     if (!smoothing) {
         ctx.imageSmoothingEnabled = false;
-        ctx.mozImageSmoothingEnabled = false;
-        ctx.webkitImageSmoothingEnabled = false;
+        (ctx as any).mozImageSmoothingEnabled = false;
+        (ctx as any).webkitImageSmoothingEnabled = false;
     }
     if (rotationAngle) {
         ctx.translate(x + w / 2, y + h / 2);
@@ -5356,7 +5356,7 @@ function renderImageTypedArrays(Mx, ctx, buf, opacity, downscaling, smoothing, x
  *
  * @private
  */
-function scaleImage(Mx, img, buf, sx, sy, sw, sh, downscaling) {
+function scaleImage(Mx: any, img: HTMLCanvasElement, buf: any, sx?: number, sy?: number, sw?: number, sh?: number, downscaling?: string): void {
     // Source buffer, expected to have .width and .height elements
     let colorMap = Mx.pixel;
 
@@ -5456,7 +5456,7 @@ var renderImage = (typeof Uint8ClampedArray === 'undefined') ? renderImageNoType
  * @param shift
  * @private
  */
-mx.shift_image_rows = function(Mx, buf, shift, zerofill) {
+mx.shift_image_rows = function(Mx: any, buf: any, shift: number, zerofill?: boolean): any {
     var imgd = new Uint32Array(buf);
     if (shift > 0) { // shift down
         shift = shift * buf.width;
@@ -5484,7 +5484,7 @@ mx.shift_image_rows = function(Mx, buf, shift, zerofill) {
  * @param zmax
  * @private
  */
-mx.update_image_row = function(Mx, buf, data, row, zmin, zmax, xcompression) {
+mx.update_image_row = function(Mx: any, buf: any, data: ArrayLike<number>, row: number, zmin: number, zmax: number, xcompression?: number): Uint32Array {
     var imgd = new Uint32Array(buf, row * buf.width * 4, buf.width);
 
     Mx.pixel.setRange(zmin, zmax);
@@ -5531,7 +5531,7 @@ mx.update_image_row = function(Mx, buf, data, row, zmin, zmax, xcompression) {
  * @param zmax
  * @private
  */
-mx.update_image_col = function(Mx, buf, data, col, zmin, zmax, xcompression) {
+mx.update_image_col = function(Mx: any, buf: any, data: ArrayLike<number>, col: number, zmin: number, zmax: number, xcompression?: number): Uint32Array {
     var imgd = new Uint32Array(buf);
 
     Mx.pixel.setRange(zmin, zmax);
@@ -5580,7 +5580,7 @@ mx.update_image_col = function(Mx, buf, data, col, zmin, zmax, xcompression) {
  * @param zmax
  * @private
  */
-mx.create_image = function(Mx, data, subsize, w, h, zmin, zmax, xcompression, drawdirection) {
+mx.create_image = function(Mx: any, data: ArrayLike<number> | null, subsize: number, w: number, h: number, zmin: number, zmax: number, xcompression?: number, drawdirection?: string): ArrayBuffer {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (!Mx.pixel) {
@@ -5597,7 +5597,7 @@ mx.create_image = function(Mx, data, subsize, w, h, zmin, zmax, xcompression, dr
     Mx.pixel.setRange(zmin, zmax);
     w = Math.ceil(w);
     h = Math.ceil(h);
-    var buf = new ArrayBuffer(w * h * 4);
+    var buf: any = new ArrayBuffer(w * h * 4);
     buf.width = w;
     buf.height = h;
 
@@ -5668,13 +5668,13 @@ mx.create_image = function(Mx, data, subsize, w, h, zmin, zmax, xcompression, dr
     return buf;
 };
 
-mx.resize_image_height = function(Mx, buf, h) {
+mx.resize_image_height = function(Mx: any, buf: any, h: number): any {
     if (buf.height === h) {
         return buf;
     }
 
-    var buf2 = ArrayBuffer.transfer(buf, (buf.width * h * 4));
-    Object.assign(buf2, buf);
+    var buf2: any = (ArrayBuffer as any).transfer(buf, (buf.width * h * 4));
+    (Object as any).assign(buf2, buf);
     buf2.height = h;
 
     return buf2;
@@ -5694,7 +5694,7 @@ mx.resize_image_height = function(Mx, buf, h) {
  * @param smoothing
  * @private
  */
-mx.put_image = function(Mx, data, nx, ny, nex, ney, xd, yd, level, opacity, smoothing, downscaling) {
+mx.put_image = function(Mx: any, data: ArrayLike<number>, nx: number, ny: number, nex: number, ney: number, xd: number, yd: number, level: number, opacity: number, smoothing: boolean, downscaling?: string): ArrayBuffer {
     var ctx = Mx.active_canvas.getContext("2d");
 
     if (!Mx.pixel) {
@@ -5713,7 +5713,7 @@ mx.put_image = function(Mx, data, nx, ny, nex, ney, xd, yd, level, opacity, smoo
     w = Math.floor(w);
     h = Math.floor(ny * ney);
 
-    var buf = new ArrayBuffer(w * h * 4);
+    var buf: any = new ArrayBuffer(w * h * 4);
     buf.width = w;
     buf.height = h;
 
@@ -5745,7 +5745,7 @@ mx.put_image = function(Mx, data, nx, ny, nex, ney, xd, yd, level, opacity, smoo
  * @param {number} rotationAngle  Angle of rotation in radians // TODO-MRA we might need to have very fixed rotations
  * @private
  */
-mx.draw_image = function(Mx, buf, xmin, ymin, xmax, ymax, opacity, smoothing, downscaling, rotationAngle, strokeStyle, text) {
+mx.draw_image = function(Mx: any, buf: any, xmin: number, ymin: number, xmax: number, ymax: number, opacity: number, smoothing: boolean | number, downscaling?: string, rotationAngle?: number, strokeStyle?: string, text?: string): void {
 
     var view_xmin = Math.max(xmin, Mx.stk[Mx.level].xmin);
     var view_xmax = Math.min(xmax, Mx.stk[Mx.level].xmax);

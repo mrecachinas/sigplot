@@ -27,6 +27,7 @@ import m from "./m.js";
 import mx from "./mx.js";
 import common from "./common.js";
 import LRU from "./lru.js";
+import type { BlueHeader, MxContext, GxContext, LayerOptions, Layer, TraceOptions } from "./types.js";
 
 
 /**
@@ -34,7 +35,47 @@ import LRU from "./lru.js";
  * @param plot
  */
 
-var Layer1DSDS = function(plot) {
+interface Layer1DSDS {
+    plot: any; // TODO: type this properly when plot is typed
+    options: LayerOptions;
+    size: number;
+    color: number;
+    line: number; 
+    thick: number;
+    opacity: number;
+    fillStyle: string | null;
+    symbol: number;
+    radius: number;
+    display: boolean;
+    xptr: ArrayBuffer | null;
+    yptr: ArrayBuffer | null;
+    xpoint: Int16Array | null; // PointArray backed by memory in xptr
+    ypoint: Int16Array | null; // PointArray backed by memory in yptr
+    server_data: Int16Array | null;
+    ymax: number;
+    ymin: number;
+    localpanymin: number;
+    localpanymax: number;
+    xmax: number;
+    xmin: number;
+    localpanxmin: number;
+    localpanxmax: number;
+    xlab: number;
+    ylab: number;
+    mode: "lds" | "xcut" | "ycut";
+    xypos_index: number;
+    y_value_change: boolean;
+    pendingurl: string;
+    hcb: BlueHeader;
+    cache: LRU<string, ArrayBuffer & { zmin?: number; zmax?: number }>;
+    debounceSend: (oReq: XMLHttpRequest) => void;
+    name?: string;
+    offset: number;
+    send_request_to_server: (url: string) => void;
+    [key: string]: any;
+}
+
+var Layer1DSDS = function(plot: any) {
     this.plot = plot;
     this.options = {};
     this.size = 0;
@@ -65,7 +106,8 @@ var Layer1DSDS = function(plot) {
     this.xypos_index = 0;
     this.y_value_change = false;
     this.pendingurl = "";
-};
+    this.offset = 0;
+} as any;
 
 Layer1DSDS.prototype = {
 
@@ -80,9 +122,9 @@ Layer1DSDS.prototype = {
      * @memberOf Layer1D
      * @private
      */
-    init: function(hcb, options) {
-        var Gx = this.plot._Gx;
-        var Mx = this.plot._Mx;
+    init: function(this: Layer1DSDS, hcb: BlueHeader, options: LayerOptions): void {
+        var Gx: GxContext = this.plot._Gx;
+        var Mx: MxContext = this.plot._Mx;
 
         this.hcb = hcb;
         this.hcb.buf_type = "I";
@@ -110,18 +152,18 @@ Layer1DSDS.prototype = {
         this.cache = new LRU(20);
 
         //De-Bounce this function
-        this.debounceSend = common.debounce(function(oReq) {
+        this.debounceSend = common.debounce(function(oReq: XMLHttpRequest) {
             oReq.send(null);
-        }, 100,false);
+        }, 100, false);
 
     },
 
-    get_data: function() {
+    get_data: function(this: Layer1DSDS): void {
 
     },
 
-    change_settings: function(settings) {
-        var Gx = this.plot._Gx;
+    change_settings: function(this: Layer1DSDS, settings: any): void { // TODO: type settings properly
+        var Gx: GxContext = this.plot._Gx;
         if (settings.cmode !== undefined) { // If setting a new cmode then reset y values. 
 
             if (((Gx.autoz & 1) !== 0)) {
@@ -135,14 +177,14 @@ Layer1DSDS.prototype = {
         }
     },
 
-    reload: function(data, hdrmod) {
+    reload: function(this: Layer1DSDS, data: any, hdrmod: any): void { // TODO: type these parameters
 
     },
 
-    push: function(data, hdrmod, sync) {
+    push: function(this: Layer1DSDS, data: any, hdrmod: any, sync: boolean): void { // TODO: type these parameters
     },
 
-    set_pan_values() {
+    set_pan_values(this: Layer1DSDS): void {
 
         if (this.localpanxmin > this.localpanxmax) {
             this.localpanxmin = this.xmin;
@@ -162,17 +204,17 @@ Layer1DSDS.prototype = {
 
     },
 
-    prep: function(xmin,xmax) {
+    prep: function(this: Layer1DSDS, xmin: number, xmax: number): void {
 
     },
 
-    make_request_url: function(x1,y1,x2,y2,zmin,zmax) {
-        var Gx = this.plot._Gx;
-        var Mx = this.plot._Mx;
-        var url;
+    make_request_url: function(this: Layer1DSDS, x1: number, y1: number, x2: number, y2: number, zmin?: number, zmax?: number): string {
+        var Gx: GxContext = this.plot._Gx;
+        var Mx: MxContext = this.plot._Mx;
+        var url: string;
 
         var urlsplit = this.hcb.url.split("/sds/hdr/");
-        var url = "";
+        url = "";
 
         if (this.mode==="lds" ) {
             url = urlsplit[0]+"/sds/lds/" +
@@ -228,51 +270,51 @@ Layer1DSDS.prototype = {
         return url;
     },
 
-    send_request_to_server: function(url) {
+    send_request_to_server: function(this: Layer1DSDS, url: string): void {
         if (this.pendingurl === url) {
             return;
         }
-        var oReq;
+        var oReq: XMLHttpRequest;
         oReq = new XMLHttpRequest();
         oReq.open("GET", url, true);
         oReq.responseType = "arraybuffer";
         oReq.overrideMimeType('text\/plain; charset=x-user-defined');
 
         var that = this;
-        oReq.onload = function(oEvent) {
+        oReq.onload = function(oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
             // `this` will be oReq within this context
-            that.load_data_from_server(url, this, oEvent);
+            that.load_data_from_server(url, this as XMLHttpRequest, oEvent);
         };
-        oReq.onerror = function(oEvent) {
+        oReq.onerror = function(oEvent: ProgressEvent<XMLHttpRequestEventTarget>) {
         };
         this.debounceSend(oReq);
         this.pendingurl = url;
     },
 
-    load_data_from_server: function(url, oReq, oEvent) {
-        var Mx = this.plot._Mx;
+    load_data_from_server: function(this: Layer1DSDS, url: string, oReq: XMLHttpRequest, oEvent: ProgressEvent<XMLHttpRequestEventTarget>): void {
+        var Mx: MxContext = this.plot._Mx;
 
         if (oReq.readyState === 4) {
             if ((oReq.status === 200) || (oReq.status === 0)) { // status = 0 is necessary for file URL
-                var Mx = this.plot._Mx;
-                var Gx = this.plot._Gx;
-                var arrayBuffer = null; // Note: not oReq.responseText
+                var Mx: MxContext = this.plot._Mx;
+                var Gx: GxContext = this.plot._Gx;
+                var arrayBuffer: ArrayBuffer | null = null; // Note: not oReq.responseText
                 if (oReq.response) {
                     arrayBuffer = oReq.response;
                 }
 
-                this.server_data = new Int16Array(arrayBuffer);
+                this.server_data = new Int16Array(arrayBuffer!);
 
-                var ymin = parseFloat(oReq.getResponseHeader("Zmin"));
-                var ymax = parseFloat(oReq.getResponseHeader("Zmax"));
+                var ymin = parseFloat(oReq.getResponseHeader("Zmin")!);
+                var ymax = parseFloat(oReq.getResponseHeader("Zmax")!);
                 this.ymin = ymin;
                 this.ymax = ymax;
                 this.set_pan_values();
 
                 //cache the data for later
-                arrayBuffer.zmin = this.ymin;
-                arrayBuffer.zmax = this.ymax;
-                this.cache.set(url, arrayBuffer);
+                (arrayBuffer as any).zmin = this.ymin;
+                (arrayBuffer as any).zmax = this.ymax;
+                this.cache.set(url, arrayBuffer as ArrayBuffer & { zmin: number; zmax: number });
                 this.plot.refresh();
 
             }
@@ -280,11 +322,11 @@ Layer1DSDS.prototype = {
 
     },
 
-    process_plot_data: function() {
-        var Gx = this.plot._Gx;
-        var Mx = this.plot._Mx;
+    process_plot_data: function(this: Layer1DSDS): void {
+        var Gx: GxContext = this.plot._Gx;
+        var Mx: MxContext = this.plot._Mx;
 
-        var numPixels = this.server_data.length/2;
+        var numPixels = this.server_data!.length/2;
         this.xptr = new ArrayBuffer(numPixels*2);
         this.yptr = new ArrayBuffer(numPixels*2);
         this.xpoint = new Int16Array(this.xptr);
@@ -292,10 +334,10 @@ Layer1DSDS.prototype = {
 
 
         // lds service returns int16 pixels with a list of all x values followed by all y values. 
-        m.vmov(this.server_data,1,this.xpoint,1,numPixels);
-        m.vmov(this.server_data.subarray(numPixels),1,this.ypoint,1,numPixels);
+        m.vmov(this.server_data!,1,this.xpoint,1,numPixels);
+        m.vmov(this.server_data!.subarray(numPixels),1,this.ypoint,1,numPixels);
 
-        var traceoptions = {};
+        var traceoptions: TraceOptions = {};
 
         if (this.fillStyle) {
             traceoptions.fillStyle = this.fillStyle;
@@ -343,14 +385,14 @@ Layer1DSDS.prototype = {
 
     },
 
-    get_pan_bounds: function(view) {
+    get_pan_bounds: function(this: Layer1DSDS, view: any): { xmin?: number; xmax?: number; ymin?: number; ymax?: number } { // TODO: type view parameter
         var cacheData = this.get_data_from_cache();
         if (cacheData.plotData) {
-            this.ymin = cacheData.plotData.zmin;
-            this.ymax = cacheData.plotData.zmax;
+            this.ymin = cacheData.plotData.zmin!;
+            this.ymax = cacheData.plotData.zmax!;
             this.set_pan_values();
         }
-        var xmin,xmax,ymin,ymax;
+        var xmin: number | undefined, xmax: number | undefined, ymin: number | undefined, ymax: number | undefined;
         if (this.localpanxmin<this.localpanxmax) {
             xmin = this.localpanxmin;
             xmax = this.localpanxmax;
@@ -368,21 +410,21 @@ Layer1DSDS.prototype = {
         };
     },
 
-    get_data_from_cache() {
-        var Mx = this.plot._Mx;
+    get_data_from_cache(this: Layer1DSDS): { url: string; plotData: (ArrayBuffer & { zmin?: number; zmax?: number }) | undefined } {
+        var Mx: MxContext = this.plot._Mx;
 
         var x1 =  Math.round((Mx.stk[Mx.level].xmin - this.xmin)/this.hcb.xdelta) ;
         var x2 = Math.round((Mx.stk[Mx.level].xmax - this.xmin)/this.hcb.xdelta) ;
         // y1 and y2 are only used for y cut mode, where the y of the original file has been moved to x 
         var y1 =  Math.round((Mx.stk[Mx.level].xmin - this.xmin)/this.hcb.ydelta) ;
         var y2 = Math.round((Mx.stk[Mx.level].xmax - this.xmin)/this.hcb.ydelta) ;
-        var ymin;
-        var ymax;
+        var ymin: number | undefined;
+        var ymax: number | undefined;
         if (Mx.stk[Mx.level].ymin < Mx.stk[Mx.level].ymax) {
             ymin = Mx.stk[Mx.level].ymin;
             ymax = Mx.stk[Mx.level].ymax;
         }
-        var url;
+        var url: string;
         url = this.make_request_url(x1,y1,x2,y2,ymin,ymax);
         var plotData = this.cache.get(url);
         if (!(plotData)) {
@@ -401,14 +443,14 @@ Layer1DSDS.prototype = {
         };
     },
 
-    draw: function() {
+    draw: function(this: Layer1DSDS): { xmin: number; xmax: number; ymin: number; ymax: number } | undefined {
         var cacheData = this.get_data_from_cache();
 
         if (cacheData.plotData) {
             this.server_data = new Int16Array(cacheData.plotData);
 
-            this.ymin = cacheData.plotData.zmin;
-            this.ymax = cacheData.plotData.zmax;
+            this.ymin = cacheData.plotData.zmin!;
+            this.ymax = cacheData.plotData.zmax!;
             this.set_pan_values();
             this.process_plot_data();
             return {
@@ -442,9 +484,9 @@ var mixc = [0, 53, 27, 80, 13, 40, 67, 93, 7, 60, 33, 87, 20, 47, 73, 100];
  *
  * @private
  */
-Layer1DSDS.overlay = function(plot, hcb, layerOptions) {
-    var Gx = plot._Gx;
-    var Mx = plot._Mx;
+Layer1DSDS.overlay = function(plot: any, hcb: BlueHeader, layerOptions: LayerOptions): Layer1DSDS[] { // TODO: type plot properly
+    var Gx: GxContext = plot._Gx;
+    var Mx: MxContext = plot._Mx;
 
     // If doing xy cut mode not sure if this will caused an unwanted effect. 
     if (hcb["class"] === 2) {
@@ -453,10 +495,10 @@ Layer1DSDS.overlay = function(plot, hcb, layerOptions) {
     hcb.buf_type = "I";
 
     // Extract the layer_name before enter the loop
-    var layer_name_override = layerOptions["name"];
+    var layer_name_override = layerOptions["name"] as string | undefined;
     delete layerOptions["name"];
 
-    var layers = [];
+    var layers: Layer1DSDS[] = [];
     // This is logic from within sigplot.for LOAD_FILES
     var layer = new Layer1DSDS(plot);
 
