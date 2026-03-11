@@ -2847,7 +2847,7 @@ Plot.prototype = {
     },
 
     hide_spinner: function(force) {
-        var cnt_pending = Object.values(this._Gx.HCB_UCB).filter(function(v) { return v === null; }).length;
+        var cnt_pending = Object.values(this._Gx.HCB_UUID).filter(function(v) { return v === null; }).length;
 
         if ((cnt_pending === 0) || force) {
             if (this._Gx.spinner && this._Gx.spinner.parentNode) {
