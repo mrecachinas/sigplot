@@ -26,7 +26,7 @@
 /*jslint nomen: true, browser: true, devel: true */
 
 import common from "./common.js";
-import sigfile from "sigfile";
+import * as sigfile from "sigfile";
 import m from "./m.js";
 import mx from "./mx.js";
 import Layer1D from "./sigplot.layer1d.js";

@@ -28,7 +28,7 @@
 //Uses Immediately-invoked Function Expressions (IIFE)s for namespaces
 //See http://addyosmani.com/blog/essential-js-namespacing/ for details.
 
-import sigfile from "sigfile";
+import * as sigfile from "sigfile";
 import loglevel from "loglevel";
 
 var bluefile = sigfile.bluefile;

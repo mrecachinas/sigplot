@@ -7,12 +7,17 @@ const common = {
     logLevel: "info",
 };
 
+// Unwrap the default export so `window.sigplot` is the sigplot object itself
+// rather than `{ default: sigplot }` which esbuild produces for `export default`.
+const iifeFooter = { js: "sigplot = sigplot.default;" };
+
 // UMD-style bundle (IIFE with global name) — replaces browserify --standalone
 await esbuild.build({
     ...common,
     entryPoints: ["js/sigplot.js"],
     format: "iife",
     globalName: "sigplot",
+    footer: iifeFooter,
     outfile: "dist/sigplot.js",
 });
 
@@ -22,6 +27,7 @@ await esbuild.build({
     entryPoints: ["js/sigplot.js"],
     format: "iife",
     globalName: "sigplot",
+    footer: iifeFooter,
     outfile: "dist/sigplot.min.js",
     minify: true,
 });
@@ -35,12 +41,15 @@ await esbuild.build({
     target: "es2020",
 });
 
+const pluginsIifeFooter = { js: "sigplot_plugins = sigplot_plugins.default;" };
+
 // Plugins bundle
 await esbuild.build({
     ...common,
     entryPoints: ["js/plugins.js"],
     format: "iife",
     globalName: "sigplot_plugins",
+    footer: pluginsIifeFooter,
     outfile: "dist/sigplot.plugins.js",
 });
 
@@ -50,6 +59,7 @@ await esbuild.build({
     entryPoints: ["js/plugins.js"],
     format: "iife",
     globalName: "sigplot_plugins",
+    footer: pluginsIifeFooter,
     outfile: "dist/sigplot.plugins.min.js",
     minify: true,
 });
