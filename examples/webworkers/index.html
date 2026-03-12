@@ -101,9 +101,7 @@
     function startStreaming() {
         if (streamInterval) { log('Already streaming'); return; }
         var frameSize = 1024;
-        pipeUuid = plot2d.overlay_pipe({ type: 2000, subsize: frameSize, xdelta: 1 }, {
-            layerType: 'Raster',
-        });
+        pipeUuid = plot2d.overlay_pipe({ type: 2000, subsize: frameSize, xdelta: 1 });
         var row = 0;
         streamInterval = setInterval(function() {
             var data = new Float64Array(frameSize);
