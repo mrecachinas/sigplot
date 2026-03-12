@@ -1,0 +1,128 @@
+<html>
+  <head>
+    <script src="/dist/sigplot.js"></script>
+    <style>
+    .plot {
+        width: 100%;
+        height: 45vh;
+    }
+    body {
+        margin: 8px;
+        font-family: monospace;
+    }
+    #status {
+        padding: 8px;
+        background: #222;
+        color: #0f0;
+        margin-bottom: 8px;
+        white-space: pre-wrap;
+        font-size: 13px;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+    button { margin: 4px; padding: 6px 12px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <h3>SigPlot Web Workers Example</h3>
+    <div id="status">Ready. Click "Enable Workers" to start.</div>
+    <div>
+      <button onclick="enableWorkers()">Enable Workers</button>
+      <button onclick="disableWorkers()">Disable Workers</button>
+      <button onclick="loadFile()">Load File (overlay_href)</button>
+      <button onclick="loadLargeArray()">Load Large Array (1M pts)</button>
+      <button onclick="startStreaming()">Start Streaming Pipe</button>
+      <button onclick="stopStreaming()">Stop Streaming</button>
+    </div>
+    <div id="plot1d" class="plot"></div>
+    <div id="plot2d" class="plot"></div>
+
+    <script>
+    var plot1d, plot2d, pipeUuid, streamInterval;
+
+    function log(msg) {
+        var el = document.getElementById('status');
+        el.textContent += '\n' + new Date().toISOString().substr(11, 12) + ' ' + msg;
+        el.scrollTop = el.scrollHeight;
+    }
+
+    window.onload = function() {
+        plot1d = new sigplot.Plot(document.getElementById('plot1d'), {
+            autohide_panbars: true,
+            xlabel: '1D Plot (Web Workers)',
+        });
+        plot2d = new sigplot.Plot(document.getElementById('plot2d'), {
+            autohide_panbars: true,
+            xlabel: '2D Plot (Web Workers)',
+        });
+        log('Plots created. Worker pool: ' + (plot1d._workerPool ? 'enabled' : 'disabled'));
+    };
+
+    function enableWorkers() {
+        try {
+            plot1d.enableWorkers();
+            plot2d.enableWorkers();
+            log('Workers ENABLED — pool size: ' + plot1d._workerPool.size);
+        } catch (e) {
+            log('ERROR enabling workers: ' + e.message);
+        }
+    }
+
+    function disableWorkers() {
+        plot1d.disableWorkers();
+        plot2d.disableWorkers();
+        log('Workers DISABLED — using synchronous rendering');
+    }
+
+    function loadFile() {
+        log('Loading /test/dat/sin.tmp via overlay_href...');
+        var t0 = performance.now();
+        plot1d.overlay_href('/test/dat/sin.tmp', {
+            onload: function() {
+                log('File loaded in ' + (performance.now() - t0).toFixed(1) + 'ms');
+            }
+        });
+    }
+
+    function loadLargeArray() {
+        var N = 1000000;
+        log('Generating ' + N + ' point array...');
+        var t0 = performance.now();
+        var data = new Float64Array(N);
+        for (var i = 0; i < N; i++) {
+            data[i] = Math.sin(i * 0.001) + 0.5 * Math.sin(i * 0.01) + 0.1 * Math.random();
+        }
+        log('Array generated in ' + (performance.now() - t0).toFixed(1) + 'ms');
+        var t1 = performance.now();
+        plot1d.overlay_array(data, { xdelta: 1.0 / N });
+        log('overlay_array took ' + (performance.now() - t1).toFixed(1) + 'ms');
+    }
+
+    function startStreaming() {
+        if (streamInterval) { log('Already streaming'); return; }
+        var frameSize = 1024;
+        pipeUuid = plot2d.overlay_pipe({ type: 2000, subsize: frameSize, xdelta: 1 }, {
+            layerType: 'Raster',
+        });
+        var row = 0;
+        streamInterval = setInterval(function() {
+            var data = new Float64Array(frameSize);
+            for (var i = 0; i < frameSize; i++) {
+                data[i] = Math.sin(2 * Math.PI * i / frameSize + row * 0.1) * (1 + 0.5 * Math.sin(row * 0.05));
+            }
+            plot2d.push(pipeUuid, data);
+            row++;
+        }, 33); // ~30fps
+        log('Streaming started (30fps, ' + frameSize + ' pts/frame)');
+    }
+
+    function stopStreaming() {
+        if (streamInterval) {
+            clearInterval(streamInterval);
+            streamInterval = null;
+            log('Streaming stopped');
+        }
+    }
+    </script>
+  </body>
+</html>
