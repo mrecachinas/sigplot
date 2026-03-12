@@ -484,6 +484,30 @@ function handleCreateImage(id: string, config: CreateImageConfig) {
     postResult(id, { pixels: pixelBuf, width: w, height: h }, [pixelBuf]);
 }
 
+// ── parse_file (fetch + return raw buffer) ─────────────────────────
+interface ParseFileConfig {
+    href: string;
+}
+
+async function handleParseFile(id: string, config: ParseFileConfig) {
+    const response = await fetch(config.href);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${config.href}: ${response.status} ${response.statusText}`);
+    }
+    const buffer = await response.arrayBuffer();
+
+    // Extract filename from URL (URL API is available in Workers)
+    let fileName = "";
+    try {
+        const url = new URL(config.href, self.location.href);
+        fileName = url.pathname.split("/").pop() || "";
+    } catch {
+        fileName = config.href.split("/").pop()?.split("?")[0] || "";
+    }
+
+    postResult(id, { buffer, fileName }, [buffer]);
+}
+
 // ── Message handler ────────────────────────────────────────────────
 self.onmessage = function (e: MessageEvent<TaskMessage>) {
     const msg = e.data;
@@ -501,6 +525,9 @@ self.onmessage = function (e: MessageEvent<TaskMessage>) {
                 break;
             case "create_image":
                 handleCreateImage(id, args[0] as CreateImageConfig);
+                break;
+            case "parse_file":
+                handleParseFile(id, args[0] as ParseFileConfig);
                 break;
             default:
                 handleSimpleMath(id, fn, args);
