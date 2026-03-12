@@ -244,13 +244,14 @@ function MX(this: any, element: HTMLElement): void {
     this.gl = null;
     this.useWebGL = false;
     this._webglVersion = 0;
+    var glOptions = {
+        alpha: true,
+        premultipliedAlpha: false,
+        antialias: true,
+        preserveDrawingBuffer: true,
+    };
     try {
-        this.gl = this.gl_canvas.getContext("webgl2", {
-            alpha: true,
-            premultipliedAlpha: false,
-            antialias: true,
-            preserveDrawingBuffer: false,
-        });
+        this.gl = this.gl_canvas.getContext("webgl2", glOptions);
         if (this.gl) {
             this.useWebGL = true;
             this._webglVersion = 2;
@@ -259,17 +260,8 @@ function MX(this: any, element: HTMLElement): void {
 
     if (!this.gl) {
         try {
-            this.gl = this.gl_canvas.getContext("webgl", {
-                alpha: true,
-                premultipliedAlpha: false,
-                antialias: true,
-                preserveDrawingBuffer: false,
-            }) || this.gl_canvas.getContext("experimental-webgl", {
-                alpha: true,
-                premultipliedAlpha: false,
-                antialias: true,
-                preserveDrawingBuffer: false,
-            });
+            this.gl = this.gl_canvas.getContext("webgl", glOptions) ||
+                       this.gl_canvas.getContext("experimental-webgl", glOptions);
             if (this.gl) {
                 this.useWebGL = true;
                 this._webglVersion = 1;
@@ -277,7 +269,9 @@ function MX(this: any, element: HTMLElement): void {
         } catch (e) { /* WebGL1 not available */ }
     }
 
-    if (!this.gl) {
+    if (this.gl) {
+        this.gl.viewport(0, 0, this.gl_canvas.width, this.gl_canvas.height);
+    } else {
         this.useWebGL = false;
         this._webglVersion = 0;
     }
