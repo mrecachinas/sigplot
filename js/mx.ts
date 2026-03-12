@@ -7268,8 +7268,8 @@ mx.gl = {
         gl.uniform1f(u.height, Mx.gl_canvas.height);
 
         var rgba = parseColor(color);
-        // Make grid lines semi-transparent
-        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3] * 0.3);
+        // Approximate the visual weight of dashed grid lines (1px on, 3px off)
+        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3] * 0.15);
 
         if (!Mx._glGridBuffer) {
             Mx._glGridBuffer = gl.createBuffer();
