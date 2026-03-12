@@ -1796,7 +1796,24 @@ class Layer2D {
         }
 
         // if there is an image, render it
-        if (this.img) {
+        var webglRendered = false;
+        if (Mx.useWebGL && mx.gl_draw_image && this.zbuf) {
+            webglRendered = mx.gl_draw_image(
+                Mx,
+                this.zbuf,
+                this.hcb!.subsize,
+                this.lps,
+                this.xmin,
+                this.ymin,
+                this.xmax,
+                this.ymax,
+                (Gx.zmin as number) + Gx.zoff,
+                (Gx.zmax as number) + Gx.zoff,
+                this.drawdirection,
+                this.opacity
+            );
+        }
+        if (!webglRendered && this.img) {
             mx.draw_image(
                 Mx,
                 this.img,

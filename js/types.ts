@@ -274,6 +274,12 @@ export interface MxContext {
     _glTraceUniforms?: Record<string, WebGLUniformLocation | null>;
     _glTraceAttribs?: Record<string, number>;
     _glTraceBuffer?: WebGLBuffer | null;
+    _glHeatmapProgram?: WebGLProgram | null;
+    _glHeatmapLocs?: Record<string, any>;
+    _glHeatmapQuadBuf?: WebGLBuffer | null;
+    _glDataTexture?: WebGLTexture | null;
+    _glColormapTexture?: WebGLTexture | null;
+    _glColormapDirty?: boolean;
 }
 
 // ---------------------------------------------------------------------------
