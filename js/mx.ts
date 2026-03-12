@@ -7232,10 +7232,27 @@ mx.gl = {
         if (!Mx.gl || !Mx.useWebGL) { return; }
         var gl = Mx.gl;
 
-        // Reuse the trace shader — set uniforms for pixel-space (identity transform)
+        // Reuse the trace shader — initialize eagerly if needed
         if (!Mx._glTraceProgram) {
-            // Shader not yet initialized — skip (will be initialized on first gl_trace call)
-            return;
+            var vertSrc = Mx._webglVersion === 2 ? TRACE_VERT_SRC_300 : TRACE_VERT_SRC_100;
+            var fragSrc = Mx._webglVersion === 2 ? TRACE_FRAG_SRC_300 : TRACE_FRAG_SRC_100;
+            Mx._glTraceProgram = mx.gl.createProgram(gl, vertSrc, fragSrc);
+            if (!Mx._glTraceProgram) { return; }
+            var p = Mx._glTraceProgram;
+            Mx._glTraceUniforms = {
+                xmin: gl.getUniformLocation(p, "u_xmin"),
+                xscl: gl.getUniformLocation(p, "u_xscl"),
+                ymin: gl.getUniformLocation(p, "u_ymin"),
+                yscl: gl.getUniformLocation(p, "u_yscl"),
+                left: gl.getUniformLocation(p, "u_left"),
+                top: gl.getUniformLocation(p, "u_top"),
+                width: gl.getUniformLocation(p, "u_width"),
+                height: gl.getUniformLocation(p, "u_height"),
+                color: gl.getUniformLocation(p, "u_color"),
+            };
+            Mx._glTraceAttribs = {
+                position: gl.getAttribLocation(p, "a_position"),
+            };
         }
 
         gl.useProgram(Mx._glTraceProgram);
