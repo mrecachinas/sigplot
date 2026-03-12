@@ -147,6 +147,10 @@ class Layer2D {
     zbuf: HcbTypedArray | null;
     img: RasterImage | undefined | null;
 
+    // Async worker pipeline state
+    _pendingPrep: Promise<any> | null;
+    _cachedImage: any | null;
+
     // Cut mode state
     xcut_layer: number | undefined;
     ycut_layer: number | undefined;
@@ -217,6 +221,10 @@ class Layer2D {
         this.buf = null;
         this.zbuf = null;
         this.img = undefined;
+
+        // Async worker pipeline state
+        this._pendingPrep = null;
+        this._cachedImage = null;
     }
 
     /**
@@ -1157,6 +1165,139 @@ class Layer2D {
         };
     }
 
+    /**
+     * Async version of prep() that offloads mode conversion and image
+     * creation to a Web Worker.  Only used for non-pipe, autol <= 0 cases.
+     */
+    async prepAsync(xmin?: number, xmax?: number): Promise<any> {
+        var Gx: GxContext = this.plot._Gx;
+        var Mx: MxContext = this.plot._Mx;
+        var pool = this.plot._workerPool;
+
+        if (!pool || !this.buf || !this.zbuf) { return null; }
+
+        var npts: number = this.lps;
+
+        var xsize: number = this.hcb!.subsize as number;
+        if (this.xcompression > 0) {
+            if (this.drawdirection !== "horizontal") {
+                xsize = Math.min(this.hcb!.subsize as number, Math.ceil(Mx.r - Mx.l));
+            } else {
+                xsize = Math.min(this.hcb!.subsize as number, Math.ceil(Mx.t - Mx.b));
+            }
+        }
+
+        // Read data on main thread (accesses HCB)
+        this.get_data();
+
+        if (!this.buf || !this.zbuf) { return null; }
+
+        // Replicate the npts boundary check from prep()
+        if (Gx.cmode !== 5 && this.xsub <= 0 && npts > 0) {
+            var xstart: number = this.xstart;
+            var xdelta: number = this.xdelta;
+            var d: number = npts;
+            var n1: number, n2: number;
+            if (Gx.index) {
+                n1 = 0;
+                n2 = npts - 1;
+            } else if (xdelta >= 0.0) {
+                n1 = Math.max(1.0, Math.min(d, Math.round(((xmin as number) - xstart) / xdelta))) - 1.0;
+                n2 = Math.max(1.0, Math.min(d, Math.round(((xmax as number) - xstart) / xdelta) + 2.0)) - 1.0;
+            } else {
+                n1 = Math.max(1.0, Math.min(d, Math.round(((xmax as number) - xstart) / xdelta) - 1.0)) - 1.0;
+                n2 = Math.max(1.0, Math.min(d, Math.round(((xmin as number) - xstart) / xdelta) + 2.0)) - 1.0;
+            }
+            npts = n2 - n1 + 1;
+        }
+
+        if (npts <= 0) { return null; }
+
+        // Copy buf data for zero-copy transfer to worker
+        var bufCopy: ArrayBuffer = this.buf.buffer.slice(0);
+
+        // Phase A: mode conversion in worker (buf → zbuf)
+        var prep2dResult = await pool.run("prep2d", [{
+            buf: bufCopy,
+            zbufLen: this.zbuf.length,
+            cx: this.cx,
+            skip: this.skip,
+            cmode: Gx.cmode,
+            dbmin: Gx.dbmin,
+            plab: Gx.plab,
+        }], [bufCopy]);
+
+        var zbufBuffer: ArrayBuffer = prep2dResult.zbuf;
+        var zbuf = new Float32Array(zbufBuffer);
+
+        // Compute z-min/max on main thread (updates shared Gx state)
+        var min: number = 0;
+        var max: number = 0;
+        if (zbuf.length > 0) {
+            min = zbuf[0];
+            max = zbuf[0];
+            for (var i = 0; i < zbuf.length; i++) {
+                if (i / this.xframe >= (this.lpb as number)) {
+                    break;
+                }
+                if (zbuf[i] < min) { min = zbuf[i]; }
+                if (zbuf[i] > max) { max = zbuf[i]; }
+            }
+        }
+        if ((Gx.autoz & 1) !== 0) {
+            if (Gx.zmin !== undefined) {
+                Gx.zmin = Math.min(Gx.zmin as number, min);
+            } else {
+                Gx.zmin = min;
+            }
+        }
+        if ((Gx.autoz & 2) !== 0) {
+            if (Gx.zmax !== undefined) {
+                Gx.zmax = Math.min(Gx.zmax as number, max);
+            } else {
+                Gx.zmax = max;
+            }
+        }
+
+        var zmin: number = (Gx.zmin as number) + Gx.zoff;
+        var zmax: number = (Gx.zmax as number) + Gx.zoff;
+
+        // Build packed colormap lookup table for the worker
+        var pixel: any = Mx.pixel;
+        pixel.setRange(zmin, zmax);
+        var mapLen: number = pixel.getNColors();
+        var colormap = new Uint32Array(mapLen);
+        for (var j = 0; j < mapLen; j++) {
+            colormap[j] = pixel.getColorByIndex(j).color;
+        }
+
+        // Phase B: create_image in worker (zbuf → RGBA pixels)
+        var imgResult = await pool.run("create_image", [{
+            data: zbufBuffer,
+            colormap: colormap.buffer,
+            mapLength: mapLen,
+            subsize: this.hcb!.subsize,
+            w: xsize,
+            h: this.lps,
+            zmin: zmin,
+            zmax: zmax,
+            xcompression: this.xcompression,
+            drawdirection: this.drawdirection || "",
+            origin: Mx.origin,
+        }], [zbufBuffer, colormap.buffer]);
+
+        // Construct image in the same format as mx.create_image
+        var img: any = imgResult.pixels;
+        img.width = imgResult.width;
+        img.height = imgResult.height;
+        img.contents = "rgba"; // already packed RGBA, skip index lookup in render
+        img.cmode = Gx.cmode;
+        img.cmap = Gx.cmap;
+        img.origin = Mx.origin;
+
+        return img;
+    }
+
     xCutData(ypos: number, zData?: boolean): any[] | null {
         var Gx: GxContext = this.plot._Gx;
         var Mx: MxContext = this.plot._Mx;
@@ -1630,7 +1771,28 @@ class Layer2D {
 
         // we might need to prep in certain situations
         if (!this.img || !this.buf || Gx.cmode !== this.img.cmode || Mx.origin !== this.img.origin) {
-            this.prep(xmin, xmax);
+            if (this.plot._workerPool && !this.hcb!.pipe && Gx.autol <= 0) {
+                // Async worker path: fire-and-forget prep, use cached image
+                if (!this._pendingPrep) {
+                    this._pendingPrep = this.prepAsync(xmin, xmax).then((img: any) => {
+                        if (img) {
+                            this._cachedImage = img;
+                        }
+                        this._pendingPrep = null;
+                        this.plot.refresh();
+                    }).catch(() => {
+                        this._pendingPrep = null;
+                    });
+                }
+                if (this._cachedImage) {
+                    this.img = this._cachedImage;
+                } else {
+                    // First frame: sync fallback
+                    this.prep(xmin, xmax);
+                }
+            } else {
+                this.prep(xmin, xmax);
+            }
         }
 
         // if there is an image, render it
