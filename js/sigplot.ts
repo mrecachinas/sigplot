@@ -357,6 +357,9 @@ var Plot = function (this: any, element: HTMLElement | string, options?: PlotSet
 
     plot_init(this, options);
 
+    if (options.useWebGL === false) {
+        this._Mx.useWebGL = false;
+    }
     this._workerPool = null;
 
     this.mimicListeners = {
@@ -4364,6 +4367,28 @@ Plot.prototype = {
 
         if (Gx.always_show_marker || Gx.show_marker) {
             draw_marker(this);
+        }
+    },
+
+    /**
+     * Enable WebGL rendering if a WebGL context is available.
+     */
+    enableWebGL: function () {
+        var Mx = this._Mx;
+        if (Mx.gl_canvas && !Mx.useWebGL && Mx.gl) {
+            Mx.useWebGL = true;
+            this.refresh();
+        }
+    },
+
+    /**
+     * Disable WebGL rendering, falling back to Canvas 2D.
+     */
+    disableWebGL: function () {
+        var Mx = this._Mx;
+        if (Mx.useWebGL) {
+            Mx.useWebGL = false;
+            this.refresh();
         }
     }
 };

@@ -540,6 +540,7 @@ export interface PlotSettings {
     p_cuts?: boolean | null;
     xcut_now?: boolean | null;
     ycut_now?: boolean | null;
+    useWebGL?: boolean;
 }
 
 // ---------------------------------------------------------------------------

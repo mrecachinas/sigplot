@@ -205,11 +205,23 @@ function MX(this: any, element: HTMLElement): void {
     this.parent.height = element.clientHeight;
     element.appendChild(this.parent);
 
+    // WebGL data rendering canvas
+    this.gl_canvas = document.createElement("canvas");
+    this.gl_canvas.style.position = "absolute";
+    this.gl_canvas.style.top = "0px";
+    this.gl_canvas.style.left = "0px";
+    this.gl_canvas.style.zIndex = "0";
+    this.gl_canvas.width = element.clientWidth;
+    this.gl_canvas.height = element.clientHeight;
+    this.parent.appendChild(this.gl_canvas);
+
     // Create the canvas that will hold the plot
     this.canvas = document.createElement("canvas");
     this.canvas.style.position = "absolute";
     this.canvas.style.top = "0px";
     this.canvas.style.left = "0px";
+    this.canvas.style.zIndex = "1";
+    this.canvas.style.backgroundColor = "transparent";
     this.canvas.width = element.clientWidth;
     this.canvas.height = element.clientHeight;
 
@@ -222,11 +234,53 @@ function MX(this: any, element: HTMLElement): void {
     this.wid_canvas.style.position = "absolute";
     this.wid_canvas.style.top = "0px";
     this.wid_canvas.style.left = "0px";
-    this.wid_canvas.style.zIndex = 1;
+    this.wid_canvas.style.zIndex = "2";
     this.wid_canvas.width = element.clientWidth;
     this.wid_canvas.height = element.clientHeight;
 
     this.parent.appendChild(this.wid_canvas);
+
+    // Initialize WebGL — try WebGL2 first, then WebGL1, then disable
+    this.gl = null;
+    this.useWebGL = false;
+    this._webglVersion = 0;
+    try {
+        this.gl = this.gl_canvas.getContext("webgl2", {
+            alpha: true,
+            premultipliedAlpha: false,
+            antialias: true,
+            preserveDrawingBuffer: false,
+        });
+        if (this.gl) {
+            this.useWebGL = true;
+            this._webglVersion = 2;
+        }
+    } catch (e) { /* WebGL2 not available */ }
+
+    if (!this.gl) {
+        try {
+            this.gl = this.gl_canvas.getContext("webgl", {
+                alpha: true,
+                premultipliedAlpha: false,
+                antialias: true,
+                preserveDrawingBuffer: false,
+            }) || this.gl_canvas.getContext("experimental-webgl", {
+                alpha: true,
+                premultipliedAlpha: false,
+                antialias: true,
+                preserveDrawingBuffer: false,
+            });
+            if (this.gl) {
+                this.useWebGL = true;
+                this._webglVersion = 1;
+            }
+        } catch (e) { /* WebGL1 not available */ }
+    }
+
+    if (!this.gl) {
+        this.useWebGL = false;
+        this._webglVersion = 0;
+    }
 
     //if ((this.canvas.height <= 0) || (this.canvas.width <= 0)) {
     //	throw "Plot could not be instantiated correctly; did you specify a size for your placeholder?";
@@ -651,6 +705,14 @@ mx.checkresize = function (Mx: any): boolean {
         Mx.wid_canvas.height = Mx.height;
         Mx.wid_canvas.width = Mx.width;
 
+        if (Mx.gl_canvas) {
+            Mx.gl_canvas.width = Mx.width;
+            Mx.gl_canvas.height = Mx.height;
+            if (Mx.gl) {
+                Mx.gl.viewport(0, 0, Mx.width, Mx.height);
+            }
+        }
+
         return true;
     }
     return false;
@@ -794,6 +856,12 @@ mx.close = function (Mx: any): void {
     //canvas.removeEventListener("touchmove", Mx.ontouchmove);
     canvas.removeEventListener("mouseup", Mx.onmouseup, false);
     //canvas.addEventListener("touchend", Mx.onmouseup);
+
+    if (Mx.gl) {
+        var ext = Mx.gl.getExtension('WEBGL_lose_context');
+        if (ext) { ext.loseContext(); }
+        Mx.gl = null;
+    }
 
     if (Mx.parent && Mx.parent.parentNode) {
         Mx.parent.parentNode.removeChild(Mx.parent);
@@ -6310,6 +6378,72 @@ mx.draw_image = function (
         mx.text(Mx, ul.x, ul.y + Mx.text_h, text, Mx.fg);
     }
     ctx.restore();
+};
+
+// WebGL shader and buffer utilities
+mx.gl = {
+    /**
+     * Compile a shader from source.
+     */
+    compileShader: function (gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+        var shader = gl.createShader(type);
+        if (!shader) { return null; }
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error("Shader compile error:", gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    },
+
+    /**
+     * Link a vertex and fragment shader into a program.
+     */
+    createProgram: function (gl: WebGLRenderingContext, vertexSrc: string, fragmentSrc: string): WebGLProgram | null {
+        var vs = mx.gl.compileShader(gl, gl.VERTEX_SHADER, vertexSrc);
+        var fs = mx.gl.compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
+        if (!vs || !fs) { return null; }
+
+        var program = gl.createProgram();
+        if (!program) { return null; }
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error("Program link error:", gl.getProgramInfoLog(program));
+            gl.deleteProgram(program);
+            return null;
+        }
+
+        gl.deleteShader(vs);
+        gl.deleteShader(fs);
+
+        return program;
+    },
+
+    /**
+     * Create and populate a buffer.
+     */
+    createBuffer: function (gl: WebGLRenderingContext, data: Float32Array, usage?: number): WebGLBuffer | null {
+        var buf = gl.createBuffer();
+        if (!buf) { return null; }
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, data, usage ?? gl.DYNAMIC_DRAW);
+        return buf;
+    },
+
+    /**
+     * Clear the WebGL canvas with a transparent background.
+     */
+    clear: function (Mx: any): void {
+        if (!Mx.gl) { return; }
+        var gl = Mx.gl;
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    },
 };
 
 // Node: Export function

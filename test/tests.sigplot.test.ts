@@ -62,15 +62,19 @@ describe("sigplot", () => {
         expect(plot).not.toBe(null);
         expect(container.childNodes.length).toBe(1);
         expect(container.childNodes[0]).toBe(plot._Mx.parent);
-        expect(plot._Mx.parent.childNodes.length).toBe(2);
-        expect(plot._Mx.parent.childNodes[0]).toBe(plot._Mx.canvas);
-        expect(plot._Mx.parent.childNodes[1]).toBe(plot._Mx.wid_canvas);
+        expect(plot._Mx.parent.childNodes.length).toBe(3);
+        expect(plot._Mx.parent.childNodes[0]).toBe(plot._Mx.gl_canvas);
+        expect(plot._Mx.parent.childNodes[1]).toBe(plot._Mx.canvas);
+        expect(plot._Mx.parent.childNodes[2]).toBe(plot._Mx.wid_canvas);
         expect(plot._Mx.canvas.width).toBe(600);
         expect(plot._Mx.canvas.height).toBe(400);
         expect(plot._Mx.canvas.style.position).toBe("absolute");
         expect(plot._Mx.wid_canvas.width).toBe(600);
         expect(plot._Mx.wid_canvas.height).toBe(400);
         expect(plot._Mx.wid_canvas.style.position).toBe("absolute");
+        expect(plot._Mx.gl_canvas.width).toBe(600);
+        expect(plot._Mx.gl_canvas.height).toBe(400);
+        expect(plot._Mx.gl_canvas.style.position).toBe("absolute");
     });
 
     it("sigplot refresh_after", () => {
