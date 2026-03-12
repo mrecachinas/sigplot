@@ -3415,23 +3415,25 @@ mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numb
             continue;
         }
         if (flags.grid && flags.grid !== "y") {
-            if (!flags.gridStyle) {
-                if (mx.LEGACY_RENDER) {
-                    flags.gridStyle = {
-                        mode: "dashed",
-                        on: 1,
-                        off: 3
-                    };
-                } else {
-                    flags.gridStyle = {
-                        color: Mx.xwms,
-                        mode: "dashed",
-                        on: 1,
-                        off: 3
-                    };
+            if (!Mx.useWebGL) {
+                if (!flags.gridStyle) {
+                    if (mx.LEGACY_RENDER) {
+                        flags.gridStyle = {
+                            mode: "dashed",
+                            on: 1,
+                            off: 3
+                        };
+                    } else {
+                        flags.gridStyle = {
+                            color: Mx.xwms,
+                            mode: "dashed",
+                            on: 1,
+                            off: 3
+                        };
+                    }
                 }
+                mx.textline(Mx, i, iscb, i, isct, flags.gridStyle);
             }
-            mx.textline(Mx, i, iscb, i, isct, flags.gridStyle);
         } else {
             mx.textline(Mx, i, iscb - 2, i, iscb + 2);
             mx.textline(Mx, i, isct - 2, i, isct + 2);
@@ -3523,14 +3525,16 @@ mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numb
             continue;
         }
         if (flags.grid && flags.grid !== "x") {
-            if (!flags.gridStyle) {
-                flags.gridStyle = {
-                    mode: "dashed",
-                    on: 1,
-                    off: 3
-                };
+            if (!Mx.useWebGL) {
+                if (!flags.gridStyle) {
+                    flags.gridStyle = {
+                        mode: "dashed",
+                        on: 1,
+                        off: 3
+                    };
+                }
+                mx.textline(Mx, iscl, i, iscr, i, flags.gridStyle);
             }
-            mx.textline(Mx, iscl, i, iscr, i, flags.gridStyle);
         } else {
             mx.textline(Mx, iscl - 2, i, iscl + 2, i);
             mx.textline(Mx, iscr - 2, i, iscr + 2, i);
