@@ -1061,7 +1061,8 @@ class Layer1D implements Layer {
                 num = pts.num;
                 if (pts.num > 0) {
                     if (!segment) {
-                        mx.trace(
+                        var _traceFn = (Mx.useWebGL && mx.gl_trace) ? mx.gl_trace : mx.trace;
+                        _traceFn(
                             Mx,
                             ic,
                             new m.PointArray(this.xptr),
@@ -1075,7 +1076,7 @@ class Layer1D implements Layer {
                             traceoptions
                         );
                         if (this.maxhold) {
-                            mx.trace(
+                            _traceFn(
                                 Mx,
                                 this.maxhold.color,
                                 new m.PointArray(this.xptr),
@@ -1100,9 +1101,10 @@ class Layer1D implements Layer {
                     num += pts.num;
                     if (pts.num > 0) {
                         if (!segment) {
-                            mx.trace(Mx, ic, new m.PointArray(this.xptr), new m.PointArray(this.yptr), pts.num, pts.start, 1, line, symbol, rad, traceoptions);
+                            var _traceFn2 = (Mx.useWebGL && mx.gl_trace) ? mx.gl_trace : mx.trace;
+                            _traceFn2(Mx, ic, new m.PointArray(this.xptr), new m.PointArray(this.yptr), pts.num, pts.start, 1, line, symbol, rad, traceoptions);
                             if (this.maxhold) {
-                                mx.trace(Mx, this.maxhold.color, new m.PointArray(this.xptr), this.mhpoint!.slice(pts.start, pts.end), pts.num, pts.start, 1, this.maxhold.line, this.maxhold.symbol, this.maxhold.rad, this.maxhold.traceoptions);
+                                _traceFn2(Mx, this.maxhold.color, new m.PointArray(this.xptr), this.mhpoint!.slice(pts.start, pts.end), pts.num, pts.start, 1, this.maxhold.line, this.maxhold.symbol, this.maxhold.rad, this.maxhold.traceoptions);
                             }
                         }
                     }
@@ -1134,7 +1136,8 @@ class Layer1D implements Layer {
                     if (segment) {
                         // TODO
                     } else {
-                        mx.trace(
+                        var _traceFn3 = (Mx.useWebGL && mx.gl_trace) ? mx.gl_trace : mx.trace;
+                        _traceFn3(
                             Mx,
                             ic,
                             new m.PointArray(this.xptr),
@@ -1149,7 +1152,7 @@ class Layer1D implements Layer {
                         );
 
                         if (this.maxhold) {
-                            mx.trace(
+                            _traceFn3(
                                 Mx,
                                 this.maxhold.color,
                                 new m.PointArray(this.xptr),

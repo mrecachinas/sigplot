@@ -6380,6 +6380,611 @@ mx.draw_image = function (
     ctx.restore();
 };
 
+// --- WebGL 2D Heatmap Rendering ---
+
+var HEATMAP_VERT_SRC_300 = `#version 300 es
+precision highp float;
+
+in vec2 a_position;
+in vec2 a_texCoord;
+
+uniform float u_width;
+uniform float u_height;
+
+out vec2 v_texCoord;
+
+void main() {
+    float cx = (a_position.x / u_width) * 2.0 - 1.0;
+    float cy = 1.0 - (a_position.y / u_height) * 2.0;
+    gl_Position = vec4(cx, cy, 0.0, 1.0);
+    v_texCoord = a_texCoord;
+}
+`;
+
+var HEATMAP_FRAG_SRC_300 = `#version 300 es
+precision highp float;
+
+uniform sampler2D u_dataTexture;
+uniform sampler2D u_colormapTexture;
+uniform float u_zmin;
+uniform float u_zmax;
+uniform float u_opacity;
+
+in vec2 v_texCoord;
+out vec4 fragColor;
+
+void main() {
+    float value = texture(u_dataTexture, v_texCoord).r;
+    float t = clamp((value - u_zmin) / (u_zmax - u_zmin), 0.0, 1.0);
+    vec4 color = texture(u_colormapTexture, vec2(t, 0.5));
+    fragColor = vec4(color.rgb, color.a * u_opacity);
+}
+`;
+
+var HEATMAP_VERT_SRC_100 = `
+precision highp float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+uniform float u_width;
+uniform float u_height;
+
+varying vec2 v_texCoord;
+
+void main() {
+    float cx = (a_position.x / u_width) * 2.0 - 1.0;
+    float cy = 1.0 - (a_position.y / u_height) * 2.0;
+    gl_Position = vec4(cx, cy, 0.0, 1.0);
+    v_texCoord = a_texCoord;
+}
+`;
+
+var HEATMAP_FRAG_SRC_100 = `
+precision highp float;
+
+uniform sampler2D u_dataTexture;
+uniform sampler2D u_colormapTexture;
+uniform float u_zmin;
+uniform float u_zmax;
+uniform float u_opacity;
+
+varying vec2 v_texCoord;
+
+void main() {
+    float value = texture2D(u_dataTexture, v_texCoord).r;
+    float t = clamp((value - u_zmin) / (u_zmax - u_zmin), 0.0, 1.0);
+    vec4 color = texture2D(u_colormapTexture, vec2(t, 0.5));
+    gl_FragColor = vec4(color.rgb, color.a * u_opacity);
+}
+`;
+
+function _glExtractColormapRGBA(Mx: any): Uint8Array {
+    var cmap = Mx.pixel;
+    var ncolors = cmap.map.length;
+    var rgba = new Uint8Array(ncolors * 4);
+    for (var i = 0; i < ncolors; i++) {
+        var c = cmap.map[i];
+        var off = i * 4;
+        rgba[off] = c.red;
+        rgba[off + 1] = c.green;
+        rgba[off + 2] = c.blue;
+        rgba[off + 3] = c.alpha;
+    }
+    return rgba;
+}
+
+function _glUploadColormap(gl: WebGLRenderingContext, Mx: any): void {
+    var rgba = _glExtractColormapRGBA(Mx);
+    var ncolors = Mx.pixel.map.length;
+
+    if (!Mx._glColormapTexture) {
+        Mx._glColormapTexture = gl.createTexture();
+    }
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, Mx._glColormapTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ncolors, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    Mx._glColormapDirty = false;
+}
+
+/**
+ * GPU-accelerated 2D heatmap/raster rendering.
+ * Replaces the create_image + draw_image pipeline for the WebGL path.
+ */
+mx.gl_draw_image = function (
+    Mx: any,
+    zbuf: ArrayLike<number>,
+    subsize: number,
+    nrows: number,
+    xmin: number,
+    ymin: number,
+    xmax: number,
+    ymax: number,
+    zmin: number,
+    zmax: number,
+    drawdirection: string | undefined,
+    opacity: number
+): boolean {
+    if (!Mx.gl || !Mx.useWebGL) { return false; }
+
+    var gl = Mx.gl;
+    var stk = Mx.stk[Mx.level];
+
+    // Determine data dimensions respecting draw direction
+    var dataWidth = subsize;
+    var dataHeight = nrows;
+
+    // Bail on degenerate data
+    if (dataWidth <= 0 || dataHeight <= 0 || !zbuf || zbuf.length === 0) { return false; }
+    if (zmax === zmin) { return false; }
+
+    // 1. Lazy-init heatmap shader program
+    if (!Mx._glHeatmapProgram) {
+        var vertSrc: string;
+        var fragSrc: string;
+        if (Mx._webglVersion === 2) {
+            vertSrc = HEATMAP_VERT_SRC_300;
+            fragSrc = HEATMAP_FRAG_SRC_300;
+        } else {
+            vertSrc = HEATMAP_VERT_SRC_100;
+            fragSrc = HEATMAP_FRAG_SRC_100;
+        }
+        Mx._glHeatmapProgram = mx.gl.createProgram(gl, vertSrc, fragSrc);
+        if (!Mx._glHeatmapProgram) { return false; }
+
+        var prog = Mx._glHeatmapProgram;
+        Mx._glHeatmapLocs = {
+            a_position: gl.getAttribLocation(prog, "a_position"),
+            a_texCoord: gl.getAttribLocation(prog, "a_texCoord"),
+            u_width: gl.getUniformLocation(prog, "u_width"),
+            u_height: gl.getUniformLocation(prog, "u_height"),
+            u_dataTexture: gl.getUniformLocation(prog, "u_dataTexture"),
+            u_colormapTexture: gl.getUniformLocation(prog, "u_colormapTexture"),
+            u_zmin: gl.getUniformLocation(prog, "u_zmin"),
+            u_zmax: gl.getUniformLocation(prog, "u_zmax"),
+            u_opacity: gl.getUniformLocation(prog, "u_opacity"),
+        };
+        Mx._glHeatmapQuadBuf = gl.createBuffer();
+    }
+
+    // 2. Convert zbuf Float64 -> Float32 and upload data texture
+    var f32data = new Float32Array(zbuf.length);
+    for (var i = 0; i < zbuf.length; i++) { f32data[i] = zbuf[i] as number; }
+
+    if (!Mx._glDataTexture) {
+        Mx._glDataTexture = gl.createTexture();
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, Mx._glDataTexture);
+
+    if (Mx._webglVersion === 2) {
+        (gl as WebGL2RenderingContext).texImage2D(
+            gl.TEXTURE_2D, 0,
+            (gl as any).R32F,
+            dataWidth, dataHeight, 0,
+            (gl as any).RED,
+            gl.FLOAT, f32data
+        );
+    } else {
+        gl.getExtension("OES_texture_float");
+        gl.texImage2D(
+            gl.TEXTURE_2D, 0,
+            gl.LUMINANCE,
+            dataWidth, dataHeight, 0,
+            gl.LUMINANCE,
+            gl.FLOAT, f32data
+        );
+    }
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    // 3. Upload colormap texture (if dirty or not yet created)
+    if (!Mx._glColormapTexture || Mx._glColormapDirty) {
+        _glUploadColormap(gl, Mx);
+    }
+
+    // 4. Compute quad corners in pixel space using real_to_pixel
+    var ul = mx.real_to_pixel(Mx, xmin, ymax);
+    var lr = mx.real_to_pixel(Mx, xmax, ymin);
+
+    var px_left: number, px_right: number, px_top: number, px_bottom: number;
+
+    if (Mx.origin === 1) {
+        // bottom-left: ymax maps to top, ymin maps to bottom
+        px_left = ul.x;
+        px_right = lr.x;
+        px_top = ul.y;
+        px_bottom = lr.y;
+    } else if (Mx.origin === 2) {
+        // bottom-right: x inverted
+        ul = mx.real_to_pixel(Mx, xmax, ymax);
+        lr = mx.real_to_pixel(Mx, xmin, ymin);
+        px_left = ul.x;
+        px_right = lr.x;
+        px_top = ul.y;
+        px_bottom = lr.y;
+    } else if (Mx.origin === 3) {
+        // top-right: both inverted
+        ul = mx.real_to_pixel(Mx, xmax, ymin);
+        lr = mx.real_to_pixel(Mx, xmin, ymax);
+        px_left = ul.x;
+        px_right = lr.x;
+        px_top = ul.y;
+        px_bottom = lr.y;
+    } else {
+        // origin 4: top-left (standard screen)
+        ul = mx.real_to_pixel(Mx, xmin, ymin);
+        lr = mx.real_to_pixel(Mx, xmax, ymax);
+        px_left = ul.x;
+        px_right = lr.x;
+        px_top = ul.y;
+        px_bottom = lr.y;
+    }
+
+    // 5. Build texture coordinates based on origin and draw direction
+    //    Data texture layout: row 0 is at v=0 (top of texture), last row at v=1.
+    //    Column 0 is at u=0 (left), last column at u=1.
+    var tx0 = 0.0, tx1 = 1.0, ty0 = 0.0, ty1 = 1.0;
+
+    if (drawdirection === "horizontal") {
+        // For horizontal mode, the texture is transposed:
+        // data is stored as [col][row] so we swap u/v
+        // origin 1: x-left=row0(u=0), y-bottom=col0 → flip v
+        if (Mx.origin === 1) {
+            // top-left pixel → last row, first col; bottom-right → first row, last col
+            tx0 = 0.0; tx1 = 1.0; ty0 = 1.0; ty1 = 0.0;
+        } else if (Mx.origin === 2) {
+            tx0 = 1.0; tx1 = 0.0; ty0 = 1.0; ty1 = 0.0;
+        } else if (Mx.origin === 3) {
+            tx0 = 1.0; tx1 = 0.0; ty0 = 0.0; ty1 = 1.0;
+        } else {
+            tx0 = 0.0; tx1 = 1.0; ty0 = 0.0; ty1 = 1.0;
+        }
+    } else {
+        // Vertical (standard): data row 0 corresponds to the first Y line
+        if (Mx.origin === 1) {
+            // bottom-left: data row 0 at bottom, so top of quad → last row (ty=1)
+            tx0 = 0.0; tx1 = 1.0; ty0 = 1.0; ty1 = 0.0;
+        } else if (Mx.origin === 2) {
+            tx0 = 1.0; tx1 = 0.0; ty0 = 1.0; ty1 = 0.0;
+        } else if (Mx.origin === 3) {
+            tx0 = 1.0; tx1 = 0.0; ty0 = 0.0; ty1 = 1.0;
+        } else {
+            // origin 4: top-left, data row 0 at top
+            tx0 = 0.0; tx1 = 1.0; ty0 = 0.0; ty1 = 1.0;
+        }
+    }
+
+    // Quad: two triangles as TRIANGLE_STRIP
+    // Vertices: top-left, top-right, bottom-left, bottom-right
+    // prettier-ignore
+    var quadData = new Float32Array([
+        // x,         y,          u,   v
+        px_left,  px_top,     tx0, ty0,
+        px_right, px_top,     tx1, ty0,
+        px_left,  px_bottom,  tx0, ty1,
+        px_right, px_bottom,  tx1, ty1,
+    ]);
+
+    // 6. Draw
+    var prog = Mx._glHeatmapProgram;
+    var locs = Mx._glHeatmapLocs;
+
+    gl.useProgram(prog);
+
+    // Upload quad buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, Mx._glHeatmapQuadBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, quadData, gl.DYNAMIC_DRAW);
+
+    gl.enableVertexAttribArray(locs.a_position);
+    gl.vertexAttribPointer(locs.a_position, 2, gl.FLOAT, false, 16, 0);
+    gl.enableVertexAttribArray(locs.a_texCoord);
+    gl.vertexAttribPointer(locs.a_texCoord, 2, gl.FLOAT, false, 16, 8);
+
+    // Set uniforms
+    gl.uniform1f(locs.u_width, gl.canvas.width);
+    gl.uniform1f(locs.u_height, gl.canvas.height);
+    gl.uniform1f(locs.u_zmin, zmin);
+    gl.uniform1f(locs.u_zmax, zmax);
+    gl.uniform1f(locs.u_opacity, opacity != null ? opacity : 1.0);
+
+    // Bind textures
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, Mx._glDataTexture);
+    gl.uniform1i(locs.u_dataTexture, 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, Mx._glColormapTexture);
+    gl.uniform1i(locs.u_colormapTexture, 1);
+
+    // Scissor to plot area
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(Mx.l, gl.canvas.height - Mx.b, Mx.r - Mx.l, Mx.b - Mx.t);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    gl.disable(gl.BLEND);
+    gl.disable(gl.SCISSOR_TEST);
+
+    gl.disableVertexAttribArray(locs.a_position);
+    gl.disableVertexAttribArray(locs.a_texCoord);
+
+    return true;
+};
+
+// ---------------------------------------------------------------------------
+// WebGL 1D trace rendering
+// ---------------------------------------------------------------------------
+
+// Vertex shader: data-space → clip-space
+var TRACE_VERT_SRC_300 = [
+    "#version 300 es",
+    "precision highp float;",
+    "in vec2 a_position;",
+    "uniform float u_xmin;",
+    "uniform float u_xscl;",
+    "uniform float u_ymin;",
+    "uniform float u_yscl;",
+    "uniform float u_left;",
+    "uniform float u_top;",
+    "uniform float u_width;",
+    "uniform float u_height;",
+    "void main() {",
+    "    float px = (a_position.x - u_xmin) * u_xscl + u_left;",
+    "    float py = (a_position.y - u_ymin) * u_yscl + u_top;",
+    "    float cx = (px / u_width) * 2.0 - 1.0;",
+    "    float cy = 1.0 - (py / u_height) * 2.0;",
+    "    gl_Position = vec4(cx, cy, 0.0, 1.0);",
+    "}"
+].join("\n");
+
+var TRACE_FRAG_SRC_300 = [
+    "#version 300 es",
+    "precision mediump float;",
+    "uniform vec4 u_color;",
+    "out vec4 fragColor;",
+    "void main() {",
+    "    fragColor = u_color;",
+    "}"
+].join("\n");
+
+var TRACE_VERT_SRC_100 = [
+    "precision highp float;",
+    "attribute vec2 a_position;",
+    "uniform float u_xmin;",
+    "uniform float u_xscl;",
+    "uniform float u_ymin;",
+    "uniform float u_yscl;",
+    "uniform float u_left;",
+    "uniform float u_top;",
+    "uniform float u_width;",
+    "uniform float u_height;",
+    "void main() {",
+    "    float px = (a_position.x - u_xmin) * u_xscl + u_left;",
+    "    float py = (a_position.y - u_ymin) * u_yscl + u_top;",
+    "    float cx = (px / u_width) * 2.0 - 1.0;",
+    "    float cy = 1.0 - (py / u_height) * 2.0;",
+    "    gl_Position = vec4(cx, cy, 0.0, 1.0);",
+    "}"
+].join("\n");
+
+var TRACE_FRAG_SRC_100 = [
+    "precision mediump float;",
+    "uniform vec4 u_color;",
+    "void main() {",
+    "    gl_FragColor = u_color;",
+    "}"
+].join("\n");
+
+// Color-parsing cache and helper
+var _colorParseCanvas: HTMLCanvasElement | null = null;
+var _colorParseCtx: CanvasRenderingContext2D | null = null;
+var _colorCache: Record<string, [number, number, number, number]> = {};
+
+function parseColor(color: string): [number, number, number, number] {
+    if (_colorCache[color]) {
+        return _colorCache[color];
+    }
+
+    // Fast path: #rrggbb
+    if (color.charAt(0) === "#" && color.length === 7) {
+        var r = parseInt(color.substring(1, 3), 16) / 255;
+        var g = parseInt(color.substring(3, 5), 16) / 255;
+        var b = parseInt(color.substring(5, 7), 16) / 255;
+        var result: [number, number, number, number] = [r, g, b, 1.0];
+        _colorCache[color] = result;
+        return result;
+    }
+
+    // Fast path: #rgb
+    if (color.charAt(0) === "#" && color.length === 4) {
+        var r = parseInt(color.charAt(1), 16) / 15;
+        var g = parseInt(color.charAt(2), 16) / 15;
+        var b = parseInt(color.charAt(3), 16) / 15;
+        var result: [number, number, number, number] = [r, g, b, 1.0];
+        _colorCache[color] = result;
+        return result;
+    }
+
+    // Fast path: rgb(r, g, b) or rgba(r, g, b, a)
+    var rgbMatch = color.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
+    if (rgbMatch) {
+        var result: [number, number, number, number] = [
+            parseInt(rgbMatch[1]) / 255,
+            parseInt(rgbMatch[2]) / 255,
+            parseInt(rgbMatch[3]) / 255,
+            rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1.0
+        ];
+        _colorCache[color] = result;
+        return result;
+    }
+
+    // General fallback: use a canvas 2D context to parse any CSS color
+    if (!_colorParseCanvas) {
+        _colorParseCanvas = document.createElement("canvas");
+        _colorParseCanvas.width = 1;
+        _colorParseCanvas.height = 1;
+        _colorParseCtx = _colorParseCanvas.getContext("2d");
+    }
+    if (_colorParseCtx) {
+        _colorParseCtx.clearRect(0, 0, 1, 1);
+        _colorParseCtx.fillStyle = color;
+        _colorParseCtx.fillRect(0, 0, 1, 1);
+        var data = _colorParseCtx.getImageData(0, 0, 1, 1).data;
+        var result: [number, number, number, number] = [data[0] / 255, data[1] / 255, data[2] / 255, data[3] / 255];
+        _colorCache[color] = result;
+        return result;
+    }
+
+    // Last resort
+    return [1.0, 1.0, 1.0, 1.0];
+}
+
+/**
+ * GPU-accelerated 1D trace rendering.
+ *
+ * Falls back to mx.trace() when WebGL is unavailable or the request
+ * involves features not yet handled on the GPU (symbols, fill, dashed).
+ */
+mx.gl_trace = function (
+    Mx: any,
+    color: string,
+    xpoint: ArrayLike<number>,
+    ypoint: ArrayLike<number>,
+    npts: number,
+    istart: number,
+    skip?: number,
+    line?: number,
+    symb?: number | string | Function,
+    rad?: number,
+    options?: any
+): void {
+    if (skip === undefined) { skip = 1; }
+    if (line === undefined) { line = 1; }
+    if (symb === undefined) { symb = 0; }
+    if (rad === undefined) { rad = 0; }
+    if (options === undefined) { options = {}; }
+
+    // Fall back to Canvas 2D for unsupported features or when WebGL is off
+    if (
+        !Mx.gl || !Mx.useWebGL ||
+        npts <= 0 ||
+        line === 0 ||
+        line === -1 ||                // fill mode
+        options.dashed ||
+        options.highlight ||
+        options.fillStyle ||
+        options.pixels ||
+        options.vertsym ||
+        options.horzsym
+    ) {
+        return mx.trace(Mx, color, xpoint, ypoint, npts, istart, skip, line, symb, rad, options);
+    }
+
+    var gl = Mx.gl;
+    var stk4 = mx.origin(Mx.origin, 4, Mx.stk[Mx.level]);
+    if (stk4.xscl === 0.0 || stk4.yscl === 0.0) {
+        return;
+    }
+
+    // Lazy-init the trace shader program (cached on Mx)
+    if (!Mx._glTraceProgram) {
+        var vertSrc = Mx._webglVersion === 2 ? TRACE_VERT_SRC_300 : TRACE_VERT_SRC_100;
+        var fragSrc = Mx._webglVersion === 2 ? TRACE_FRAG_SRC_300 : TRACE_FRAG_SRC_100;
+        Mx._glTraceProgram = mx.gl.createProgram(gl, vertSrc, fragSrc);
+        if (!Mx._glTraceProgram) {
+            Mx.useWebGL = false;
+            return mx.trace(Mx, color, xpoint, ypoint, npts, istart, skip, line, symb, rad, options);
+        }
+        var p = Mx._glTraceProgram;
+        Mx._glTraceUniforms = {
+            xmin: gl.getUniformLocation(p, "u_xmin"),
+            xscl: gl.getUniformLocation(p, "u_xscl"),
+            ymin: gl.getUniformLocation(p, "u_ymin"),
+            yscl: gl.getUniformLocation(p, "u_yscl"),
+            left: gl.getUniformLocation(p, "u_left"),
+            top: gl.getUniformLocation(p, "u_top"),
+            width: gl.getUniformLocation(p, "u_width"),
+            height: gl.getUniformLocation(p, "u_height"),
+            color: gl.getUniformLocation(p, "u_color"),
+        };
+        Mx._glTraceAttribs = {
+            position: gl.getAttribLocation(p, "a_position"),
+        };
+    }
+
+    // Build interleaved vertex data.
+    // mx.trace indexes as xpoint[0], xpoint[skip], xpoint[2*skip], etc.
+    var vertexData = new Float32Array(npts * 2);
+    for (var i = 0; i < npts; i++) {
+        var si = i * skip;
+        vertexData[i * 2] = xpoint[si] as number;
+        vertexData[i * 2 + 1] = ypoint[si] as number;
+    }
+
+    // Upload to GPU
+    if (!Mx._glTraceBuffer) {
+        Mx._glTraceBuffer = gl.createBuffer();
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, Mx._glTraceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.DYNAMIC_DRAW);
+
+    // Activate program and set uniforms
+    gl.useProgram(Mx._glTraceProgram);
+    var u = Mx._glTraceUniforms;
+    gl.uniform1f(u.xmin, stk4.xmin);
+    gl.uniform1f(u.xscl, 1.0 / stk4.xscl);
+    gl.uniform1f(u.ymin, stk4.ymin);
+    gl.uniform1f(u.yscl, 1.0 / stk4.yscl);
+    gl.uniform1f(u.left, stk4.x1);
+    gl.uniform1f(u.top, stk4.y1);
+    gl.uniform1f(u.width, Mx.gl_canvas.width);
+    gl.uniform1f(u.height, Mx.gl_canvas.height);
+
+    // Parse and set color
+    var rgba = parseColor(color);
+    gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3]);
+
+    // Vertex attribute
+    gl.enableVertexAttribArray(Mx._glTraceAttribs.position);
+    gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+
+    // Scissor test: clip to plot area
+    // gl.scissor uses bottom-left origin; canvas pixel coords use top-left
+    var clipX = stk4.x1;
+    var clipW = stk4.x2 - stk4.x1 + 1;
+    var clipH = stk4.y2 - stk4.y1 + 1;
+    var clipY = Mx.gl_canvas.height - stk4.y1 - clipH;
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(clipX, clipY, clipW, clipH);
+
+    // Enable blending for proper alpha compositing
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Draw the line strip
+    gl.lineWidth(line > 1 ? line : (Mx.linewidth || 1));
+    gl.drawArrays(gl.LINE_STRIP, 0, npts);
+
+    gl.disable(gl.BLEND);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.disableVertexAttribArray(Mx._glTraceAttribs.position);
+
+    // If symbols are requested, fall back to Canvas 2D for those
+    if (symb && symb !== 0) {
+        mx.trace(Mx, color, xpoint, ypoint, npts, istart, skip, 0, symb, rad, options);
+    }
+};
+
 // WebGL shader and buffer utilities
 mx.gl = {
     /**

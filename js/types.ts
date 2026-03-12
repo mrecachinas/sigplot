@@ -264,6 +264,16 @@ export interface MxContext {
 
     // DOM menu mode
     useDomMenu?: boolean;
+
+    // WebGL
+    gl_canvas?: HTMLCanvasElement;
+    gl?: WebGLRenderingContext | WebGL2RenderingContext | null;
+    useWebGL?: boolean;
+    _webglVersion?: number;
+    _glTraceProgram?: WebGLProgram | null;
+    _glTraceUniforms?: Record<string, WebGLUniformLocation | null>;
+    _glTraceAttribs?: Record<string, number>;
+    _glTraceBuffer?: WebGLBuffer | null;
 }
 
 // ---------------------------------------------------------------------------
