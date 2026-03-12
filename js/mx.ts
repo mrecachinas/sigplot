@@ -3225,16 +3225,18 @@ mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numb
         // When WebGL is active, clear the 2D plot area to transparent
         // so the WebGL data layer shows through
         ctx.clearRect(iscl, isct, iscr - iscl, iscb - isct);
-    } else if (flags.fillStyle) {
-        if (Array.isArray(flags.fillStyle)) {
-            ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, iscb - isct, flags.fillStyle);
-        } else {
-            ctx.fillStyle = flags.fillStyle;
-        }
     } else {
-        ctx.fillStyle = Mx.bg;
+        if (flags.fillStyle) {
+            if (Array.isArray(flags.fillStyle)) {
+                ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, iscb - isct, flags.fillStyle);
+            } else {
+                ctx.fillStyle = flags.fillStyle;
+            }
+        } else {
+            ctx.fillStyle = Mx.bg;
+        }
+        ctx.fillRect(iscl, isct, iscr - iscl, iscb - isct);
     }
-    ctx.fillRect(iscl, isct, iscr - iscl, iscb - isct);
 
     if (!flags.noaxisbox) {
         mx.textline(Mx, iscl, isct, iscr, isct);
