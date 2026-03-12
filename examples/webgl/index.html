@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>SigPlot WebGL Example</title>
+    <script src="/sigplot.js"></script>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: sans-serif; background: #1a1a1a; color: #eee; padding: 16px; }
+      h1 { margin-bottom: 8px; }
+      .info { font-size: 0.85em; color: #aaa; margin-bottom: 12px; }
+      .controls { margin-bottom: 12px; display: flex; gap: 8px; align-items: center; }
+      button { padding: 6px 14px; cursor: pointer; }
+      #status { font-size: 0.85em; color: #0f0; }
+      .plots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .plot-container { background: #000; border: 1px solid #333; }
+      .plot-container h3 { padding: 6px 10px; font-size: 0.9em; color: #ccc; }
+      .plot { width: 100%; height: 400px; }
+    </style>
+  </head>
+  <body>
+    <h1>SigPlot — WebGL Rendering</h1>
+    <div class="info" id="status">Initializing…</div>
+    <div class="controls">
+      <button id="btn-toggle">Toggle WebGL</button>
+      <button id="btn-refresh">Refresh Data</button>
+    </div>
+
+    <div class="plots">
+      <div class="plot-container">
+        <h3>1D Trace (Line Plot)</h3>
+        <div class="plot" id="plot1d"></div>
+      </div>
+      <div class="plot-container">
+        <h3>2D Raster (Heatmap)</h3>
+        <div class="plot" id="plot2d"></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var plot1d, plot2d, lyr1d, lyr2d;
+        var webglEnabled = true;
+
+        function generatePulse(n) {
+          var data = [];
+          for (var i = 0; i < n; i++) {
+            data.push(Math.sin(2 * Math.PI * i / n) * Math.exp(-((i - n / 2) * (i - n / 2)) / (2 * (n / 8) * (n / 8))));
+          }
+          return data;
+        }
+
+        function generateRaster(rows, cols) {
+          var data = [];
+          for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < cols; c++) {
+              data.push(Math.sin(2 * Math.PI * c / cols + r * 0.1) * Math.cos(Math.PI * r / rows));
+            }
+          }
+          return data;
+        }
+
+        function updateStatus() {
+          var Mx = plot1d._Mx;
+          var info = "WebGL: " + (Mx.useWebGL ? "ON (v" + Mx._webglVersion + ")" : "OFF");
+          if (Mx.gl) {
+            var gl = Mx.gl;
+            info += " | Renderer: " + gl.getParameter(gl.RENDERER);
+          }
+          document.getElementById("status").textContent = info;
+        }
+
+        function init() {
+          var opts = { all: true, expand: true, autohide_panbars: true };
+
+          plot1d = new sigplot.Plot(document.getElementById("plot1d"), opts);
+          var pulse = generatePulse(1024);
+          lyr1d = plot1d.overlay_array(pulse, { xdelta: 1.0 / 1024, xunits: "Time", yunits: "Amplitude" }, { name: "Gaussian Pulse" });
+
+          plot2d = new sigplot.Plot(document.getElementById("plot2d"), opts);
+          var raster = generateRaster(128, 256);
+          lyr2d = plot2d.overlay_array(raster, {
+            type: 2000,
+            subsize: 256,
+            xdelta: 1.0,
+            ydelta: 1.0,
+            xunits: "Frequency",
+            yunits: "Time",
+          });
+
+          updateStatus();
+        }
+
+        document.getElementById("btn-toggle").addEventListener("click", function () {
+          webglEnabled = !webglEnabled;
+          if (webglEnabled) {
+            plot1d.enableWebGL();
+            plot2d.enableWebGL();
+          } else {
+            plot1d.disableWebGL();
+            plot2d.disableWebGL();
+          }
+          plot1d.refresh();
+          plot2d.refresh();
+          updateStatus();
+        });
+
+        document.getElementById("btn-refresh").addEventListener("click", function () {
+          var pulse = generatePulse(1024);
+          plot1d.reload(lyr1d, pulse);
+          var raster = generateRaster(128, 256);
+          plot2d.reload(lyr2d, raster);
+        });
+
+        window.onload = init;
+      })();
+    </script>
+  </body>
+</html>

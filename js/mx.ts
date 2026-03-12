@@ -2302,8 +2302,14 @@ mx.clip = function (Mx: any, left: number, top: number, width: number, height: n
 mx.clear_window = function (Mx: any): void {
     var ctx = Mx.active_canvas.getContext("2d");
 
-    ctx.fillStyle = Mx.bg;
-    ctx.fillRect(0, 0, Mx.width, Mx.height);
+    if (Mx.useWebGL) {
+        // When WebGL is active, the background is drawn on gl_canvas,
+        // so clear the 2D canvas to transparent for proper compositing.
+        ctx.clearRect(0, 0, Mx.width, Mx.height);
+    } else {
+        ctx.fillStyle = Mx.bg;
+        ctx.fillRect(0, 0, Mx.width, Mx.height);
+    }
 };
 
 /**
@@ -7041,12 +7047,19 @@ mx.gl = {
     },
 
     /**
-     * Clear the WebGL canvas with a transparent background.
+     * Clear the WebGL canvas. When useWebGL is active, clears with the
+     * background color so it shows through the transparent 2D canvas.
+     * Falls back to transparent clear otherwise.
      */
     clear: function (Mx: any): void {
         if (!Mx.gl) { return; }
         var gl = Mx.gl;
-        gl.clearColor(0, 0, 0, 0);
+        if (Mx.useWebGL && Mx.bg) {
+            var rgba = parseColor(Mx.bg);
+            gl.clearColor(rgba[0], rgba[1], rgba[2], rgba[3]);
+        } else {
+            gl.clearColor(0, 0, 0, 0);
+        }
         gl.clear(gl.COLOR_BUFFER_BIT);
     },
 };

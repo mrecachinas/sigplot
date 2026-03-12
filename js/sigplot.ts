@@ -4216,8 +4216,8 @@ Plot.prototype = {
             // TODO Gx.panning !==
             // 0?? Does this work?
             Gx.plotData.valid = false;
-            mx.clear_window(Mx);
             mx.gl.clear(Mx);
+            mx.clear_window(Mx);
         } //else if (!Gx.specs) {
         // TODO
         //} else if (Gx.panning === 1) {
