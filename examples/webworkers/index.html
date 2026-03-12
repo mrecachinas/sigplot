@@ -4,7 +4,7 @@
     <style>
     .plot {
         width: 100%;
-        height: 45vh;
+        height: 35vh;
     }
     body {
         margin: 8px;
@@ -17,28 +17,46 @@
         margin-bottom: 8px;
         white-space: pre-wrap;
         font-size: 13px;
-        max-height: 120px;
+        max-height: 150px;
         overflow-y: auto;
     }
+    #metrics {
+        padding: 8px;
+        background: #111;
+        color: #ff0;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
     button { margin: 4px; padding: 6px 12px; cursor: pointer; }
+    .section { margin: 4px 0; }
     </style>
   </head>
   <body>
     <h3>SigPlot Web Workers Example</h3>
+    <div id="metrics">Frame metrics: idle</div>
     <div id="status">Ready. Click "Enable Workers" to start.</div>
-    <div>
+    <div class="section">
       <button onclick="enableWorkers()">Enable Workers</button>
       <button onclick="disableWorkers()">Disable Workers</button>
+    </div>
+    <div class="section">
       <button onclick="loadFile()">Load File (overlay_href)</button>
-      <button onclick="loadLargeArray()">Load Large Array (1M pts)</button>
-      <button onclick="startStreaming()">Start Streaming Pipe</button>
+      <button onclick="loadLargeArray()">Load 1M pts</button>
+      <button onclick="loadLargeArray(5000000)">Load 5M pts</button>
+      <button onclick="stressRerender()">Stress: Re-render 100x</button>
+    </div>
+    <div class="section">
+      <button onclick="startStreaming()">Start Streaming</button>
       <button onclick="stopStreaming()">Stop Streaming</button>
+      <button onclick="measureInputLag()">Measure Input Lag</button>
     </div>
     <div id="plot1d" class="plot"></div>
     <div id="plot2d" class="plot"></div>
 
     <script>
     var plot1d, plot2d, pipeUuid, streamInterval;
+    var frameTimes = [];
+    var rafHandle = null;
 
     function log(msg) {
         var el = document.getElementById('status');
@@ -46,14 +64,33 @@
         el.scrollTop = el.scrollHeight;
     }
 
+    function updateMetrics(label, times) {
+        if (!times.length) return;
+        times.sort(function(a,b) { return a - b; });
+        var sum = times.reduce(function(a,b) { return a + b; }, 0);
+        var avg = sum / times.length;
+        var p50 = times[Math.floor(times.length * 0.5)];
+        var p95 = times[Math.floor(times.length * 0.95)];
+        var p99 = times[Math.floor(times.length * 0.99)];
+        var max = times[times.length - 1];
+        var mode = plot1d._workerPool ? 'WORKERS' : 'SYNC';
+        document.getElementById('metrics').textContent =
+            label + ' [' + mode + '] — ' + times.length + ' samples | ' +
+            'avg: ' + avg.toFixed(2) + 'ms | ' +
+            'p50: ' + p50.toFixed(2) + 'ms | ' +
+            'p95: ' + p95.toFixed(2) + 'ms | ' +
+            'p99: ' + p99.toFixed(2) + 'ms | ' +
+            'max: ' + max.toFixed(2) + 'ms';
+    }
+
     window.onload = function() {
         plot1d = new sigplot.Plot(document.getElementById('plot1d'), {
             autohide_panbars: true,
-            xlabel: '1D Plot (Web Workers)',
+            xlabel: '1D Plot',
         });
         plot2d = new sigplot.Plot(document.getElementById('plot2d'), {
             autohide_panbars: true,
-            xlabel: '2D Plot (Web Workers)',
+            xlabel: '2D Plot',
         });
         log('Plots created. Worker pool: ' + (plot1d._workerPool ? 'enabled' : 'disabled'));
     };
@@ -84,33 +121,78 @@
         });
     }
 
-    function loadLargeArray() {
-        var N = 1000000;
-        log('Generating ' + N + ' point array...');
+    function loadLargeArray(N) {
+        N = N || 1000000;
+        plot1d.deoverlay();
+        log('Generating ' + (N/1e6).toFixed(1) + 'M point complex array...');
         var t0 = performance.now();
-        var data = new Float64Array(N);
+        // Complex interleaved data (re, im pairs) — forces cvmag computation in prep
+        var data = new Float64Array(N * 2);
         for (var i = 0; i < N; i++) {
-            data[i] = Math.sin(i * 0.001) + 0.5 * Math.sin(i * 0.01) + 0.1 * Math.random();
+            data[i * 2]     = Math.sin(i * 0.001) + 0.1 * Math.random(); // real
+            data[i * 2 + 1] = Math.cos(i * 0.001) + 0.1 * Math.random(); // imag
         }
         log('Array generated in ' + (performance.now() - t0).toFixed(1) + 'ms');
+
         var t1 = performance.now();
-        plot1d.overlay_array(data, { xdelta: 1.0 / N });
+        plot1d.overlay_array(data, {
+            xdelta: 1.0 / N,
+            format: 'CF',  // complex float
+        });
         log('overlay_array took ' + (performance.now() - t1).toFixed(1) + 'ms');
+    }
+
+    // Stress test: force re-render many times and measure each frame
+    function stressRerender() {
+        if (!plot1d._Gx.lyr.length) {
+            log('Load data first!');
+            return;
+        }
+        var times = [];
+        var iterations = 100;
+        log('Stress test: re-rendering ' + iterations + ' times...');
+
+        var i = 0;
+        function nextFrame() {
+            if (i >= iterations) {
+                updateMetrics('Stress re-render', times);
+                log('Stress test done. See metrics bar above.');
+                return;
+            }
+            var t0 = performance.now();
+            // Force a full re-render by toggling zoom slightly
+            plot1d._Mx.stk[0].xmin += (i % 2 === 0 ? 0.0001 : -0.0001);
+            plot1d.refresh();
+            var elapsed = performance.now() - t0;
+            times.push(elapsed);
+            i++;
+            requestAnimationFrame(nextFrame);
+        }
+        requestAnimationFrame(nextFrame);
     }
 
     function startStreaming() {
         if (streamInterval) { log('Already streaming'); return; }
-        var frameSize = 1024;
+        var frameSize = 2048;
         pipeUuid = plot2d.overlay_pipe({ type: 2000, subsize: frameSize, xdelta: 1 });
         var row = 0;
+        var streamTimes = [];
+
         streamInterval = setInterval(function() {
+            var t0 = performance.now();
             var data = new Float64Array(frameSize);
             for (var i = 0; i < frameSize; i++) {
                 data[i] = Math.sin(2 * Math.PI * i / frameSize + row * 0.1) * (1 + 0.5 * Math.sin(row * 0.05));
             }
             plot2d.push(pipeUuid, data);
+            streamTimes.push(performance.now() - t0);
             row++;
-        }, 33); // ~30fps
+
+            // Update metrics every 30 frames (~1s)
+            if (row % 30 === 0) {
+                updateMetrics('Streaming push+render', streamTimes.slice(-90));
+            }
+        }, 33);
         log('Streaming started (30fps, ' + frameSize + ' pts/frame)');
     }
 
@@ -120,6 +202,30 @@
             streamInterval = null;
             log('Streaming stopped');
         }
+    }
+
+    // Measure main thread responsiveness during heavy rendering
+    function measureInputLag() {
+        log('Measuring input lag for 3 seconds — try interacting with the plot...');
+        var samples = [];
+        var start = performance.now();
+
+        function tick() {
+            var now = performance.now();
+            if (now - start > 3000) {
+                updateMetrics('Input lag (rAF jitter)', samples);
+                log('Input lag test done. See metrics bar. Lower = more responsive UI.');
+                return;
+            }
+            if (samples.length > 0) {
+                // Time since last rAF — ideally ~16.6ms at 60fps
+                samples.push(now - samples._lastTime);
+            }
+            samples._lastTime = now;
+            if (samples.length === 0) samples.push(0); // seed
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
     }
     </script>
   </body>
