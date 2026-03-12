@@ -3227,7 +3227,11 @@ mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numb
     }
 
     var ctx = Mx.active_canvas.getContext("2d");
-    if (flags.fillStyle) {
+    if (Mx.useWebGL) {
+        // When WebGL is active, clear the 2D plot area to transparent
+        // so the WebGL data layer shows through
+        ctx.clearRect(iscl, isct, iscr - iscl, iscb - isct);
+    } else if (flags.fillStyle) {
         if (Array.isArray(flags.fillStyle)) {
             ctx.fillStyle = mx.linear_gradient(Mx, 0, 0, 0, iscb - isct, flags.fillStyle);
         } else {
@@ -4106,7 +4110,9 @@ mx.widgetbox = function (
     }
     if (inw > 0 && inh > 0) {
         var ctx = Mx.active_canvas.getContext("2d");
-        if (mx.LEGACY_RENDER) {
+        if (Mx.useWebGL) {
+            ctx.clearRect(inx, iny, inw, inh);
+        } else if (mx.LEGACY_RENDER) {
             ctx.fillStyle = Mx.bg;
             ctx.fillRect(inx, iny, inw, inh);
         } else {
