@@ -3415,7 +3415,11 @@ mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numb
             continue;
         }
         if (flags.grid && flags.grid !== "y") {
-            if (!Mx.useWebGL) {
+            if (Mx.useWebGL) {
+                // Draw grid on WebGL canvas so it's behind data
+                var gridColor = (flags.gridStyle && flags.gridStyle.color) ? flags.gridStyle.color : Mx.xwms || Mx.fg;
+                mx.gl.drawLine(Mx, i, iscb, i, isct, gridColor);
+            } else {
                 if (!flags.gridStyle) {
                     if (mx.LEGACY_RENDER) {
                         flags.gridStyle = {
@@ -3525,7 +3529,10 @@ mx.drawaxis = function (Gx: any, Mx: any, xdiv: number, ydiv: number, xlab: numb
             continue;
         }
         if (flags.grid && flags.grid !== "x") {
-            if (!Mx.useWebGL) {
+            if (Mx.useWebGL) {
+                var gridColor = (flags.gridStyle && flags.gridStyle.color) ? flags.gridStyle.color : Mx.xwms || Mx.fg;
+                mx.gl.drawLine(Mx, iscl, i, iscr, i, gridColor);
+            } else {
                 if (!flags.gridStyle) {
                     flags.gridStyle = {
                         mode: "dashed",
@@ -7215,6 +7222,52 @@ mx.gl = {
             gl.clearColor(0, 0, 0, 0);
         }
         gl.clear(gl.COLOR_BUFFER_BIT);
+    },
+
+    /**
+     * Draw a line in pixel coordinates on the WebGL canvas.
+     * Used for grid lines so they render behind data.
+     */
+    drawLine: function (Mx: any, x1: number, y1: number, x2: number, y2: number, color: string, dashed?: boolean): void {
+        if (!Mx.gl || !Mx.useWebGL) { return; }
+        var gl = Mx.gl;
+
+        // Reuse the trace shader — set uniforms for pixel-space (identity transform)
+        if (!Mx._glTraceProgram) {
+            // Shader not yet initialized — skip (will be initialized on first gl_trace call)
+            return;
+        }
+
+        gl.useProgram(Mx._glTraceProgram);
+        var u = Mx._glTraceUniforms;
+        // Set identity data→pixel transform: px = (x - 0) * 1.0 + 0 = x
+        gl.uniform1f(u.xmin, 0);
+        gl.uniform1f(u.xscl, 1.0);
+        gl.uniform1f(u.ymin, 0);
+        gl.uniform1f(u.yscl, 1.0);
+        gl.uniform1f(u.left, 0);
+        gl.uniform1f(u.top, 0);
+        gl.uniform1f(u.width, Mx.gl_canvas.width);
+        gl.uniform1f(u.height, Mx.gl_canvas.height);
+
+        var rgba = parseColor(color);
+        // Make grid lines semi-transparent
+        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3] * 0.3);
+
+        if (!Mx._glGridBuffer) {
+            Mx._glGridBuffer = gl.createBuffer();
+        }
+        var verts = new Float32Array([x1, y1, x2, y2]);
+        gl.bindBuffer(gl.ARRAY_BUFFER, Mx._glGridBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+        gl.enableVertexAttribArray(Mx._glTraceAttribs.position);
+        gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.drawArrays(gl.LINES, 0, 2);
+        gl.disable(gl.BLEND);
+        gl.disableVertexAttribArray(Mx._glTraceAttribs.position);
     },
 };
 
