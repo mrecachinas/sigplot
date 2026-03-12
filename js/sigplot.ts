@@ -357,6 +357,8 @@ var Plot = function (this: any, element: HTMLElement | string, options?: PlotSet
 
     plot_init(this, options);
 
+    this._workerPool = null;
+
     this.mimicListeners = {
         other: null,
         listeners: {
@@ -1631,6 +1633,30 @@ Plot.prototype = {
     },
 
     /**
+     * Create a WorkerPool and attach it to this plot.
+     * Layers that support async prep will automatically use it.
+     *
+     * @param options
+     *            optional WorkerPool constructor options (poolSize, workerUrl, fallback)
+     */
+    enableWorkers: function (options?: { poolSize?: number; workerUrl?: string | URL; fallback?: boolean }) {
+        if (this._workerPool) {
+            this._workerPool.terminate();
+        }
+        this._workerPool = new WorkerPool(options);
+    },
+
+    /**
+     * Terminate the WorkerPool and revert to synchronous rendering.
+     */
+    disableWorkers: function () {
+        if (this._workerPool) {
+            this._workerPool.terminate();
+            this._workerPool = null;
+        }
+    },
+
+    /**
      * Adds a listener to plot events.
      *
      * @example plot.addListener(what, function(event: any) {});
@@ -2858,6 +2884,55 @@ Plot.prototype = {
         }
 
         m.log.debug("Overlay href: " + href + " " + lyr_uuid);
+
+        // Worker path: fetch file in a Web Worker, parse header on main thread
+        if (this._workerPool) {
+            this.show_spinner();
+            const plot = this;
+            this._workerPool
+                .run("parse_file", [{ href: href }])
+                .then(function (result: any) {
+                    try {
+                        let hcb: any;
+                        if (href.endsWith(".mat")) {
+                            hcb = new (matfile as any).MatHeader(result.buffer);
+                        } else {
+                            hcb = new bluefile.BlueHeader(result.buffer);
+                        }
+                        hcb.file_name = result.fileName;
+                        hcb._uuid = lyr_uuid;
+                        common.update(hcb, overrides);
+
+                        let i: any;
+                        if (href.endsWith(".mat")) {
+                            i = plot.overlay_matfile(hcb, layerOptions);
+                        } else {
+                            i = plot.overlay_bluefile(hcb, layerOptions);
+                        }
+                        if (onload_cb) {
+                            onload_cb(hcb, i);
+                        }
+                    } catch (err: any) {
+                        if (onerror_cb) {
+                            onerror_cb(err);
+                        } else {
+                            m.log.error("Worker parse_file error: " + (err?.message ?? err));
+                        }
+                    } finally {
+                        plot.hide_spinner();
+                    }
+                })
+                .catch(function (err: any) {
+                    if (onerror_cb) {
+                        onerror_cb(err);
+                    } else {
+                        m.log.error("Worker parse_file fetch error: " + (err?.message ?? err));
+                    }
+                    plot.hide_spinner();
+                });
+            return lyr_uuid;
+        }
+
         try {
             this.show_spinner();
             var handleHeader = (function (plot, _onload, _onerror) {

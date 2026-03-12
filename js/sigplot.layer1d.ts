@@ -169,6 +169,10 @@ class Layer1D implements Layer {
     ymin?: number;
     ymax?: number;
 
+    // Async prep state (Web Worker offload)
+    _pendingPrep: Promise<any> | null;
+    _cachedPrepResult: PrepResult | null;
+
     constructor(plot: Plot) {
         this.plot = plot;
 
@@ -214,6 +218,9 @@ class Layer1D implements Layer {
         this.mhpoint = null;
         this.firstpush = false;
         this.options = {};
+
+        this._pendingPrep = null;
+        this._cachedPrepResult = null;
     }
 
     /**
@@ -803,6 +810,87 @@ class Layer1D implements Layer {
     }
 
     /**
+     * Async variant of prep() — offloads math transforms to a Web Worker.
+     * get_data() still runs on the main thread (reads from HCB).
+     */
+    async prepAsync(xmin: number, xmax: number): Promise<PrepResult> {
+        const Gx: GxContext = this.plot._Gx;
+
+        let npts: number = this.get_data(xmin, xmax);
+        if (this.mode === "XY") {
+            npts = Math.floor(npts / 2);
+        }
+
+        if (npts === 0) {
+            return { num: 0, start: 0, end: 0 };
+        }
+
+        // Build the config expected by the worker's prep1d handler
+        const ybufCopy = this.ybuf!.slice(0);
+        const transferables: Transferable[] = [ybufCopy];
+
+        const config: Record<string, any> = {
+            ybuf: ybufCopy,
+            npts,
+            skip: this.skip,
+            cx: this.cx,
+            mode: this.mode,
+            xstart: this.xstart,
+            xdelta: this.xdelta,
+            xmin,
+            xmax,
+            imin: this.imin,
+            size: this.size,
+            cmode: Gx.cmode,
+            index: Gx.index,
+            dbmin: Gx.dbmin,
+            plab: Gx.plab,
+            panxmin: Gx.panxmin,
+            panxmax: Gx.panxmax,
+            firstLayerCx: Gx.lyr.length > 0 && Gx.lyr[0].cx,
+            maxhold: this.maxhold ? { decay: this.maxhold.decay ?? 0 } : undefined,
+            line: this.line,
+            xsub: this.xsub,
+        };
+
+        if (this.xbuf) {
+            const xbufCopy = this.xbuf.slice(0);
+            config.xbuf = xbufCopy;
+            transferables.push(xbufCopy);
+        }
+
+        if (this.mhpoint) {
+            const mhCopy = this.mhpoint.buffer.slice(0);
+            config.mhpoint = mhCopy;
+            transferables.push(mhCopy);
+        }
+
+        const result = await this.plot._workerPool.run("prep1d", [config], transferables);
+
+        // Copy worker result buffers back into the layer
+        this.xptr = result.xpoint;
+        this.yptr = result.ypoint;
+        this.xpoint = new m.PointArray(this.xptr);
+        this.ypoint = new m.PointArray(this.yptr);
+        this.pointbufsize = this.xptr!.byteLength;
+
+        if (result.mhpoint) {
+            this.mhptr = result.mhpoint;
+            this.mhpoint = new m.PointArray(this.mhptr);
+        }
+
+        return {
+            num: result.num,
+            start: result.start,
+            end: result.end,
+            panxmin: result.panxmin,
+            panxmax: result.panxmax,
+            panymin: result.panymin,
+            panymax: result.panymax,
+        };
+    }
+
+    /**
      * Get the pan-boundaries for the layer.
      */
     get_pan_bounds(view?: PanView): BoundsResult {
@@ -951,64 +1039,154 @@ class Layer1D implements Layer {
         let panymax: number | undefined;
         let num: number = 0;
 
-        while (xmin < xmax) {
-            // sigplot_prep fills in this.xptr and this.yptr (both m.PointArray)
-            // with the data to be plotted
+        // Deferred render pattern: when a worker pool is available, launch
+        // async prep and render from cached results to avoid blocking the
+        // main thread.  The first frame falls back to sync prep.
+        if (this.plot._workerPool && !this._pendingPrep) {
+            const asyncXmin = xmin;
+            const asyncXmax = xmax;
+            this._pendingPrep = this.prepAsync(asyncXmin, asyncXmax).then((result) => {
+                this._cachedPrepResult = result;
+                this._pendingPrep = null;
+                this.plot.refresh();
+            }).catch(() => {
+                this._pendingPrep = null;
+            });
 
-            const pts: PrepResult = this.prep(xmin, xmax);
-
-            panymin = panymin === undefined ? pts.panymin : Math.min(panymin, pts.panymin!);
-            panymax = panymax === undefined ? pts.panymax : Math.max(panymax, pts.panymax!);
-            num += pts.num;
-
-            if (pts.num > 0) {
-                if (segment) {
-                    // TODO
-                } else {
-                    mx.trace(
-                        Mx,
-                        ic,
-                        new m.PointArray(this.xptr),
-                        new m.PointArray(this.yptr),
-                        pts.num,
-                        pts.start,
-                        1,
-                        line,
-                        symbol,
-                        rad,
-                        traceoptions
-                    );
-
-                    if (this.maxhold) {
+            if (this._cachedPrepResult) {
+                // Use cached result from a previous async prep
+                const pts = this._cachedPrepResult;
+                panymin = pts.panymin;
+                panymax = pts.panymax;
+                num = pts.num;
+                if (pts.num > 0) {
+                    if (!segment) {
                         mx.trace(
                             Mx,
-                            this.maxhold.color,
+                            ic,
                             new m.PointArray(this.xptr),
-                            this.mhpoint!.slice(pts.start, pts.end),
+                            new m.PointArray(this.yptr),
                             pts.num,
                             pts.start,
                             1,
-                            this.maxhold.line,
-                            this.maxhold.symbol,
-                            this.maxhold.rad,
-                            this.maxhold.traceoptions
+                            line,
+                            symbol,
+                            rad,
+                            traceoptions
                         );
+                        if (this.maxhold) {
+                            mx.trace(
+                                Mx,
+                                this.maxhold.color,
+                                new m.PointArray(this.xptr),
+                                this.mhpoint!.slice(pts.start, pts.end),
+                                pts.num,
+                                pts.start,
+                                1,
+                                this.maxhold.line,
+                                this.maxhold.symbol,
+                                this.maxhold.rad,
+                                this.maxhold.traceoptions
+                            );
+                        }
+                    }
+                }
+            } else {
+                // First frame: no cache yet, fall back to synchronous prep
+                while (xmin < xmax) {
+                    const pts: PrepResult = this.prep(xmin, xmax);
+                    panymin = panymin === undefined ? pts.panymin : Math.min(panymin, pts.panymin!);
+                    panymax = panymax === undefined ? pts.panymax : Math.max(panymax, pts.panymax!);
+                    num += pts.num;
+                    if (pts.num > 0) {
+                        if (!segment) {
+                            mx.trace(Mx, ic, new m.PointArray(this.xptr), new m.PointArray(this.yptr), pts.num, pts.start, 1, line, symbol, rad, traceoptions);
+                            if (this.maxhold) {
+                                mx.trace(Mx, this.maxhold.color, new m.PointArray(this.xptr), this.mhpoint!.slice(pts.start, pts.end), pts.num, pts.start, 1, this.maxhold.line, this.maxhold.symbol, this.maxhold.rad, this.maxhold.traceoptions);
+                            }
+                        }
+                    }
+                    if (pts.num === 0) {
+                        xmin = xmax;
+                    } else {
+                        if (Gx.index) {
+                            xmin = xmin + pts.num;
+                        } else {
+                            if (xdelta >= 0) {
+                                xmin = xmin + pts.num * xdelta;
+                            } else {
+                                xmax = xmax + pts.num * xdelta;
+                            }
+                        }
                     }
                 }
             }
+        } else if (!this._pendingPrep) {
+            // Synchronous path: no worker pool
+            while (xmin < xmax) {
+                const pts: PrepResult = this.prep(xmin, xmax);
 
-            if (pts.num === 0) {
-                xmin = xmax;
-            } else {
-                if (Gx.index) {
-                    xmin = xmin + pts.num;
-                } else {
-                    if (xdelta >= 0) {
-                        xmin = xmin + pts.num * xdelta;
+                panymin = panymin === undefined ? pts.panymin : Math.min(panymin, pts.panymin!);
+                panymax = panymax === undefined ? pts.panymax : Math.max(panymax, pts.panymax!);
+                num += pts.num;
+
+                if (pts.num > 0) {
+                    if (segment) {
+                        // TODO
                     } else {
-                        xmax = xmax + pts.num * xdelta;
+                        mx.trace(
+                            Mx,
+                            ic,
+                            new m.PointArray(this.xptr),
+                            new m.PointArray(this.yptr),
+                            pts.num,
+                            pts.start,
+                            1,
+                            line,
+                            symbol,
+                            rad,
+                            traceoptions
+                        );
+
+                        if (this.maxhold) {
+                            mx.trace(
+                                Mx,
+                                this.maxhold.color,
+                                new m.PointArray(this.xptr),
+                                this.mhpoint!.slice(pts.start, pts.end),
+                                pts.num,
+                                pts.start,
+                                1,
+                                this.maxhold.line,
+                                this.maxhold.symbol,
+                                this.maxhold.rad,
+                                this.maxhold.traceoptions
+                            );
+                        }
                     }
                 }
+
+                if (pts.num === 0) {
+                    xmin = xmax;
+                } else {
+                    if (Gx.index) {
+                        xmin = xmin + pts.num;
+                    } else {
+                        if (xdelta >= 0) {
+                            xmin = xmin + pts.num * xdelta;
+                        } else {
+                            xmax = xmax + pts.num * xdelta;
+                        }
+                    }
+                }
+            }
+        } else {
+            // A prep is already in-flight; use cached result if available
+            if (this._cachedPrepResult) {
+                const pts = this._cachedPrepResult;
+                panymin = pts.panymin;
+                panymax = pts.panymax;
+                num = pts.num;
             }
         }
 
