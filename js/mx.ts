@@ -7267,9 +7267,9 @@ mx.gl = {
         gl.uniform1f(u.width, Mx.gl_canvas.width);
         gl.uniform1f(u.height, Mx.gl_canvas.height);
 
-        var rgba = parseColor(color);
-        // Approximate the visual weight of dashed grid lines (1px on, 3px off)
-        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3] * 0.15);
+        // Use foreground color at low opacity for subtle but visible grid
+        var rgba = parseColor(Mx.fg || color);
+        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], 0.2);
 
         if (!Mx._glGridBuffer) {
             Mx._glGridBuffer = gl.createBuffer();
