@@ -55,3 +55,20 @@ await esbuild.build({
     outfile: "dist/sigplot.plugins.min.js",
     minify: true,
 });
+
+// Worker bundle (for use with WorkerPool in production)
+await esbuild.build({
+    ...common,
+    entryPoints: ["js/worker-task.ts"],
+    format: "iife",
+    outfile: "dist/sigplot.worker.js",
+});
+
+// Worker bundle minified
+await esbuild.build({
+    ...common,
+    entryPoints: ["js/worker-task.ts"],
+    format: "iife",
+    outfile: "dist/sigplot.worker.min.js",
+    minify: true,
+});

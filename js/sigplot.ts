@@ -41,6 +41,7 @@ import AnnotationPlugin from "./sigplot.annotations.js";
 import BoxesPlugin from "./sigplot.boxes.js";
 import PlaybackControlsPlugin from "./sigplot.playback.js";
 import SliderPlugin from "./sigplot.slider.js";
+import WorkerPool from "./worker-pool.js";
 
 import type {
     GxContext,
@@ -75,6 +76,7 @@ function sigplot(this: any, element: HTMLElement | string, options?: PlotSetting
 (sigplot as any).Layer1D = Layer1D;
 (sigplot as any).Layer2D = Layer2D;
 (sigplot as any).version = version;
+(sigplot as any).WorkerPool = WorkerPool;
 
 /**
  * Text of the keypress help dialog.
