@@ -6885,10 +6885,7 @@ mx.gl_trace = function (
         !Mx.gl || !Mx.useWebGL ||
         npts <= 0 ||
         line === 0 ||
-        line === -1 ||                // fill mode
         options.dashed ||
-        options.highlight ||
-        options.fillStyle ||
         options.pixels ||
         options.vertsym ||
         options.horzsym
@@ -6928,22 +6925,6 @@ mx.gl_trace = function (
         };
     }
 
-    // Build interleaved vertex data.
-    // mx.trace indexes as xpoint[0], xpoint[skip], xpoint[2*skip], etc.
-    var vertexData = new Float32Array(npts * 2);
-    for (var i = 0; i < npts; i++) {
-        var si = i * skip;
-        vertexData[i * 2] = xpoint[si] as number;
-        vertexData[i * 2 + 1] = ypoint[si] as number;
-    }
-
-    // Upload to GPU
-    if (!Mx._glTraceBuffer) {
-        Mx._glTraceBuffer = gl.createBuffer();
-    }
-    gl.bindBuffer(gl.ARRAY_BUFFER, Mx._glTraceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.DYNAMIC_DRAW);
-
     // Activate program and set uniforms
     gl.useProgram(Mx._glTraceProgram);
     var u = Mx._glTraceUniforms;
@@ -6956,13 +6937,10 @@ mx.gl_trace = function (
     gl.uniform1f(u.width, Mx.gl_canvas.width);
     gl.uniform1f(u.height, Mx.gl_canvas.height);
 
-    // Parse and set color
-    var rgba = parseColor(color);
-    gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3]);
-
-    // Vertex attribute
-    gl.enableVertexAttribArray(Mx._glTraceAttribs.position);
-    gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+    // Ensure trace buffer exists
+    if (!Mx._glTraceBuffer) {
+        Mx._glTraceBuffer = gl.createBuffer();
+    }
 
     // Scissor test: clip to plot area
     // gl.scissor uses bottom-left origin; canvas pixel coords use top-left
@@ -6977,9 +6955,179 @@ mx.gl_trace = function (
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    // Draw the line strip
-    gl.lineWidth(line > 1 ? line : (Mx.linewidth || 1));
-    gl.drawArrays(gl.LINE_STRIP, 0, npts);
+    if (line === -1) {
+        // Filled trace: triangle strip from trace down to baseline
+        // Compute the data-space y value that maps to the bottom of the plot
+        var ybase = stk4.ymin + (stk4.y2 - stk4.y1) * stk4.yscl;
+        var fillData = new Float32Array(npts * 4);
+        for (var i = 0; i < npts; i++) {
+            var si = i * skip;
+            fillData[i * 4] = xpoint[si] as number;
+            fillData[i * 4 + 1] = ypoint[si] as number;
+            fillData[i * 4 + 2] = xpoint[si] as number;
+            fillData[i * 4 + 3] = ybase;
+        }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, Mx._glTraceBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, fillData, gl.DYNAMIC_DRAW);
+        gl.enableVertexAttribArray(Mx._glTraceAttribs.position);
+        gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+
+        var rgba = parseColor(color);
+        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3]);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, npts * 2);
+
+        gl.disableVertexAttribArray(Mx._glTraceAttribs.position);
+        gl.disable(gl.BLEND);
+        gl.disable(gl.SCISSOR_TEST);
+
+        if (symb && symb !== 0) {
+            mx.trace(Mx, color, xpoint, ypoint, npts, istart, skip, 0, symb, rad, options);
+        }
+        return;
+    }
+
+    // Build interleaved vertex data (data-space coordinates).
+    // mx.trace indexes as xpoint[0], xpoint[skip], xpoint[2*skip], etc.
+    var vertexData = new Float32Array(npts * 2);
+    for (var i = 0; i < npts; i++) {
+        var si = i * skip;
+        vertexData[i * 2] = xpoint[si] as number;
+        vertexData[i * 2 + 1] = ypoint[si] as number;
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, Mx._glTraceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(Mx._glTraceAttribs.position);
+    gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+
+    if (options && options.highlight) {
+        // Build highlight color segments in data space
+        var xxmin = stk4.xmin;
+        var xscl = 1.0 / stk4.xscl;
+        var left = stk4.x1;
+        var dx = Math.abs(stk4.xmax - stk4.xmin);
+        var xmin = Math.min(stk4.xmin, stk4.xmax);
+        var xmax = xmin + dx;
+
+        // Determine a color for each data point based on highlights
+        var pointColors: string[] = new Array(npts);
+        for (var i = 0; i < npts; i++) {
+            pointColors[i] = color;
+        }
+        for (var sn = 0; sn < options.highlight.length; sn++) {
+            var hl = options.highlight[sn];
+            if (hl.xstart >= xmax || hl.xend <= xmin) {
+                continue;
+            }
+            var xs = Math.max(hl.xstart, xmin);
+            var xe = Math.min(hl.xend, xmax);
+            if (xs < xe && hl.color) {
+                for (var i = 0; i < npts; i++) {
+                    var px = vertexData[i * 2];
+                    if (px >= xs && px <= xe) {
+                        pointColors[i] = hl.color;
+                    }
+                }
+            }
+        }
+
+        // Render segments grouped by consecutive color
+        var segStart = 0;
+        var segColor = pointColors[0];
+        for (var i = 1; i <= npts; i++) {
+            if (i === npts || pointColors[i] !== segColor) {
+                var rgba = parseColor(segColor);
+                gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3]);
+                gl.lineWidth(line > 1 ? line : (Mx.linewidth || 1));
+                // Draw this segment; overlap by one vertex for continuity
+                var drawStart = segStart;
+                var drawCount = i - segStart;
+                gl.drawArrays(gl.LINE_STRIP, drawStart, drawCount);
+                if (i < npts) {
+                    segStart = i;
+                    segColor = pointColors[i];
+                }
+            }
+        }
+
+        // Handle highlight fills
+        for (var hi = 0; hi < options.highlight.length; hi++) {
+            var highlight = options.highlight[hi];
+            if (!highlight.fill) {
+                continue;
+            }
+            if (highlight.xstart >= xmax || highlight.xend <= xmin) {
+                continue;
+            }
+            var xs = Math.max(highlight.xstart, xmin);
+            var xe = Math.min(highlight.xend, xmax);
+            if (xs >= xe) {
+                continue;
+            }
+
+            // Collect points within the highlight range
+            var hlIndices: number[] = [];
+            for (var i = 0; i < npts; i++) {
+                var px = vertexData[i * 2];
+                if (px >= xs && px <= xe) {
+                    hlIndices.push(i);
+                }
+            }
+            if (hlIndices.length === 0) {
+                continue;
+            }
+
+            // Build triangle strip for the filled highlight region
+            var ybase = stk4.ymin + (stk4.y2 - stk4.y1) * stk4.yscl;
+            var hlFillData = new Float32Array(hlIndices.length * 4);
+            for (var j = 0; j < hlIndices.length; j++) {
+                var idx = hlIndices[j];
+                hlFillData[j * 4] = vertexData[idx * 2];
+                hlFillData[j * 4 + 1] = vertexData[idx * 2 + 1];
+                hlFillData[j * 4 + 2] = vertexData[idx * 2];
+                hlFillData[j * 4 + 3] = ybase;
+            }
+            gl.bufferData(gl.ARRAY_BUFFER, hlFillData, gl.DYNAMIC_DRAW);
+            gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+
+            var fillRgba = parseColor(highlight.fill);
+            gl.uniform4f(u.color, fillRgba[0], fillRgba[1], fillRgba[2], fillRgba[3]);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, hlIndices.length * 2);
+        }
+    } else {
+        // Standard line rendering
+        var rgba = parseColor(color);
+        gl.uniform4f(u.color, rgba[0], rgba[1], rgba[2], rgba[3]);
+        gl.lineWidth(line > 1 ? line : (Mx.linewidth || 1));
+        gl.drawArrays(gl.LINE_STRIP, 0, npts);
+    }
+
+    // Handle fillStyle: fill area under the trace
+    if (options && options.fillStyle && !Mx.fillMin && !Mx.fillMax) {
+        var ybase = stk4.ymin + (stk4.y2 - stk4.y1) * stk4.yscl;
+        var fillColor: string;
+        if (Array.isArray(options.fillStyle)) {
+            // Gradient fill: use the first color at full opacity as an approximation
+            fillColor = options.fillStyle[0] || color;
+        } else {
+            fillColor = options.fillStyle;
+        }
+
+        var fillData = new Float32Array(npts * 4);
+        for (var i = 0; i < npts; i++) {
+            fillData[i * 4] = vertexData[i * 2];
+            fillData[i * 4 + 1] = vertexData[i * 2 + 1];
+            fillData[i * 4 + 2] = vertexData[i * 2];
+            fillData[i * 4 + 3] = ybase;
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, fillData, gl.DYNAMIC_DRAW);
+        gl.vertexAttribPointer(Mx._glTraceAttribs.position, 2, gl.FLOAT, false, 0, 0);
+
+        var fillRgba = parseColor(fillColor);
+        gl.uniform4f(u.color, fillRgba[0], fillRgba[1], fillRgba[2], fillRgba[3]);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, npts * 2);
+    }
 
     gl.disable(gl.BLEND);
     gl.disable(gl.SCISSOR_TEST);
