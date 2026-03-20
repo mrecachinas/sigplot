@@ -15,7 +15,6 @@ const redToGreenToBlue = [
 ];
 
 describe("ColorMap extended tests", () => {
-
     describe("construction", () => {
         it("creates a colormap with default 500 colors", () => {
             const cm = new ColorMap(blackToWhite);

@@ -29,42 +29,50 @@ import ColorMap from "../js/ColorMap.js";
 
 describe("ColorMap", () => {
     it("colormap", () => {
-        var map = new ColorMap([{
-            pos: 0,
-            red: 0,
-            green: 0,
-            blue: 15
-        }, {
-            pos: 10,
-            red: 0,
-            green: 0,
-            blue: 50
-        }, {
-            pos: 31,
-            red: 0,
-            green: 65,
-            blue: 75
-        }, {
-            pos: 50,
-            red: 0,
-            green: 85,
-            blue: 0
-        }, {
-            pos: 70,
-            red: 75,
-            green: 80,
-            blue: 0
-        }, {
-            pos: 83,
-            red: 100,
-            green: 60,
-            blue: 0
-        }, {
-            pos: 100,
-            red: 100,
-            green: 0,
-            blue: 0
-        }]);
+        var map = new ColorMap([
+            {
+                pos: 0,
+                red: 0,
+                green: 0,
+                blue: 15
+            },
+            {
+                pos: 10,
+                red: 0,
+                green: 0,
+                blue: 50
+            },
+            {
+                pos: 31,
+                red: 0,
+                green: 65,
+                blue: 75
+            },
+            {
+                pos: 50,
+                red: 0,
+                green: 85,
+                blue: 0
+            },
+            {
+                pos: 70,
+                red: 75,
+                green: 80,
+                blue: 0
+            },
+            {
+                pos: 83,
+                red: 100,
+                green: 60,
+                blue: 0
+            },
+            {
+                pos: 100,
+                red: 100,
+                green: 0,
+                blue: 0
+            }
+        ]);
         var color = map.getColor(0);
         expect(color.red).toBe(0);
         expect(color.green).toBe(0);

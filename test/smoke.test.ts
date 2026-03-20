@@ -63,8 +63,6 @@ describe("m namespace — math operations", () => {
     });
 
     it("PointArray is Float32Array or Float64Array", () => {
-        expect(
-            sigplot.m.PointArray === Float32Array || sigplot.m.PointArray === Float64Array
-        ).toBe(true);
+        expect(sigplot.m.PointArray === Float32Array || sigplot.m.PointArray === Float64Array).toBe(true);
     });
 });

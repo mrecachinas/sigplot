@@ -41,18 +41,20 @@ describe("mx", () => {
             x: 0,
             y: 0,
             level: 0,
-            stk: [{
-                xmin: -1,
-                xmax: 1,
-                ymin: -1,
-                ymax: 1,
-                xscl: 1 / 100,
-                yscl: 1 / 100,
-                x1: 0,
-                y1: 0,
-                x2: 200,
-                y2: 200
-            }]
+            stk: [
+                {
+                    xmin: -1,
+                    xmax: 1,
+                    ymin: -1,
+                    ymax: 1,
+                    xscl: 1 / 100,
+                    yscl: 1 / 100,
+                    x1: 0,
+                    y1: 0,
+                    x2: 200,
+                    y2: 200
+                }
+            ]
         };
         var result = sigplot.mx.real_to_pixel(Mx, 0, 0);
         expect(result.x).toBe(100);
@@ -88,18 +90,20 @@ describe("mx", () => {
             x: 0,
             y: 0,
             level: 0,
-            stk: [{
-                xmin: -1,
-                xmax: 1,
-                ymin: -1,
-                ymax: 1,
-                xscl: 1 / 100,
-                yscl: 1 / 100,
-                x1: 0,
-                y1: 0,
-                x2: 200,
-                y2: 200
-            }]
+            stk: [
+                {
+                    xmin: -1,
+                    xmax: 1,
+                    ymin: -1,
+                    ymax: 1,
+                    xscl: 1 / 100,
+                    yscl: 1 / 100,
+                    x1: 0,
+                    y1: 0,
+                    x2: 200,
+                    y2: 200
+                }
+            ]
         };
         result = sigplot.mx.real_to_pixel(Mx, 0, 0);
         expect(result.x).toBe(100);
@@ -137,18 +141,20 @@ describe("mx", () => {
             x: 0,
             y: 0,
             level: 0,
-            stk: [{
-                xmin: -1,
-                xmax: 1,
-                ymin: -1,
-                ymax: 1,
-                xscl: 1 / 100,
-                yscl: 1 / 100,
-                x1: 0,
-                y1: 0,
-                x2: 200,
-                y2: 200
-            }]
+            stk: [
+                {
+                    xmin: -1,
+                    xmax: 1,
+                    ymin: -1,
+                    ymax: 1,
+                    xscl: 1 / 100,
+                    yscl: 1 / 100,
+                    x1: 0,
+                    y1: 0,
+                    x2: 200,
+                    y2: 200
+                }
+            ]
         };
         var result;
 
@@ -181,18 +187,20 @@ describe("mx", () => {
             x: 0,
             y: 0,
             level: 0,
-            stk: [{
-                xmin: -1,
-                xmax: 1,
-                ymin: -1,
-                ymax: 1,
-                xscl: 1 / 100,
-                yscl: 1 / 100,
-                x1: 0,
-                y1: 0,
-                x2: 200,
-                y2: 200
-            }]
+            stk: [
+                {
+                    xmin: -1,
+                    xmax: 1,
+                    ymin: -1,
+                    ymax: 1,
+                    xscl: 1 / 100,
+                    yscl: 1 / 100,
+                    x1: 0,
+                    y1: 0,
+                    x2: 200,
+                    y2: 200
+                }
+            ]
         };
 
         result = sigplot.mx.real_distance_to_pixel(Mx, -1, 1, 1, 1);
@@ -226,18 +234,20 @@ describe("mx", () => {
             x: 0,
             y: 0,
             level: 0,
-            stk: [{
-                xmin: -1,
-                xmax: 1,
-                ymin: -1,
-                ymax: 1,
-                xscl: 1 / 100,
-                yscl: 1 / 100,
-                x1: 0,
-                y1: 0,
-                x2: 200,
-                y2: 200
-            }]
+            stk: [
+                {
+                    xmin: -1,
+                    xmax: 1,
+                    ymin: -1,
+                    ymax: 1,
+                    xscl: 1 / 100,
+                    yscl: 1 / 100,
+                    x1: 0,
+                    y1: 0,
+                    x2: 200,
+                    y2: 200
+                }
+            ]
         };
 
         var result;
@@ -282,18 +292,20 @@ describe("mx", () => {
             x: 0,
             y: 0,
             level: 0,
-            stk: [{
-                xmin: -1,
-                xmax: 1,
-                ymin: -1,
-                ymax: 1,
-                xscl: 1 / 100,
-                yscl: 1 / 100,
-                x1: 0,
-                y1: 0,
-                x2: 200,
-                y2: 200
-            }]
+            stk: [
+                {
+                    xmin: -1,
+                    xmax: 1,
+                    ymin: -1,
+                    ymax: 1,
+                    xscl: 1 / 100,
+                    yscl: 1 / 100,
+                    x1: 0,
+                    y1: 0,
+                    x2: 200,
+                    y2: 200
+                }
+            ]
         };
 
         result = sigplot.mx.real_box_to_pixel(Mx, -1, -1, 1, 1);

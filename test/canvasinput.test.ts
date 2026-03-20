@@ -17,11 +17,11 @@ describe("W2: boxShadow initialization", () => {
         container.style.height = "400px";
         container.style.position = "absolute";
         Object.defineProperty(container, "clientWidth", {
-            get: () => container.style.display === "none" ? 0 : (parseInt(container.style.width) || 0),
+            get: () => (container.style.display === "none" ? 0 : parseInt(container.style.width) || 0),
             configurable: true
         });
         Object.defineProperty(container, "clientHeight", {
-            get: () => container.style.display === "none" ? 0 : (parseInt(container.style.height) || 0),
+            get: () => (container.style.display === "none" ? 0 : parseInt(container.style.height) || 0),
             configurable: true
         });
         document.body.appendChild(container);

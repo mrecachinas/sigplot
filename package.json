@@ -52,17 +52,17 @@
   "scripts": {
     "build": "node esbuild.config.mjs && npm run types",
     "dev": "vite",
-    "lint": "eslint js/",
-    "lint:fix": "eslint js/ --fix",
-    "format": "prettier --write 'js/**/*.js' 'test/**/*.js'",
-    "format:check": "prettier --check 'js/**/*.js' 'test/**/*.js'",
+    "lint": "biome lint js/",
+    "lint:fix": "biome lint --write js/",
+    "format": "biome format --write js/ test/",
+    "format:check": "biome format js/ test/",
     "docs": "rm -rf ./doc/; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose; cp ./fft-white.png doc/sigplot/$npm_package_version/",
     "clean": "rm -rf dist/",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "types": "tsc --declaration --declarationDir dist/types --emitDeclarationOnly",
+    "typecheck": "tsgo --noEmit",
+    "types": "tsgo --declaration --declarationDir dist/types --emitDeclarationOnly",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
@@ -71,22 +71,17 @@
     "tinycolor2": "^1.4.1"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@biomejs/biome": "^2.4.8",
     "@types/tinycolor2": "^1.4.6",
-    "@typescript-eslint/eslint-plugin": "^8.57.0",
-    "@typescript-eslint/parser": "^8.57.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260320.1",
     "@vitest/browser": "^4.0.18",
     "@vitest/browser-playwright": "^4.0.18",
     "@vitest/coverage-v8": "^4.0.18",
     "bootstrap": "^5.0.0-beta3",
     "esbuild": "^0.27.3",
-    "eslint": "^10.0.3",
-    "eslint-config-prettier": "^10.1.8",
     "express": "^4.13.4",
     "jsdom": "^28.1.0",
     "playwright": "^1.58.2",
-    "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   }

@@ -126,8 +126,8 @@ describe("m.cvmag — complex magnitude", () => {
         var src = new Float64Array([3, 4, 0, 1]);
         var dst = new Float64Array(2);
         sigplot.m.cvmag(src, dst, 2);
-        expect(dst[0]).toBeCloseTo(5, 10);   // sqrt(9+16)
-        expect(dst[1]).toBeCloseTo(1, 10);   // sqrt(0+1)
+        expect(dst[0]).toBeCloseTo(5, 10); // sqrt(9+16)
+        expect(dst[1]).toBeCloseTo(1, 10); // sqrt(0+1)
     });
 });
 
@@ -136,17 +136,14 @@ describe("m.cvmag2 — complex magnitude squared", () => {
         var src = new Float64Array([3, 4, 1, 2]);
         var dst = new Float64Array(2);
         sigplot.m.cvmag2(src, dst, 2);
-        expect(dst[0]).toBe(25);  // 9+16
-        expect(dst[1]).toBe(5);   // 1+4
+        expect(dst[0]).toBe(25); // 9+16
+        expect(dst[1]).toBe(5); // 1+4
     });
 });
 
 describe("m.PointArray", () => {
     it("is Float32Array or Float64Array", () => {
-        expect(
-            sigplot.m.PointArray === Float32Array ||
-            sigplot.m.PointArray === Float64Array
-        ).toBe(true);
+        expect(sigplot.m.PointArray === Float32Array || sigplot.m.PointArray === Float64Array).toBe(true);
     });
 
     it("can be constructed with a size", () => {
@@ -166,14 +163,20 @@ describe("m.PointArray", () => {
 describe("m.throttle", () => {
     it("limits call frequency", async () => {
         var calls = 0;
-        var fn = sigplot.m.throttle(50, function() { calls++; });
+        var fn = sigplot.m.throttle(50, function () {
+            calls++;
+        });
         // throttle uses Date.now() — first call may be skipped if delay hasn't passed since init
-        await new Promise(function(r) { setTimeout(r, 60); });
+        await new Promise(function (r) {
+            setTimeout(r, 60);
+        });
         fn(); // should go through
         expect(calls).toBe(1);
         fn(); // too soon, skipped
         expect(calls).toBe(1);
-        await new Promise(function(r) { setTimeout(r, 60); });
+        await new Promise(function (r) {
+            setTimeout(r, 60);
+        });
         fn(); // enough time passed
         expect(calls).toBe(2);
     });

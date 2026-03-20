@@ -5,7 +5,9 @@ describe("common.dashOn / common.dashOff", () => {
     it("sets line dash on context", () => {
         var dashes = null;
         var ctx = {
-            setLineDash: function(d) { dashes = d; }
+            setLineDash: function (d) {
+                dashes = d;
+            }
         };
         var result = common.dashOn(ctx, 5, 3);
         expect(result).toBe(true);
@@ -15,7 +17,9 @@ describe("common.dashOn / common.dashOff", () => {
     it("clears line dash", () => {
         var dashes = [5, 3];
         var ctx = {
-            setLineDash: function(d) { dashes = d; }
+            setLineDash: function (d) {
+                dashes = d;
+            }
         };
         common.dashOff(ctx);
         expect(dashes).toEqual([]);
@@ -58,18 +62,28 @@ describe("common.update", () => {
 describe("common.debounce", () => {
     it("delays execution", async () => {
         var calls = 0;
-        var fn = common.debounce(function() { calls++; }, 50);
+        var fn = common.debounce(function () {
+            calls++;
+        }, 50);
         fn();
         fn();
         fn();
         expect(calls).toBe(0);
-        await new Promise(function(r) { setTimeout(r, 100); });
+        await new Promise(function (r) {
+            setTimeout(r, 100);
+        });
         expect(calls).toBe(1);
     });
 
     it("immediate mode fires on leading edge", () => {
         var calls = 0;
-        var fn = common.debounce(function() { calls++; }, 100, true);
+        var fn = common.debounce(
+            function () {
+                calls++;
+            },
+            100,
+            true
+        );
         fn();
         expect(calls).toBe(1);
     });

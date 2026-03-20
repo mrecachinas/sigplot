@@ -38,8 +38,8 @@ function createMockPlot() {
     return {
         _Mx: {
             listeners: [],
-            addEventListener: function() {},
-            removeEventListener: function() {}
+            addEventListener: function () {},
+            removeEventListener: function () {}
         },
         _Gx: {}
     };
@@ -57,7 +57,6 @@ function createMockCanvas() {
 }
 
 describe("Plugin base class", () => {
-
     describe("construction", () => {
         it("creates a plugin instance", () => {
             const plugin = new TestPlugin();
@@ -337,7 +336,13 @@ describe("Plugin base class", () => {
             const plugin = new TestPlugin();
             const ctx = { name: "myContext" };
             let calledContext;
-            plugin.on("evt", function() { calledContext = this; }, ctx);
+            plugin.on(
+                "evt",
+                function () {
+                    calledContext = this;
+                },
+                ctx
+            );
             plugin.emit("evt", {});
             expect(calledContext).toBe(ctx);
         });

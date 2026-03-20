@@ -39,11 +39,11 @@ describe("sigplot", () => {
         container.style.position = "absolute";
         // jsdom doesn't compute layout — mock clientWidth/clientHeight
         Object.defineProperty(container, "clientWidth", {
-            get: () => container.style.display === "none" ? 0 : (parseInt(container.style.width) || 0),
+            get: () => (container.style.display === "none" ? 0 : parseInt(container.style.width) || 0),
             configurable: true
         });
         Object.defineProperty(container, "clientHeight", {
-            get: () => container.style.display === "none" ? 0 : (parseInt(container.style.height) || 0),
+            get: () => (container.style.display === "none" ? 0 : parseInt(container.style.height) || 0),
             configurable: true
         });
         document.body.appendChild(container);
@@ -184,7 +184,7 @@ describe("sigplot", () => {
         plot.overlay_array(ramp, null, {
             name: "x",
             symbol: 1,
-            line: 0,
+            line: 0
         });
 
         plot.change_settings({ cmode: "Magnitude" });
@@ -306,9 +306,7 @@ describe("sigplot", () => {
         expect(plot._Gx.panxmin).toBe(0);
         expect(plot._Gx.panxmax).toBe(1000);
 
-        expect(Math.abs(plot._Gx.panymin - -71.4)).toBeLessThanOrEqual(
-            0.0001,
-        );
+        expect(Math.abs(plot._Gx.panymin - -71.4)).toBeLessThanOrEqual(0.0001);
         expect(Math.abs(plot._Gx.panymax - 1.4)).toBeLessThanOrEqual(0.0001);
     });
 
@@ -327,14 +325,14 @@ describe("sigplot", () => {
         expect(plot.get_layer(0)).toBe(null);
         lyr_uuid = plot.overlay_array(zeros, {
             type: 2000,
-            subsize: zeros.length,
+            subsize: zeros.length
         });
         expect(plot.get_layer(0)).not.toBe(null);
         plot.deoverlay();
         expect(plot.get_layer(0)).toBe(null);
         lyr_uuid = plot.overlay_pipe({
             type: 2000,
-            subsize: 128,
+            subsize: 128
         });
         expect(plot.get_layer(0)).not.toBe(null);
         expect(plot.get_layer(0).drawmode).toBe("scrolling");
@@ -345,11 +343,11 @@ describe("sigplot", () => {
         lyr_uuid = plot.overlay_pipe(
             {
                 type: 2000,
-                subsize: 128,
+                subsize: 128
             },
             {
-                drawmode: "rising",
-            },
+                drawmode: "rising"
+            }
         );
         expect(plot.get_layer(0)).not.toBe(null);
         expect(plot.get_layer(0).drawmode).toBe("rising");
@@ -360,11 +358,11 @@ describe("sigplot", () => {
         lyr_uuid = plot.overlay_pipe(
             {
                 type: 2000,
-                subsize: 128,
+                subsize: 128
             },
             {
-                drawmode: "falling",
-            },
+                drawmode: "falling"
+            }
         );
         expect(plot.get_layer(0)).not.toBe(null);
         expect(plot.get_layer(0).drawmode).toBe("falling");
@@ -386,7 +384,7 @@ describe("sigplot", () => {
         }
         var lyr_uuid = plot.overlay_pipe({
             type: 2000,
-            subsize: 128,
+            subsize: 128
         });
         expect(plot.get_layer(0)).not.toBe(null);
         expect(plot.get_layer(0).drawmode).toBe("scrolling");
@@ -418,11 +416,11 @@ describe("sigplot", () => {
         var lyr_uuid = plot.overlay_pipe(
             {
                 type: 2000,
-                subsize: 128,
+                subsize: 128
             },
             {
-                drawmode: "scrolling",
-            },
+                drawmode: "scrolling"
+            }
         );
         expect(plot.get_layer(0)).not.toBe(null);
         expect(plot.get_layer(0).drawmode).toBe("scrolling");
@@ -457,7 +455,7 @@ describe("sigplot", () => {
             type: 2000,
             subsize: 128,
             lps: 100,
-            pipe: true,
+            pipe: true
         });
         expect(plot.get_layer(0)).not.toBe(null);
         expect(plot.get_layer(0).lps).toBe(100);
@@ -477,7 +475,7 @@ describe("sigplot", () => {
             type: 2000,
             subsize: 128,
             lps: 100,
-            pipe: true,
+            pipe: true
         });
         var accordion = new sigplot.plugins.AccordionPlugin({
             draw_center_line: true,
@@ -485,8 +483,8 @@ describe("sigplot", () => {
             draw_edge_lines: true,
             direction: "vertical",
             edge_line_style: {
-                strokeStyle: "#FF2400",
-            },
+                strokeStyle: "#FF2400"
+            }
         });
         expect(plot._Gx.plugins.length).toBe(0);
         plot.add_plugin(accordion, 1);
@@ -502,7 +500,7 @@ describe("sigplot", () => {
         var positions = [0.0, 5.0, 9.0, 3.0];
         for (var pos = 0; pos < positions.length; ++pos) {
             var slider = new sigplot.plugins.SliderPlugin({
-                style: { strokeStyle: "#FF0000" },
+                style: { strokeStyle: "#FF0000" }
             });
             plot.add_plugin(slider, 1);
             slider.set_position(positions[pos]);
@@ -512,12 +510,8 @@ describe("sigplot", () => {
         expect(plot._Mx.canvas.height).toBe(container.clientHeight);
         expect(plot._Mx.canvas.width).toBe(container.clientWidth);
         for (var pos = 0; pos < positions.length; ++pos) {
-            expect(plot._Gx.plugins[pos].canvas.height).toBe(
-                plot._Mx.canvas.height,
-            );
-            expect(plot._Gx.plugins[pos].canvas.width).toBe(
-                plot._Mx.canvas.width,
-            );
+            expect(plot._Gx.plugins[pos].canvas.height).toBe(plot._Mx.canvas.height);
+            expect(plot._Gx.plugins[pos].canvas.width).toBe(plot._Mx.canvas.width);
         }
         container.style.display = "none";
         plot.checkresize();
@@ -534,12 +528,8 @@ describe("sigplot", () => {
         expect(plot._Mx.canvas.height).toBe(container.clientHeight);
         expect(plot._Mx.canvas.width).toBe(container.clientWidth);
         for (var pos = 0; pos < positions.length; ++pos) {
-            expect(plot._Gx.plugins[pos].canvas.height).toBe(
-                plot._Mx.canvas.height,
-            );
-            expect(plot._Gx.plugins[pos].canvas.width).toBe(
-                plot._Mx.canvas.width,
-            );
+            expect(plot._Gx.plugins[pos].canvas.height).toBe(plot._Mx.canvas.height);
+            expect(plot._Gx.plugins[pos].canvas.width).toBe(plot._Mx.canvas.width);
         }
     });
 
@@ -554,13 +544,13 @@ describe("sigplot", () => {
             ramp,
             {
                 xunits: "Power",
-                yunits: "Angle rad",
+                yunits: "Angle rad"
             },
             {
                 name: "x",
                 symbol: 1,
-                line: 0,
-            },
+                line: 0
+            }
         );
 
         expect(plot._Gx.HCB_UUID[lyr_uuid].xunits).toBe(12);
@@ -580,13 +570,13 @@ describe("sigplot", () => {
             ramp,
             {
                 xunits: "Hz",
-                yunits: "Time_sec",
+                yunits: "Time_sec"
             },
             {
                 name: "x",
                 symbol: 1,
-                line: 0,
-            },
+                line: 0
+            }
         );
 
         expect(plot._Gx.HCB_UUID[lyr_uuid].xunits).toBe(3);
@@ -607,11 +597,11 @@ describe("sigplot", () => {
         var lyr_uuid = plot.overlay_pipe(
             {
                 type: 2000,
-                subsize: 64,
+                subsize: 64
             },
             {
-                layerType: sigplot.Layer1D,
-            },
+                layerType: sigplot.Layer1D
+            }
         );
         expect(plot.get_layer(0)).not.toBe(null);
 
@@ -642,7 +632,7 @@ describe("sigplot", () => {
         }
         var lyr_uuid = plot.overlay_pipe({
             type: 2000,
-            subsize: 64,
+            subsize: 64
         });
         expect(plot.get_layer(0)).not.toBe(null);
 
@@ -716,9 +706,9 @@ describe("sigplot", () => {
                 highlights = layer.get_highlights();
                 expect(highlights).toHaveLength(2);
 
-                expect(highlights.some(h => h.color === "blue")).toBe(true);
-                expect(highlights.some(h => h.color === "green")).toBe(true);
-                expect(highlights.some(h => h.color === "red")).toBe(false);
+                expect(highlights.some((h) => h.color === "blue")).toBe(true);
+                expect(highlights.some((h) => h.color === "green")).toBe(true);
+                expect(highlights.some((h) => h.color === "red")).toBe(false);
             } else {
                 console.log("Layer highlight methods not available, skipping highlight test");
             }
@@ -727,14 +717,10 @@ describe("sigplot", () => {
         it("P2-4: should assign position = 0 when subsize changes in push()", () => {
             const src = fs.readFileSync("js/sigplot.layer1d.ts", "utf-8");
 
-            const subsizeBlock = src.match(
-                /hdrmod\.subsize[\s\S]*?this\.position\s*=\s*0/
-            );
+            const subsizeBlock = src.match(/hdrmod\.subsize[\s\S]*?this\.position\s*=\s*0/);
             expect(subsizeBlock).not.toBeNull();
 
-            const posAssignment = src.match(
-                /hdrmod\.subsize[\s\S]*?this\.position\s*=\s*(0|undefined|null)/
-            );
+            const posAssignment = src.match(/hdrmod\.subsize[\s\S]*?this\.position\s*=\s*(0|undefined|null)/);
             expect(posAssignment).not.toBeNull();
             expect(posAssignment![1]).toBe("0");
         });
@@ -830,8 +816,8 @@ describe("sigplot", () => {
             const mockPlot = {
                 _Gx: {
                     xcompression: 1,
-                    rasterDownscale: 1,
-                },
+                    rasterDownscale: 1
+                }
             };
 
             const layer = new Layer2D(mockPlot as any);

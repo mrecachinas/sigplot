@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 
 describe("m extended math functions", () => {
-
     // --- log10 ---
     describe("log10", () => {
         it("returns log base 10 for normal positive values", () => {
@@ -93,7 +92,7 @@ describe("m extended math functions", () => {
             const src = [3, 4];
             const dst = new Array(1);
             sigplot.m.cvmag2logscale(src, undefined, 10, dst);
-            expect(dst[0]).toBeCloseTo(Math.log(25) / Math.log(10) * 10, 5);
+            expect(dst[0]).toBeCloseTo((Math.log(25) / Math.log(10)) * 10, 5);
         });
 
         it("handles multiple complex pairs", () => {
@@ -401,7 +400,7 @@ describe("m extended math functions", () => {
             const hcb = {
                 dview: undefined,
                 format: "SF",
-                ape: 1,
+                ape: 1
             };
             const bufview = new Float32Array(10);
 
@@ -413,7 +412,7 @@ describe("m extended math functions", () => {
             const hcb = {
                 dview: null,
                 format: "SF",
-                ape: 1,
+                ape: 1
             };
             const bufview = new Float32Array(10);
 

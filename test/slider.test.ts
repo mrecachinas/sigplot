@@ -22,7 +22,7 @@ describe("Slider regression", () => {
                 },
                 removeListener(what: string, cb: Function) {
                     removedListeners[what] = cb;
-                },
+                }
             };
 
             const slider = new SliderPlugin({ direction: "vertical" });
@@ -70,9 +70,7 @@ describe("Slider regression", () => {
             const src = fs.readFileSync("js/sigplot.slider.ts", "utf-8");
 
             // The onmousedown handler must contain a slider_drag guard
-            const onmousedownMatch = src.match(
-                /onmousedown[\s\S]*?evt\.slider_drag/
-            );
+            const onmousedownMatch = src.match(/onmousedown[\s\S]*?evt\.slider_drag/);
             expect(onmousedownMatch).not.toBeNull();
         });
     });
@@ -82,9 +80,7 @@ describe("Slider regression", () => {
             const src = fs.readFileSync("js/sigplot.slider.ts", "utf-8");
 
             // Extract the onmousedown method body
-            const onmousedownMatch = src.match(
-                /onmousedown[\s\S]*?preventDefault/
-            );
+            const onmousedownMatch = src.match(/onmousedown[\s\S]*?preventDefault/);
             expect(onmousedownMatch).not.toBeNull();
         });
 
@@ -92,9 +88,7 @@ describe("Slider regression", () => {
             const src = fs.readFileSync("js/sigplot.slider.ts", "utf-8");
 
             // Extract the onmouseup method body
-            const onmouseupMatch = src.match(
-                /onmouseup[\s\S]*?preventDefault/
-            );
+            const onmouseupMatch = src.match(/onmouseup[\s\S]*?preventDefault/);
             expect(onmouseupMatch).not.toBeNull();
         });
     });
