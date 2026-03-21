@@ -29,11 +29,6 @@ import common from "./common.js";
 import LRU from "./lru.js";
 import type { BlueHeader, MxContext, GxContext, LayerOptions, Layer, TraceOptions } from "./types.js";
 
-/**
- * @constructor
- * @param plot
- */
-
 interface Layer1DSDS {
     plot: any; // TODO: type this properly when plot is typed
     options: LayerOptions;
