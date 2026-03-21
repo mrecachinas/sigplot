@@ -56,7 +56,7 @@
     "lint:fix": "biome lint --write js/",
     "format": "biome format --write js/ test/",
     "format:check": "biome format js/ test/",
-    "docs": "rm -rf ./doc/; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose; cp ./fft-white.png doc/sigplot/$npm_package_version/",
+    "docs": "rm -rf ./doc/ && typedoc",
     "clean": "rm -rf dist/",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -82,6 +82,7 @@
     "express": "^4.13.4",
     "jsdom": "^28.1.0",
     "playwright": "^1.58.2",
+    "typedoc": "^0.28.17",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   }
