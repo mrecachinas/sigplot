@@ -918,3 +918,219 @@ QUnit.test('Plot onerror SDS callback', function(assert) {
         layerType: "2DSDS"
     });
 });
+
+// Draw a 1D layer and capture the traces instead of rendering them
+function draw_layer1d(plot, lyr) {
+    var traces = [];
+    var trace = sigplot.mx.trace;
+    sigplot.mx.trace = function(Mx, color, xpoint, ypoint, npts) {
+        traces.push({
+            x: Array.prototype.slice.call(xpoint, 0, npts),
+            y: Array.prototype.slice.call(ypoint, 0, npts)
+        });
+    };
+    try {
+        plot.get_layer(lyr).draw();
+    } finally {
+        sigplot.mx.trace = trace;
+    }
+    return traces;
+}
+
+QUnit.test('sigplot layer1d zoom draws the correct samples', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {});
+    var ramp = [];
+    for (var i = 0; i < 1000; i++) {
+        ramp.push(i);
+    }
+    var lyr = plot.overlay_array(ramp);
+
+    plot.zoom({
+        x: 300.3
+    }, {
+        x: 400.3
+    });
+    var traces = draw_layer1d(plot, lyr);
+    assert.equal(traces.length, 1);
+    var t = traces[0];
+    var mismatched = t.x.filter(function(x, ii) {
+        return t.y[ii] !== x;
+    });
+    assert.deepEqual(mismatched, [], "each point is plotted at its own sample's x");
+    assert.ok(t.x[0] <= 300.3, "trace reaches the left edge of the view");
+    assert.ok(t.x[t.x.length - 1] >= 400.3, "trace reaches the right edge of the view");
+});
+
+QUnit.test('sigplot layer1d draws every sample when larger than bufmax', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {
+        bufmax: 100
+    });
+    var size = 401;
+    var ramp = [];
+    for (var i = 0; i < size; i++) {
+        ramp.push(i);
+    }
+    var headers = [{
+        xstart: 0,
+        xdelta: 1
+    }, {
+        xstart: size - 1,
+        xdelta: -1
+    }];
+    var lyrs = headers.map(function(hdr) {
+        return plot.overlay_array(ramp, hdr);
+    });
+
+    plot.zoom({
+        x: 0
+    }, {
+        x: size - 1
+    });
+    lyrs.forEach(function(lyr, n) {
+        var hdr = headers[n];
+        var traces = draw_layer1d(plot, lyr);
+        var drawn = {};
+        var mismatched = 0;
+        var chunks = traces.map(function(t) {
+            t.x.forEach(function(x, ii) {
+                var k = Math.round((x - hdr.xstart) / hdr.xdelta);
+                drawn[k] = true;
+                if (t.y[ii] !== k) {
+                    mismatched++;
+                }
+            });
+            return [Math.min.apply(null, t.x), Math.max.apply(null, t.x)];
+        });
+        assert.ok(traces.length > 1, "xdelta " + hdr.xdelta + ": drawn in multiple chunks");
+        assert.equal(mismatched, 0, "xdelta " + hdr.xdelta + ": each point is plotted at its own sample's x");
+        assert.equal(Object.keys(drawn).length, size, "xdelta " + hdr.xdelta + ": every sample is drawn");
+        chunks.sort(function(a, b) {
+            return a[0] - b[0];
+        });
+        var gaps = 0;
+        for (var jj = 1; jj < chunks.length; jj++) {
+            if (chunks[jj][0] > chunks[jj - 1][1]) {
+                gaps++;
+            }
+        }
+        assert.equal(gaps, 0, "xdelta " + hdr.xdelta + ": consecutive chunks are connected");
+    });
+});
+
+QUnit.test('sigplot layer1d maxhold while zoomed', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {});
+    var lyr = plot.overlay_pipe({
+        type: 1000
+    }, {
+        framesize: 100,
+        maxhold: {
+            color: "red"
+        }
+    });
+    var spike = [];
+    var ones = [];
+    for (var i = 0; i < 100; i++) {
+        spike.push((i === 10) ? 100 : 0);
+        ones.push(1);
+    }
+    plot.push(lyr, spike, null, true);
+    draw_layer1d(plot, lyr);
+    plot.push(lyr, ones, null, true);
+
+    plot.zoom({
+        x: 30.2
+    }, {
+        x: 60.2
+    });
+    var traces = draw_layer1d(plot, lyr);
+    assert.equal(traces.length, 2, "data and maxhold traces");
+    assert.deepEqual(traces[1].x, traces[0].x);
+    assert.equal(Math.max.apply(null, traces[1].y), 1, "spike outside the view is not shown");
+
+    plot.unzoom();
+    traces = draw_layer1d(plot, lyr);
+    assert.equal(traces[1].y[traces[1].x.indexOf(10)], 100, "maxhold is retained at the spike");
+});
+
+QUnit.test('sigplot layer1d pipe draws the latest frame after subsize change', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {});
+    var lyr = plot.overlay_pipe({
+        type: 2000,
+        subsize: 64
+    }, {
+        layerType: sigplot.Layer1D
+    });
+    var frame = function(f, n) {
+        var data = [];
+        for (var i = 0; i < n; i++) {
+            data.push(f * 1000 + i);
+        }
+        return data;
+    };
+    plot.push(lyr, frame(1, 64), null, true);
+    draw_layer1d(plot, lyr);
+    plot.push(lyr, frame(2, 128), {
+        subsize: 128
+    }, true);
+
+    plot.zoom({
+        x: 0
+    }, {
+        x: 127
+    });
+    var traces = draw_layer1d(plot, lyr);
+    assert.equal(traces.length, 1);
+    var t = traces[0];
+    assert.equal(t.x.length, 128);
+    var mismatched = t.x.filter(function(x, ii) {
+        return t.y[ii] !== 2000 + x;
+    });
+    assert.deepEqual(mismatched, [], "the latest frame is drawn");
+});
+
+QUnit.test('sigplot layer1d XY mode', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {});
+    var xy = [];
+    for (var i = 0; i < 50; i++) {
+        xy.push(100 + (2 * i), i);
+    }
+    var lyr = plot.overlay_array(xy, null, {
+        mode: "XY"
+    });
+    assert.equal(plot.get_layer(lyr).xmin, 100);
+    assert.equal(plot.get_layer(lyr).xmax, 198);
+
+    var traces = draw_layer1d(plot, lyr);
+    assert.equal(traces.length, 1);
+    assert.equal(traces[0].x.length, 50);
+    assert.equal(traces[0].x[49], 198);
+    assert.equal(traces[0].y[49], 49);
+});
+
+QUnit.test('sigplot layer1d index mode draws the first sample', function(assert) {
+    var container = document.getElementById('plot');
+    var plot = new sigplot.Plot(container, {});
+    var ramp = [];
+    for (var i = 0; i < 100; i++) {
+        ramp.push(i);
+    }
+    var lyr = plot.overlay_array(ramp, {
+        xstart: 1000,
+        xdelta: 5
+    });
+    plot.change_settings({
+        index: true
+    });
+
+    var traces = draw_layer1d(plot, lyr);
+    assert.equal(traces.length, 1);
+    var t = traces[0];
+    assert.equal(t.x[0], 1, "sample 0 is plotted at index 1");
+    assert.equal(t.y[0], 0);
+    assert.equal(t.x.length, 100);
+});

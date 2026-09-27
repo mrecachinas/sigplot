@@ -256,31 +256,38 @@
 
             var imin = 0;
             var imax = 0;
+            // Fetch one sample beyond each edge of [xmin, xmax] so the
+            // trace extends all the way to the edges of the view
             if (Gx.index) {
-                imin = Math.floor(xmin);
+                // index mode x-values are 1-based sample numbers
+                imin = Math.floor(xmin) - 2;
                 imax = Math.floor(xmax + 0.5);
             } else if (this.mode === "XY") {
                 imin = 0;
                 imax = size - 1;
             } else if (HCB.xdelta >= 0.0) {
                 imin = Math.floor((xmin - HCB.xstart) / HCB.xdelta) - 1;
-                imax = Math.floor((xmax - HCB.xstart) / HCB.xdelta + 0.5);
+                imax = Math.floor((xmax - HCB.xstart) / HCB.xdelta) + 1;
             } else {
-
                 imin = Math.floor((xmax - HCB.xstart) / HCB.xdelta) - 1;
-                imax = Math.floor((xmin - HCB.xstart) / HCB.xdelta + 0.5);
+                imax = Math.floor((xmin - HCB.xstart) / HCB.xdelta) + 1;
             }
             imin = Math.max(0.0, imin);
             imax = Math.min(size - 1, imax);
 
+            // When limited by bufmax, return the chunk nearest xmin; draw()
+            // and get_pan_bounds() then advance xmin to fetch the rest
             var npts = Math.max(0.0, Math.min(imax - imin + 1, Gx.bufmax));
-            if (HCB.xdelta < 0) {
+            if ((HCB.xdelta < 0) && (!Gx.index)) {
                 imin = imax - npts + 1;
             }
 
             this.imin = imin;
 
-            if ((this.ybufmin !== undefined) && (this.ybufmax !== undefined) && (imin >= this.ybufmin) && (imin + npts <= this.ybufmax)) {
+            if (HCB.pipe) {
+                // pipe data is written directly into ybuf by _onpipewrite
+                return npts;
+            } else if ((this.ybufmin !== undefined) && (this.ybufmax !== undefined) && (imin >= this.ybufmin) && (imin + npts <= this.ybufmax)) {
                 // data already in buffers
                 return npts;
             } else if (this.modified) {
@@ -339,14 +346,7 @@
                 if (this.maxhold.decay === undefined) {
                     this.maxhold.decay = 0;
                 }
-                if (this.mhpoint) {
-                    // clear the maxhold buffer by setting to negative Infinity
-                    this.mhpoint.fill(-Infinity);
-                } else {
-                    this.mhptr = new ArrayBuffer(this.pointbufsize);
-                    this.mhpoint = new m.PointArray(this.mhptr);
-                    this.mhpoint.fill(-Infinity);
-                }
+                this._reset_maxhold();
             } else if (settings.maxhold === null) {
                 this.maxhold = undefined;
                 this.mhpoint = undefined;
@@ -362,9 +362,7 @@
                 this.ybufn = this.size * Math.max(this.skip * m.PointArray.BYTES_PER_ELEMENT, m.PointArray.BYTES_PER_ELEMENT);
                 this.ybuf = new ArrayBuffer(this.ybufn);
                 if (this.maxhold) {
-                    this.mhptr = new ArrayBuffer(this.pointbufsize);
-                    this.mhpoint = new m.PointArray(this.mhptr);
-                    this.mhpoint.fill(-Infinity);
+                    this._reset_maxhold();
                 }
             }
 
@@ -372,6 +370,19 @@
                 this.color = settings.color;
             }
 
+        },
+
+        /**
+         * Allocate (or clear) the maxhold buffer.  The buffer is indexed by
+         * absolute sample index so it must span the entire layer.
+         *
+         * @memberOf Layer1D
+         * @private
+         */
+        _reset_maxhold: function() {
+            this.mhptr = new ArrayBuffer(Math.max(this.size, 1) * m.PointArray.BYTES_PER_ELEMENT);
+            this.mhpoint = new m.PointArray(this.mhptr);
+            this.mhpoint.fill(-Infinity);
         },
 
         reload: function(data, hdrmod) {
@@ -489,14 +500,10 @@
                 this.yptr = new ArrayBuffer(this.pointbufsize);
                 this.xpoint = new m.PointArray(this.xptr);
                 this.ypoint = new m.PointArray(this.yptr);
-                // invalidate max hold buffers
-                this.mhptr = null;
-                this.mhpoint = null;
-                if (this.maxhold) {
-                    this.mhptr = new ArrayBuffer(this.pointbufsize);
-                    this.mhpoint = new m.PointArray(this.mhptr);
-                    this.mhpoint.fill(-Infinity);
-                }
+            }
+
+            if (this.maxhold && (!this.mhpoint || (this.mhpoint.length < this.size))) {
+                this._reset_maxhold();
             }
 
             var dbuf = new m.PointArray(this.ybuf);
@@ -540,10 +547,11 @@
                     n1 = 0;
                     n2 = npts;
                 }
-                //if ((this.cx) || (this.mode === "XY")) {
-                //    this.xmin = qmin;
-                //    this.xmax = qmax;
-                //}
+                if (this.mode === "XY") {
+                    // in XY mode the x-range of the layer comes from the data
+                    this.xmin = qmin;
+                    this.xmax = qmax;
+                }
             } else if (npts > 0) {
                 var xstart = this.hcb.xstart + this.imin * this.xdelta;
                 var xdelta = this.xdelta;
@@ -634,7 +642,7 @@
             mxmn = m.vmxmn(this.ypoint, npts);
 
             if ((this.maxhold && this.mhpoint)) {
-                m.vmovmax(this.ypoint, 0, 1, this.mhpoint, n1, 1, npts, this.maxhold.decay);
+                m.vmovmax(this.ypoint, 0, 1, this.mhpoint, this.imin + n1, 1, npts, this.maxhold.decay);
             }
 
             qmax = mxmn.smax;
@@ -715,20 +723,8 @@
                 panymax = (panymax === undefined) ? prep.panymax : Math.max(panymax, prep.panymax);
                 num += prep.num;
 
-                if (Gx.all) {
-                    if (this.size === 0) {
-                        xmin = xmax;
-                    } else {
-                        if (Gx.index) {
-                            xmin = xmin + prep.num;
-                        } else {
-                            if (this.xdelta >= 0) {
-                                xmin = xmin + (prep.num * this.xdelta);
-                            } else {
-                                xmax = xmax + (prep.num * this.xdelta);
-                            }
-                        }
-                    }
+                if (Gx.all && (this.size !== 0) && (prep.num > 0)) {
+                    xmin = this._next_chunk_xmin(xmin, prep);
                 } else {
                     xmin = xmax;
                 }
@@ -750,6 +746,36 @@
                 ymin: this.ymin,
                 ymax: this.ymax
             };
+        },
+
+        /**
+         * Returns the xmin for the next chunk after prep() returned pts for
+         * a chunk starting at xmin.  The next chunk resumes from the last
+         * sample drawn, so consecutive chunks share a point and the trace
+         * is continuous across chunks.
+         *
+         * @memberOf Layer1D
+         * @private
+         */
+        _next_chunk_xmin: function(xmin, pts) {
+            var Gx = this.plot._Gx;
+            if (this.mode === "XY") {
+                // get_data returns the same points regardless of xmin
+                return Infinity;
+            }
+            var first = this.imin + pts.start;
+            var last = first + pts.num - 1;
+            var xlast;
+            if (Gx.index) {
+                xlast = last + 1;
+            } else {
+                xlast = this.hcb.xstart + Math.max(first * this.hcb.xdelta, last * this.hcb.xdelta);
+            }
+            if (xlast > xmin) {
+                return xlast;
+            }
+            // always make forward progress
+            return xmin + pts.num * (Gx.index ? 1 : Math.abs(this.hcb.xdelta));
         },
 
         draw: function() {
@@ -796,7 +822,6 @@
             }
 
             var segment = (Gx.segment) && (Gx.cmode !== 5) && (this.xsub > 0) && (mask === 0);
-            var xdelta = this.xdelta;
 
             var xmin;
             var xmax;
@@ -864,7 +889,7 @@
                             mx.trace(Mx,
                                 this.maxhold.color,
                                 new m.PointArray(this.xptr),
-                                this.mhpoint.slice(pts.start, pts.end),
+                                this.mhpoint.slice(this.imin + pts.start, this.imin + pts.start + pts.num),
                                 pts.num,
                                 pts.start,
                                 1,
@@ -879,15 +904,7 @@
                 if (pts.num === 0) {
                     xmin = xmax;
                 } else {
-                    if (Gx.index) {
-                        xmin = xmin + pts.num;
-                    } else {
-                        if (xdelta >= 0) {
-                            xmin = xmin + (pts.num * xdelta);
-                        } else {
-                            xmax = xmax + (pts.num * xdelta);
-                        }
-                    }
+                    xmin = this._next_chunk_xmin(xmin, pts);
                 }
             }
 
