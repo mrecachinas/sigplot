@@ -901,7 +901,8 @@
                     }
                 }
 
-                if (pts.num === 0) {
+                // Unless 'all' is set, only one buffer (bufmax points) is drawn
+                if ((pts.num === 0) || (!Gx.all)) {
                     xmin = xmax;
                 } else {
                     xmin = this._next_chunk_xmin(xmin, pts);

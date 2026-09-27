@@ -965,7 +965,8 @@ QUnit.test('sigplot layer1d zoom draws the correct samples', function(assert) {
 QUnit.test('sigplot layer1d draws every sample when larger than bufmax', function(assert) {
     var container = document.getElementById('plot');
     var plot = new sigplot.Plot(container, {
-        bufmax: 100
+        bufmax: 100,
+        all: true
     });
     var size = 401;
     var ramp = [];
@@ -1016,6 +1017,18 @@ QUnit.test('sigplot layer1d draws every sample when larger than bufmax', functio
             }
         }
         assert.equal(gaps, 0, "xdelta " + hdr.xdelta + ": consecutive chunks are connected");
+    });
+
+    // without 'all' only one buffer, starting at the left edge of the view, is drawn
+    plot.change_settings({
+        all: false
+    });
+    lyrs.forEach(function(lyr, n) {
+        var hdr = headers[n];
+        var traces = draw_layer1d(plot, lyr);
+        assert.equal(traces.length, 1, "xdelta " + hdr.xdelta + ": one buffer without all");
+        assert.equal(traces[0].x.length, 100, "xdelta " + hdr.xdelta + ": bufmax points without all");
+        assert.equal(Math.min.apply(null, traces[0].x), 0, "xdelta " + hdr.xdelta + ": buffer starts at the left edge");
     });
 });
 
